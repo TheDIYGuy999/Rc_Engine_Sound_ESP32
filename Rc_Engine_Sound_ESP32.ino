@@ -9,7 +9,7 @@
    - additional sounds like horn
 */
 
-const float codeVersion = 0.1; // Software revision. Still v0.1, already sort of working, but only one engine sound...
+const float codeVersion = 0.2; // Software revision.
 
 // All the required vehicle specific settings are done in settings.h!
 #include "settings.h" // <<------- SETTINGS
@@ -35,8 +35,6 @@ const float codeVersion = 0.1; // Software revision. Still v0.1, already sort of
 #define DAC1 25 // connect the PAM8403 amplifier to pin 25. A 10kOhm potentiometer is required for volume adjustment!
 
 // Define global variables
-volatile uint16_t currentSmpleRate = 0; // Current playback rate, this is adjusted depending on engine RPM
-//volatile uint16_t fixedSmpleRate = FREQ / BASE_RATE; // Current playback rate, this is adjusted depending on engine RPM
 volatile uint8_t engineState = 2; // 0 = off, 1 = starting, 2 = running, 3 = stopping
 
 volatile boolean engineOn = false;              // Signal for engine on / off
@@ -45,11 +43,11 @@ volatile uint16_t curEngineSample;              // Index of currently loaded eng
 volatile uint16_t curStartSample;               // Index of currently loaded start sample
 volatile uint16_t curHornSample;                // Index of currently loaded horn sample
 
-uint16_t  currentThrottle = 0;                  // 0 - 1000, a top value of 1023 is acceptable
+uint16_t  currentThrottle = 0;                  // 0 - 500
 volatile int16_t pulseWidth = 0;                // Current RC signal pulse width
 volatile boolean pulseAvailable;                // RC signal pulses are coming in
 
-int16_t currentRpm = 0; // 0 - 1023
+int16_t currentRpm = 0; // 0 - 500
 //float currentRpmScaled;
 volatile int16_t currentRpmScaled;
 

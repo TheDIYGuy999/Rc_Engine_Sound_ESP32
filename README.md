@@ -13,8 +13,15 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## New in V 0.1:
 - Runs on an ESP32 (80MHz)
 - It's still quick and dirty, but works with the included V8 short course truck idle sound
-- sound way better than the ATmega 328 version, thanks to  22'050Hz sampling rate (instead of 8'000Hz)
+- sounds way better than the ATmega 328 version, thanks to  22'050Hz sampling rate (instead of 8'000Hz)
 
+## New in V 0.2:
+- Many new 22'050Hz, 8bit sound files generated, mostly the same as in the ATmega 328 version, but im better quality :-)
+
+## On the todo list:
+- Adding motor start / stop functionality
+- Adding horn
+-...
 
 
 ## Ho to create new sound arrays:
