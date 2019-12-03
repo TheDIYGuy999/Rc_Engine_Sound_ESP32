@@ -3,16 +3,15 @@ It's based on the ATMega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_
 and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## Features:
-- Many selectable engine sounds and startup sounds for cars and trucks
-- Sound files up to 8bit, 16kHz, mono can be used
-- Works best with a PAM8403 amplifier module, connected to pin 3, via a 10kOhm potentiometer
-- The engine RPM is calculated according to RC signal input on pin 2
+- Many selectable engine sounds and startup sounds for cars and trucks (currently just one)
+- Sound files up to 22'050Hz, 8bit, mono can be used
+- Works best with a PAM8403 amplifier module, connected to pin 25, via a 10kOhm potentiometer
+- The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max.! *** 10kOhm resistor recommended!
 - Gear shifting is simulated in "curves.h"
-- Use an Arduino Pro Mini 5V, 16MHz
+- Use an ESP32 80MHz
 
 ## New in V 0.1:
 - Runs on an ESP32 (80MHz)
-- PAM8403 amplifier connected to pin 25, via a 10kOhm potentiometer for volume adjustment
 - It's still quick and dirty, but works with the included V8 short course truck idle sound
 - sound way better than the ATmega 328 version, thanks to  22'050Hz sampling rate (instead of 8'000Hz)
 
@@ -46,6 +45,9 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## Schematic:
 todo...
+
+## Pictures (including optional additional filtering):
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/top.jpg)
 
 
 2019, TheDIYGuy999
