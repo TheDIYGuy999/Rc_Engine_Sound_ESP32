@@ -1,27 +1,35 @@
-# This is an Arduino RC engine sound generator for ESP32.
-It's based on the ATMega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_Sound
+# This is an Arduino RC engine sound generator for ESP32
+It's based on the ATmega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## Features:
-- Many selectable engine sounds and startup sounds for cars and trucks (currently just one)
+- Many selectable engine sounds and startup sounds for cars and trucks
 - Sound files up to 22'050Hz, 8bit, mono can be used
 - Works best with a PAM8403 amplifier module, connected to pin 25, via a 10kOhm potentiometer
+- The horn is played on pin 26 (see wiring instructions in code)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max.! *** 10kOhm resistor recommended!
 - Gear shifting is simulated in "curves.h"
-- Use an ESP32 80MHz
+- Use an ESP32, CPU frequency must be set to 240MHz
 
 ## New in V 0.1:
-- Runs on an ESP32 (80MHz)
+- Runs on an ESP32 (240MHz)
 - It's still quick and dirty, but works with the included V8 short course truck idle sound
 - sounds way better than the ATmega 328 version, thanks to  22'050Hz sampling rate (instead of 8'000Hz)
 
 ## New in V 0.2:
-- Many new 22'050Hz, 8bit sound files generated, mostly the same as in the ATmega 328 version, but im better quality :-)
+- Many new 22'050Hz, 8bit sound files generated, mostly the same as in the ATmega 328 version, but in better quality :-)
+
+## New in V 0.3:
+- Engine start / stop implemented, including starter sounds
+- Three different start sounds available
+- Horn implemented. It is played on pin 26 (see wiring instructions in code) triggered by switch on input 12
+- Two different horn sounds available
+- The horn can play in parallel with the variable speed engine sound!
+- For easier access, the "settings.h" file was renamed in "Adjustments.h"
 
 ## On the todo list:
-- Adding motor start / stop functionality
-- Adding horn
--...
+- Optional horn triggering via RC signal
+- Drawing a schematic
 
 
 ## Ho to create new sound arrays:
