@@ -27,8 +27,13 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - The horn can play in parallel with the variable speed engine sound!
 - For easier access, the "settings.h" file was renamed in "Adjustments.h"
 
+## New in V 0.4:
+- volume offset issue fixed
+- added the typical Swisss post bus horn, an American police siren, a European Feuerwehr Martinshorn and a car horn
+- added the varible "shifted", which allows to select between linear ans shifted engine rpm
+
 ## On the todo list:
-- Optional horn triggering via RC signal
+- Optional horn triggering via PPM RC signal
 - Drawing a schematic
 
 
