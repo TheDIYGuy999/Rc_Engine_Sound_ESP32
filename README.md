@@ -31,10 +31,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - volume offset issue fixed
 - added the typical Swisss post bus horn, an American police siren, a European Feuerwehr Martinshorn and a car horn
 - added the varible "shifted", which allows to select between linear ans shifted engine rpm
+- added schematic
 
 ## On the todo list:
 - Optional horn triggering via PPM RC signal
-- Drawing a schematic
 
 
 ## Ho to create new sound arrays:
@@ -64,7 +64,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - the new engine should now run...
 
 ## Schematic:
-todo...
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/wiring.jpg)
 
 ## Pictures (including optional additional filtering):
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/top.jpg)
