@@ -28,9 +28,9 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - For easier access, the "settings.h" file was renamed in "Adjustments.h"
 
 ## New in V 0.4:
-- volume offset issue fixed
+- volume offset bug fixed
 - added the typical Swisss post bus horn, an American police siren, a European Feuerwehr Martinshorn and a car horn
-- added the varible "shifted", which allows to select between linear ans shifted engine rpm
+- added the varible "shifted", which allows to select between linear and shifted engine rpm response
 - added schematic
 
 ## On the todo list:
