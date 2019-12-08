@@ -66,7 +66,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## Schematic:
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/wiring.jpg)
 
-## Pictures (including optional additional filtering):
+## Pictures:
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/top.jpg)
 
 
