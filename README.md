@@ -33,6 +33,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - added the varible "shifted", which allows to select between linear and shifted engine rpm response
 - added schematic
 
+## New in V 0.5:
+- added idle sound volume adjustment variable "idleVolumePercentage" in "Adjustments.h"
+- added Union Pacific 2002 SD70M 16 cylinder Diesel locomotive sounds
+- added Jaguar XJS HE car sound (bad quality)
+- added "pwmHornTrigger" variable in Adjustments.h", which allows to trigger the horn, using a PWM signal. Allows to use standard receivers
+
 ## On the todo list:
 - Optional horn triggering via PPM RC signal
 

@@ -36,7 +36,7 @@ const float codeVersion = 0.4; // Software revision.
 
 // Pin assignment and wiring instructions
 #define THROTTLE_PIN 13 // connect to RC receiver throttle channel (caution, max. 3.3V, 10kOhm series resistor recommended!)
-#define HORN_SWITCH 12 // This input is triggering the horn, if connected to VCC
+#define HORN_PIN 12 // This input is triggering the horn, if connected to VCC or PWM pulse length above threshold (see variable pwmHornTrigger" in Adjustments.h)
 
 #define DAC1 25 // connect pin25 to a 10kOhm resistor
 #define DAC2 26 // connect pin26 to a 10kOhm resistor
@@ -126,15 +126,15 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curEngineSample < sampleCount) {
-        dacWrite(DAC1, (int)samples[curEngineSample] + 128);
+        dacWrite(DAC1, (int)(samples[curEngineSample] * idleVolumePercentage / 100) + 128);
         curEngineSample ++;
       }
       else {
         curEngineSample = 0;
-        attenuator = 1;
       }
 
       if (!engineOn) {
+        attenuator = 1;
         engineState = 3;
       }
       break;
@@ -144,7 +144,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curEngineSample < sampleCount) {
-        dacWrite(DAC1, (int)(samples[curEngineSample] / attenuator) + 128);
+        dacWrite(DAC1, (int)(samples[curEngineSample] * idleVolumePercentage / 100 / attenuator) + 128);
         curEngineSample ++;
       }
       else {
@@ -203,8 +203,8 @@ void IRAM_ATTR fixedPlaybackTimer() {
 void setup() {
 
   // Pin modes
-  pinMode(THROTTLE_PIN, INPUT);
-  pinMode(HORN_SWITCH, INPUT_PULLDOWN);
+  pinMode(THROTTLE_PIN, INPUT_PULLDOWN);
+  pinMode(HORN_PIN, INPUT_PULLDOWN);
 
 #ifdef DEBUG
   // Serial setup
@@ -277,8 +277,14 @@ void getRcSignal() {
 //
 
 void triggerHorn() {
-  // detect horn input
-  if (digitalRead(HORN_SWITCH)) hornOn = true;
+  if (pwmHornTrigger) {
+    // detect horn trigger ( impulse length > 1700us)
+    if (pulseIn(HORN_PIN, HIGH, 100000) > 1700) hornOn = true;
+  }
+  else {
+    // detect horn trigger (constant high level)
+    if (digitalRead(HORN_PIN)) hornOn = true;
+  }
 }
 
 //
