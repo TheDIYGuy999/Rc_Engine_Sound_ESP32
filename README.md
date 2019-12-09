@@ -40,7 +40,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - added "pwmHornTrigger" variable in Adjustments.h", which allows to trigger the horn, using a PWM signal. Allows to use standard receivers
 
 ## On the todo list:
-- Optional horn triggering via PPM RC signal
+- sort out the strange delay in main loop
 
 
 ## Ho to create new sound arrays:
