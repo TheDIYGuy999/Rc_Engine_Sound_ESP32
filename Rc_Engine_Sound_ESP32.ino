@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 0.6; // Software revision.
+const float codeVersion = 0.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -47,11 +47,17 @@ const float codeVersion = 0.6; // Software revision.
 // Define global variables
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
 
+volatile uint8_t soundNo = 0; // 0 = horn, 1 = additional sound 1
+
 volatile boolean engineOn = false;              // Signal for engine on / off
 volatile boolean hornOn = false;                // Signal for horn on / off
+volatile boolean sound1On = false;              // Signal for additional sound 1  on / off
+
+volatile boolean hornSwitch = false;           // Switch state for horn on / off triggering
+volatile boolean sound1Switch = false;         // Switch state for additional sound 1 triggering
 
 uint32_t  currentThrottle = 0;                  // 0 - 500
-volatile uint32_t pulseWidth = 0;                // Current RC signal pulse width
+volatile uint32_t pulseWidth = 0;               // Current RC signal pulse width
 volatile boolean pulseAvailable;                // RC signal pulses are coming in
 
 const int32_t maxRpm = 500;                     // always 500
@@ -175,24 +181,49 @@ void IRAM_ATTR variablePlaybackTimer() {
 void IRAM_ATTR fixedPlaybackTimer() {
 
   static uint32_t curHornSample;                // Index of currently loaded horn sample
-
+  static uint32_t curSound1Sample;                // Index of currently loaded sound 1 sample
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
-  fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
-  timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+  switch (soundNo) {
 
-  if (hornOn) {
-    if (curHornSample < hornSampleCount) {
-      dacWrite(DAC2, (int)hornSamples[curHornSample] + 128);
-      curHornSample ++;
-    }
-    else {
+    case 0: // Horn ----
+      fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
+      timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+      curSound1Sample = 0;
+
+      if (hornOn) {
+        if (curHornSample < hornSampleCount) {
+          dacWrite(DAC2, (int)hornSamples[curHornSample] + 128);
+          curHornSample ++;
+        }
+        else {
+          curHornSample = 0;
+          dacWrite(DAC2, 128);
+          if (!hornSwitch) hornOn = false; // Latch required to prevent it from popping
+        }
+      }
+      break;
+
+    case 1: // Sound 1 ----
+      fixedTimerTicks = 4000000 / sound1SampleRate; // our fixed sampling rate
+      timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
       curHornSample = 0;
-      hornOn = false;
-      dacWrite(DAC2, 128);
-    }
-  }
+
+      if (sound1On) {
+        if (curSound1Sample < sound1SampleCount) {
+          dacWrite(DAC2, (int)sound1Samples[curSound1Sample] + 128);
+          curSound1Sample ++;
+        }
+        else {
+          curSound1Sample = 0;
+          dacWrite(DAC2, 128);
+          if (!sound1Switch) sound1On = false; // Latch required to prevent it from popping
+        }
+      }
+      break;
+
+  } // end of switch case
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -215,8 +246,8 @@ void setup() {
 #endif
 
   // DAC
-  dacWrite(DAC1, 128);
-  dacWrite(DAC2, 128);
+  //dacWrite(DAC1, 128);
+  //dacWrite(DAC2, 128);
 
   // Watchdog timers need to be disabled, if task 1 is running without delay(1)
   disableCore0WDT();
@@ -250,7 +281,8 @@ void setup() {
   delay(1000);
 
   // then compute the RC channel offset (only, if "engineManualOnOff" inactive)
-  if (!engineManualOnOff) pulseZero = pulseWidth;
+  getRcSignal(); // Read RC signal for the first time
+  if (!engineManualOnOff) pulseZero = pulseWidth; // store offset
 
   // Calculate throttle range
   pulseMaxNeutral = pulseZero + pulseNeutral;
@@ -275,19 +307,44 @@ void getRcSignal() {
 
 //
 // =======================================================================================================
-// HORN TRIGGERING
+// HORN TRIGGERING, ADDITIONAL SOUND TRIGGERING
 // =======================================================================================================
 //
 
 void triggerHorn() {
-  if (pwmHornTrigger) {
-    // detect horn trigger ( impulse length > 1700us)
-    if (pulseIn(HORN_PIN, HIGH, 50000) > 1700) hornOn = true;
+  if (pwmHornTrigger) { // PWM RC signal mode --------------------------------------------
+
+    // detect horn trigger ( impulse length > 1700us) -------------
+    if (pulseIn(HORN_PIN, HIGH, 50000) > 1700) {
+      hornSwitch = true;
+      soundNo = 0;  // 0 = horn
+    }
+    else hornSwitch = false;
+
+
+    // detect sound 1 trigger ( impulse length < 1300us) ----------
+    if (pulseIn(HORN_PIN, HIGH, 50000) < 1300) {
+      sound1Switch = true;
+      soundNo = 1;  // 1 = sound 1
+    }
+    else sound1Switch = false;
+
   }
-  else {
+  else { // High level triggering mode ---------------------------------------------------
+
     // detect horn trigger (constant high level)
-    if (digitalRead(HORN_PIN)) hornOn = true;
+    if (digitalRead(HORN_PIN)) {
+      hornSwitch = true;
+      soundNo = 0;  // 0 = horn
+    }
+    else hornSwitch = false;
   }
+
+  // Latches (required to prevent sound seams from popping) --------------------------------
+
+  if (hornSwitch) hornOn = true;
+  if (sound1Switch) sound1On = true;
+
 }
 
 //
@@ -419,7 +476,11 @@ unsigned long loopDuration() {
 
 void loop() {
 
-  // Nothing going on here...
+  // measure RC signal mark space ratio
+  getRcSignal();
+
+  // Horn triggering
+  triggerHorn();
 }
 
 //
@@ -431,18 +492,6 @@ void loop() {
 void Task1code(void *pvParameters) {
   for (;;) {
 
-    static unsigned long pulseReadMillis;
-
-    // *** Read PWM signals only every 100ms (very important, otherwise pulseRead() uses too much cycle time!! *** //
-    if (millis() - pulseReadMillis > 100) {
-      pulseReadMillis = millis();
-      // measure RC signal mark space ratio
-      getRcSignal();
-
-      // Horn triggering
-      triggerHorn();
-    }
-
     // Map pulsewidth to throttle
     mapThrottle();
 
@@ -453,7 +502,5 @@ void Task1code(void *pvParameters) {
     engineOnOff();
 
     loopTime = loopDuration(); // measure loop time
-
-    //delay(1); // 1ms delay required, otherwise ESP32 keeps rebooting, if watchdog timers are active...
   }
 }

@@ -42,6 +42,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## New in V 0.6:
 - fixed slow engine RPM response: The RC signal pulsewidth is now only read every 100ms, so much more processing time is available for other things
 
+## New in V 0.7:
+- fixed auto throttle zero calibration bug
+- fixed "gap" bug, if sounds were triggered in PWM mode
+- PWM mode now allows to trigger 2 sounds
+
 ## On the todo list:
 - separate engine switch off sounds?
 
