@@ -39,8 +39,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - added Jaguar XJS HE car sound (bad quality)
 - added "pwmHornTrigger" variable in Adjustments.h", which allows to trigger the horn, using a PWM signal. Allows to use standard receivers
 
+## New in V 0.6:
+- fixed slow engine RPM response: The RC signal pulsewidth is now only read every 100ms, so much more processing time is available for other things
+
 ## On the todo list:
-- sort out the strange delay in main loop
+- separate engine switch off sounds?
 
 
 ## Ho to create new sound arrays:

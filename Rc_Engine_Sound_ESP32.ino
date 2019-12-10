@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 0.5; // Software revision.
+const float codeVersion = 0.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -18,7 +18,7 @@ const float codeVersion = 0.5; // Software revision.
 // All the required vehicle specific settings are done in Adjustments.h!
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
-//#define DEBUG // can slow down the playback loop! Comment it out, if not needed
+#define DEBUG // can slow down the playback loop! Comment it out, if not needed
 
 //
 // =======================================================================================================
@@ -68,6 +68,9 @@ uint16_t pulseMinLimit;
 
 // Our main tasks
 TaskHandle_t Task1;
+
+// Loop time (for debug)
+uint16_t loopTime;
 
 // Sampling intervals for interrupt timer (adjusted according to your sound file sampling rate)
 uint32_t maxSampleInterval = 4000000 / sampleRate;
@@ -267,7 +270,7 @@ void setup() {
 
 void getRcSignal() {
   // measure RC signal mark space ratio
-  pulseWidth = pulseIn(THROTTLE_PIN, HIGH, 100000);
+  pulseWidth = pulseIn(THROTTLE_PIN, HIGH, 50000);
 }
 
 //
@@ -279,7 +282,7 @@ void getRcSignal() {
 void triggerHorn() {
   if (pwmHornTrigger) {
     // detect horn trigger ( impulse length > 1700us)
-    if (pulseIn(HORN_PIN, HIGH, 100000) > 1700) hornOn = true;
+    if (pulseIn(HORN_PIN, HIGH, 50000) > 1700) hornOn = true;
   }
   else {
     // detect horn trigger (constant high level)
@@ -315,42 +318,35 @@ void mapThrottle() {
 // =======================================================================================================
 //
 
-float map2(float x, float in_min, float in_max, float out_min, float out_max)
-{
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-
-
 void engineMassSimulation() {
 
   static uint32_t  mappedThrottle = 0;
   static unsigned long throtMillis;
   static unsigned long printMillis;
 
-  //if (millis() - throtMillis > 1) { // Every 2ms
-  //throtMillis = millis();
+  if (millis() - throtMillis > 2) { // Every 2ms
+    throtMillis = millis();
 
-  // compute rpm curves
-  if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
-  else mappedThrottle = reMap(curveLinear, currentThrottle);
+    // compute rpm curves
+    if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
+    else mappedThrottle = reMap(curveLinear, currentThrottle);
 
 
-  // Accelerate engine
-  if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2) {
-    currentRpm += acc;
-    if (currentRpm > maxRpm) currentRpm = maxRpm;
+    // Accelerate engine
+    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2) {
+      currentRpm += acc;
+      if (currentRpm > maxRpm) currentRpm = maxRpm;
+    }
+
+    // Decelerate engine
+    if (mappedThrottle < currentRpm) {
+      currentRpm -= dec;
+      if (currentRpm < minRpm) currentRpm = minRpm;
+    }
+
+    // Speed (sample rate) output
+    currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
   }
-
-  // Decelerate engine
-  if (mappedThrottle < currentRpm) {
-    currentRpm -= dec;
-    if (currentRpm < minRpm) currentRpm = minRpm;
-  }
-
-  // Speed (sample rate) output
-  currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
-  //currentRpmScaled = map2(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
-  //}
 
 
   // Print debug infos
@@ -364,6 +360,7 @@ void engineMassSimulation() {
     Serial.println(currentRpmScaled);
     Serial.println(engineState);
     Serial.println(" ");
+    Serial.println(loopTime);
   }
 #endif
 }
@@ -401,6 +398,21 @@ void engineOnOff() {
 
 //
 // =======================================================================================================
+// LOOP TIME MEASUREMENT
+// =======================================================================================================
+//
+
+unsigned long loopDuration() {
+  static unsigned long timerOld;
+  unsigned long loopTime;
+  unsigned long timer = millis();
+  loopTime = timer - timerOld;
+  timerOld = timer;
+  return loopTime;
+}
+
+//
+// =======================================================================================================
 // MAIN LOOP, RUNNING ON CORE 1
 // =======================================================================================================
 //
@@ -419,11 +431,17 @@ void loop() {
 void Task1code(void *pvParameters) {
   for (;;) {
 
-    // measure RC signal mark space ratio
-    getRcSignal();
+    static unsigned long pulseReadMillis;
 
-    // Horn triggering
-    triggerHorn();
+    // *** Read PWM signals only every 100ms (very important, otherwise pulseRead() uses too much cycle time!! *** //
+    if (millis() - pulseReadMillis > 100) {
+      pulseReadMillis = millis();
+      // measure RC signal mark space ratio
+      getRcSignal();
+
+      // Horn triggering
+      triggerHorn();
+    }
 
     // Map pulsewidth to throttle
     mapThrottle();
@@ -433,6 +451,8 @@ void Task1code(void *pvParameters) {
 
     // Switch engine on or off
     engineOnOff();
+
+    loopTime = loopDuration(); // measure loop time
 
     //delay(1); // 1ms delay required, otherwise ESP32 keeps rebooting, if watchdog timers are active...
   }
