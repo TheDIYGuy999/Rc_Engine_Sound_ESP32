@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 0.7; // Software revision.
+const float codeVersion = 0.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -246,8 +246,8 @@ void setup() {
 #endif
 
   // DAC
-  //dacWrite(DAC1, 128);
-  //dacWrite(DAC2, 128);
+  dacWrite(DAC1, 128);
+  dacWrite(DAC2, 128);
 
   // Watchdog timers need to be disabled, if task 1 is running without delay(1)
   disableCore0WDT();

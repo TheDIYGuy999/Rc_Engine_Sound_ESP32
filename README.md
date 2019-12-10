@@ -47,6 +47,13 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - fixed "gap" bug, if sounds were triggered in PWM mode
 - PWM mode now allows to trigger 2 sounds
 
+## New in V 0.8:
+- volume offset bug was back and is fixed again!
+- improved sound quality of Union Pacific 2002
+- Detroit Diesel truck added
+- Sine test tones added
+- M2 sound added
+
 ## On the todo list:
 - separate engine switch off sounds?
 

@@ -16,6 +16,7 @@ volatile int idleVolumePercentage = 60; // Adjust the idle volume (usually = 100
 #include "UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "ScaniaV8Idle.h" // Scania V8
 //#include "UralV8Idle.h" // Ural 4320 V8
+//#include "DetroitDieselIdle.h" // Detroit Diesel Truck (use multiplier = 2, acc = 2, dec = 2)
 //#include "DefenderV8Idle.h" // Land Rover Defender V8 <------- Check this one out!
 //#include "Mustang68Idle.h" // Ford Mustang 1968
 //#include "DodgeChallenger70Idle.h" // 1970 Dodge Challenger
@@ -24,6 +25,9 @@ volatile int idleVolumePercentage = 60; // Adjust the idle volume (usually = 100
 //#include "chevyNovaV8Idle.h" // Chevy Nova Coupe 1975 <------- The best sounding!
 //#include "V8TrophyTruckIdle.h" // V8 Trophy Truck
 //#include "JaguarXjsHeIdle.h" // Jaguar XJS HE (bad quality)
+//#include "20Hz.h" // 20Hz test tone
+//#include "100Hz.h" // 100Hz test tone
+//#include "1000Hz.h" // 1000Hz test tone
 
 // Choose the horn sound (uncomment the one you want)
 #include "TrainHorn.h" // American train horn
@@ -35,6 +39,8 @@ volatile int idleVolumePercentage = 60; // Adjust the idle volume (usually = 100
 
 // Choose the additional sound (uncomment the one you want)
 #include "EMDLocomotiveBell.h" // American EMD locomotive bell
+//#include "007JamesBond.h" // James Bond melody
+//#include "M2Fire.h" // M2 salve
 
 // PWM Throttle range calibration ---------------------------------------------------------------------------------------
 int16_t pulseZero = 1500; // Usually 1500 (range 1000 - 2000us) Autocalibration active, if "engineManualOnOff" = "false"
@@ -57,5 +63,5 @@ const boolean engineManualOnOff = false;
 const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 5 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
-const int8_t acc = 1; // Acceleration step (4) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t acc = 1; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
 const int8_t dec = 1; // Deceleration step per (2) 1 = slow for locomotive engine, 5 = fast for trophy truck
