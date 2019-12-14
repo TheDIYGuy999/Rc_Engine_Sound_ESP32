@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 0.8; // Software revision.
+const float codeVersion = 0.9; // Software revision.
 
 //
 // =======================================================================================================
@@ -53,8 +53,11 @@ volatile boolean engineOn = false;              // Signal for engine on / off
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sound1On = false;              // Signal for additional sound 1  on / off
 
-volatile boolean hornSwitch = false;           // Switch state for horn on / off triggering
-volatile boolean sound1Switch = false;         // Switch state for additional sound 1 triggering
+volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
+volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
+
+volatile boolean hornSwitch = false;            // Switch state for horn on / off triggering
+volatile boolean sound1Switch = false;          // Switch state for additional sound 1 triggering
 
 uint32_t  currentThrottle = 0;                  // 0 - 500
 volatile uint32_t pulseWidth = 0;               // Current RC signal pulse width
@@ -101,8 +104,10 @@ volatile uint32_t fixedTimerTicks = maxSampleInterval;
 void IRAM_ATTR variablePlaybackTimer() {
 
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
+  static uint32_t curBrakeSample;              // Index of currently loaded brake sound sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
+  static uint32_t a, b;                         // Two input signals for mixer
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -112,7 +117,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       fixedTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
-      dacWrite(DAC1, 128); // volume = zero
+      a = 128; // volume = zero
       if (engineOn) engineState = 1;
       break;
 
@@ -121,7 +126,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curStartSample < startSampleCount) {
-        dacWrite(DAC1, (int)startSamples[curStartSample] + 128);
+        a = (int)startSamples[curStartSample] + 128;
         curStartSample ++;
       }
       else {
@@ -134,13 +139,31 @@ void IRAM_ATTR variablePlaybackTimer() {
       variableTimerTicks = currentRpmScaled;  // our variable sampling rate!
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
+      // Engine
       if (curEngineSample < sampleCount) {
-        dacWrite(DAC1, (int)(samples[curEngineSample] * idleVolumePercentage / 100) + 128);
+        a = (int)(samples[curEngineSample] * idleVolumePercentage / 100) + 128;
         curEngineSample ++;
       }
       else {
         curEngineSample = 0;
       }
+
+      // Air brake release noise, triggered after stop
+      if (airBrakeTrigger) {
+        if (curBrakeSample < brakeSampleCount) {
+          b = (int)brakeSamples[curBrakeSample] + 128;
+          curBrakeSample ++;
+        }
+        else {
+          curBrakeSample = 0;
+          airBrakeTrigger = false;
+          EngineWasAboveIdle = false;
+        }
+      }
+      else {
+        b = 0; // Ensure full engine volume
+      }
+
 
       if (!engineOn) {
         attenuator = 1;
@@ -153,7 +176,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curEngineSample < sampleCount) {
-        dacWrite(DAC1, (int)(samples[curEngineSample] * idleVolumePercentage / 100 / attenuator) + 128);
+        a = (int)(samples[curEngineSample] * idleVolumePercentage / 100 / attenuator) + 128;
         curEngineSample ++;
       }
       else {
@@ -161,13 +184,15 @@ void IRAM_ATTR variablePlaybackTimer() {
         attenuator += 5; // fade engine sound out
       }
       if (attenuator >= 20) {  // 3 - 20
-        dacWrite(DAC1, 128);
+        a = 128;
         engineOn = false;
         if (!engineOn) engineState = 0; // Important: ensure, that engine is off, before we go back to "starting"!!
       }
       break;
 
   } // end of switch case
+
+  dacWrite(DAC1, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -391,8 +416,10 @@ void engineMassSimulation() {
 
     // Accelerate engine
     if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2) {
-      currentRpm += acc;
-      if (currentRpm > maxRpm) currentRpm = maxRpm;
+      if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
+        currentRpm += acc;
+        if (currentRpm > maxRpm) currentRpm = maxRpm;
+      }
     }
 
     // Decelerate engine
@@ -418,13 +445,16 @@ void engineMassSimulation() {
     Serial.println(engineState);
     Serial.println(" ");
     Serial.println(loopTime);
+    Serial.println(" ");
+    Serial.println(airBrakeTrigger);
+    Serial.println(EngineWasAboveIdle);
   }
 #endif
 }
 
 //
 // =======================================================================================================
-// SWITCH ENGINE ON OR OFF
+// SWITCH ENGINE ON OR OFF, AIR BRAKE TRIGGERING
 // =======================================================================================================
 //
 
@@ -447,8 +477,19 @@ void engineOnOff() {
     if (millis() - idleDelayMillis > 15000) {
       engineOn = false; // after delay, switch engine off
     }
-    else {
-      if (currentThrottle > 100) engineOn = true;
+
+    // air brake noise trigggering
+    if (millis() - idleDelayMillis > 1000) {
+      if (EngineWasAboveIdle) {
+        airBrakeTrigger = true; // after delay, trigger air brake noise
+      }
+    }
+
+    // Engine start detection
+    if (currentThrottle > 100) {
+      engineOn = true;
+      EngineWasAboveIdle = true;
+      airBrakeTrigger = false;
     }
   }
 }
