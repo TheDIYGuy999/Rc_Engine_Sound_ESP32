@@ -54,6 +54,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Sine test tones added
 - M2 sound added
 
+## New in V 0.9:
+- Humvee Diesel engine sound added
+- Truck pneumatic brake release sound added
+
 ## On the todo list:
 - separate engine switch off sounds?
 
