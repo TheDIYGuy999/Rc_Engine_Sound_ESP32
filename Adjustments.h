@@ -7,8 +7,9 @@
 // Choose the start sound (uncomment the one you want)
 //#include "UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "ScaniaV8Start.h" // Scania V8 Start
-//#include "UralV8Start.h" // Ural 4320 V8 Start
-#include "DefenderV8Start.h" // Land Rover Defender V8 Start <------- Check this one out!
+#include "UralV8Start.h" // Ural 4320 V8 Start
+//#include "HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
+//#include "DefenderV8Start.h" // Land Rover Defender V8 Start <------- Check this one out!
 //#include "JaguarXjsHeStart.h" // Jaguar XJS HE Start
 
 // Choose the motor sound (uncomment the one you want)
@@ -16,7 +17,8 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 //#include "UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "ScaniaV8Idle.h" // Scania V8
 //#include "UralV8Idle.h" // Ural 4320 V8
-#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
+#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel <------- nice turbo whining!
+//#include "HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "DetroitDieselIdle.h" // Detroit Diesel Truck (use multiplier = 2, acc = 2, dec = 2)
 //#include "DefenderV8Idle.h" // Land Rover Defender V8 <------- Check this one out!
 //#include "Mustang68Idle.h" // Ford Mustang 1968
@@ -34,13 +36,14 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 //#include "TrainHorn.h" // American train horn
 //#include "UsPoliceSiren.h" // US Police siren
 //#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
-//#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
+#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
-#include "CarHorn.h" // A boring car horn
+//#include "CarHorn.h" // A boring car horn
 
 // Choose the air brake release sound (uncomment the one you want)
-//#include "AirBrakeDummy.h" // No air brake sound
-#include "TruckAirBrakes.h" // Truck air brake sound
+//#include "AirBrakeDummy.h" // If you don't want air brake sound
+//#include "TruckAirBrakes.h" // Short truck air brake sound
+#include "TruckAirBrakesLong.h" // Long truck air brake sound
 
 // Choose the additional sound (uncomment the one you want)
 //#include "EMDLocomotiveBell.h" // American EMD locomotive bell
@@ -68,5 +71,5 @@ const boolean engineManualOnOff = false;
 const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
-const int8_t acc = 3; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
-const int8_t dec = 2; // Deceleration step per (2) 1 = slow for locomotive engine, 5 = fast for trophy truck
+const int8_t acc = 2; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t dec = 1; // Deceleration step per (2) 1 = slow for locomotive engine, 5 = fast for trophy truck

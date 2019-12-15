@@ -58,9 +58,13 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Humvee Diesel engine sound added
 - Truck pneumatic brake release sound added
 
-## On the todo list:
-- separate engine switch off sounds?
+## New in V 1.0:
+- Engine now slowing down, if switched off, not just fading out
+- Fader bug fixed, now working smoothly
+- HG P408 sounds added
 
+## On the todo list:
+- Light functions for indicators, beacons, etc.
 
 ## Ho to create new sound arrays:
 

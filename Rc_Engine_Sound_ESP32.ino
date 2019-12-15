@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 0.9; // Software revision.
+const float codeVersion = 1.0; // Software revision.
 
 //
 // =======================================================================================================
@@ -97,24 +97,26 @@ volatile uint32_t fixedTimerTicks = maxSampleInterval;
 
 //
 // =======================================================================================================
-// INTERRUPT FOR VARIABLE SPEED PLAYBACK (Engine sound)
+// INTERRUPT FOR VARIABLE SPEED PLAYBACK (Engine sound, brake sound)
 // =======================================================================================================
 //
 
 void IRAM_ATTR variablePlaybackTimer() {
 
+  static uint32_t attenuatorMillis;
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
-  static uint32_t curBrakeSample;              // Index of currently loaded brake sound sample
+  static uint32_t curBrakeSample;               // Index of currently loaded brake sound sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
-  static uint32_t a, b;                         // Two input signals for mixer
+  static uint16_t speedPercentage;              // slows the engine down during shutdown
+  static uint32_t a, b;                         // Two input signals for mixer: a = engine, b = additional sound
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
   switch (engineState) {
 
     case 0: // off ----
-      fixedTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
+      variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       a = 128; // volume = zero
@@ -122,7 +124,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       break;
 
     case 1: // starting ----
-      fixedTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
+      variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curStartSample < startSampleCount) {
@@ -155,24 +157,25 @@ void IRAM_ATTR variablePlaybackTimer() {
           curBrakeSample ++;
         }
         else {
-          curBrakeSample = 0;
           airBrakeTrigger = false;
           EngineWasAboveIdle = false;
         }
       }
       else {
         b = 0; // Ensure full engine volume
+        curBrakeSample = 0; // ensure, next sound will start @ first sample
       }
 
 
       if (!engineOn) {
+        speedPercentage = 100;
         attenuator = 1;
         engineState = 3;
       }
       break;
 
     case 3: // stopping ----
-      fixedTimerTicks = 4000000 / sampleRate; // our fixed sampling rate
+      variableTimerTicks = 4000000 / sampleRate * speedPercentage / 100; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curEngineSample < sampleCount) {
@@ -181,12 +184,35 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       else {
         curEngineSample = 0;
-        attenuator += 5; // fade engine sound out
       }
-      if (attenuator >= 20) {  // 3 - 20
+
+      // fade engine sound out
+      if (millis() - attenuatorMillis > 50) { // Every 50ms
+        attenuatorMillis = millis();
+        attenuator ++; // attenuate volume
+        speedPercentage += 10; // make it slower
+      }
+
+      if (attenuator >= 50 || speedPercentage >= 500) { // 50 & 500
         a = 128;
-        engineOn = false;
-        if (!engineOn) engineState = 0; // Important: ensure, that engine is off, before we go back to "starting"!!
+        speedPercentage = 100;
+        //engineOn = false;
+        //if (!engineOn) engineState = 0; // Important: ensure, that engine is off, before we go back to "starting"!!
+        engineState = 4;
+      }
+      break;
+
+      case 4: // brake air sound after engine is off ----
+      variableTimerTicks = 4000000 / brakeSampleRate; // our fixed sampling rate
+      timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+
+      if (curBrakeSample < brakeSampleCount) {
+          b = (int)brakeSamples[curBrakeSample] + 128;
+          curBrakeSample ++;
+      }
+      else {
+        curBrakeSample = 0;
+        engineState = 0;
       }
       break;
 
@@ -306,7 +332,7 @@ void setup() {
   delay(1000);
 
   // then compute the RC channel offset (only, if "engineManualOnOff" inactive)
-  getRcSignal(); // Read RC signal for the first time
+  getRcSignal(); // Read RC signal for the first time (used for offset calculations)
   if (!engineManualOnOff) pulseZero = pulseWidth; // store offset
 
   // Calculate throttle range
@@ -486,10 +512,9 @@ void engineOnOff() {
     }
 
     // Engine start detection
-    if (currentThrottle > 100) {
+    if (currentThrottle > 100 && !airBrakeTrigger) {
       engineOn = true;
       EngineWasAboveIdle = true;
-      airBrakeTrigger = false;
     }
   }
 }
