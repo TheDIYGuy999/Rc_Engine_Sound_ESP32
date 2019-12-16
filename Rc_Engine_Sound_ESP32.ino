@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.0; // Software revision.
+const float codeVersion = 1.1; // Software revision.
 
 //
 // =======================================================================================================
@@ -52,6 +52,7 @@ volatile uint8_t soundNo = 0; // 0 = horn, 1 = additional sound 1
 volatile boolean engineOn = false;              // Signal for engine on / off
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sound1On = false;              // Signal for additional sound 1  on / off
+volatile boolean reversingSoundOn = false;       // active during backing up
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
@@ -196,19 +197,17 @@ void IRAM_ATTR variablePlaybackTimer() {
       if (attenuator >= 50 || speedPercentage >= 500) { // 50 & 500
         a = 128;
         speedPercentage = 100;
-        //engineOn = false;
-        //if (!engineOn) engineState = 0; // Important: ensure, that engine is off, before we go back to "starting"!!
         engineState = 4;
       }
       break;
 
-      case 4: // brake air sound after engine is off ----
+    case 4: // brake air sound after engine is off ----
       variableTimerTicks = 4000000 / brakeSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curBrakeSample < brakeSampleCount) {
-          b = (int)brakeSamples[curBrakeSample] + 128;
-          curBrakeSample ++;
+        b = (int)brakeSamples[curBrakeSample] + 128;
+        curBrakeSample ++;
       }
       else {
         curBrakeSample = 0;
@@ -232,7 +231,9 @@ void IRAM_ATTR variablePlaybackTimer() {
 void IRAM_ATTR fixedPlaybackTimer() {
 
   static uint32_t curHornSample;                // Index of currently loaded horn sample
-  static uint32_t curSound1Sample;                // Index of currently loaded sound 1 sample
+  static uint32_t curSound1Sample;              // Index of currently loaded sound 1 sample
+  static uint32_t curReversingSample;           // Index of currently loaded sound 1 sample
+  static uint32_t a, b;                         // Two input signals for mixer: a = horn, b = reversing sound
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -245,12 +246,12 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
       if (hornOn) {
         if (curHornSample < hornSampleCount) {
-          dacWrite(DAC2, (int)hornSamples[curHornSample] + 128);
+          a =  (int)hornSamples[curHornSample] + 128;
           curHornSample ++;
         }
         else {
           curHornSample = 0;
-          dacWrite(DAC2, 128);
+          a = 128;
           if (!hornSwitch) hornOn = false; // Latch required to prevent it from popping
         }
       }
@@ -263,18 +264,41 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
       if (sound1On) {
         if (curSound1Sample < sound1SampleCount) {
-          dacWrite(DAC2, (int)sound1Samples[curSound1Sample] + 128);
+          a = (int)sound1Samples[curSound1Sample] + 128;
           curSound1Sample ++;
         }
         else {
           curSound1Sample = 0;
-          dacWrite(DAC2, 128);
+          a = 128;
           if (!sound1Switch) sound1On = false; // Latch required to prevent it from popping
         }
       }
       break;
 
   } // end of switch case
+
+  // Reversing beep sound
+  if (reversingSoundOn) {
+    fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
+    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+
+    if (curReversingSample < reversingSampleCount) {
+      b = (int)reversingSamples[curReversingSample] + 128;
+      curReversingSample ++;
+    }
+    else {
+      curReversingSample = 0;
+    }
+    b = b * reversingvolumePercentage / 100; // Reversing volume
+  }
+  else {
+    curReversingSample = 0;
+    b = 0;
+  }
+
+
+
+  dacWrite(DAC2, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -406,6 +430,8 @@ void triggerHorn() {
 
 void mapThrottle() {
 
+  static unsigned long reversingMillis;
+
   // Input is around 1000 - 2000us, output 0-500 for forward and backwards
 
   // check if the pulsewidth looks like a servo pulse
@@ -418,7 +444,37 @@ void mapThrottle() {
     else if (pulseWidth < pulseMinNeutral) currentThrottle = map(pulseWidth, pulseMinNeutral, pulseMin, 0, 500);
     else currentThrottle = 0;
   }
+
+
+  // reversing sound trigger signal
+  if (reverseSoundMode == 1) {
+    if (pulseWidth <= pulseMaxNeutral) {
+      reversingMillis = millis();
+    }
+
+    if (millis() - reversingMillis > 200) {
+      reversingSoundOn = true;
+    }
+    else reversingSoundOn = false;
+  }
+
+  if (reverseSoundMode == 2) {
+    if (pulseWidth >= pulseMinNeutral) {
+      reversingMillis = millis();
+    }
+
+    if (millis() - reversingMillis > 200) {
+      reversingSoundOn = true;
+    }
+    else reversingSoundOn = false;
+  }
+
+  if (reverseSoundMode == 0) {
+    reversingSoundOn = false;
+  }
+
 }
+
 
 //
 // =======================================================================================================

@@ -63,6 +63,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Fader bug fixed, now working smoothly
 - HG P408 sounds added
 
+## New in V 1.1:
+- Truck reversing beep sound added
+- Can play in parallel with other additional sound and with variable speed engine sound!
+
 ## On the todo list:
 - Light functions for indicators, beacons, etc.
 
