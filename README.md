@@ -67,8 +67,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Truck reversing beep sound added
 - Can play in parallel with other additional sound and with variable speed engine sound!
 
+## New in V 1.2:
+- Light functions added: reversing light, beacons (blue light), headlights, taillights with integrated brake lights
+- My "statusLED" library is required: https://github.com/TheDIYGuy999/statusLED
+
 ## On the todo list:
-- Light functions for indicators, beacons, etc.
+- more lights
 
 ## Ho to create new sound arrays:
 

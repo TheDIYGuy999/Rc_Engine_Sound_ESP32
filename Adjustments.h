@@ -35,8 +35,8 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 // Choose the horn sound (uncomment the one you want)
 //#include "TrainHorn.h" // American train horn
 //#include "UsPoliceSiren.h" // US Police siren
-//#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
-#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
+#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+//#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
 //#include "CarHorn.h" // A boring car horn
 
@@ -77,4 +77,4 @@ const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the numbe
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
-const int8_t dec = 1; // Deceleration step per (2) 1 = slow for locomotive engine, 5 = fast for trophy truck
+const int8_t dec = 1; // Deceleration step (2) 1 = slow for locomotive engine, 5 = fast for trophy truck

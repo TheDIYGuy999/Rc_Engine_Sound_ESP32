@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.1; // Software revision.
+const float codeVersion = 1.2; // Software revision.
 
 //
 // =======================================================================================================
@@ -27,6 +27,7 @@ const float codeVersion = 1.1; // Software revision.
 //
 
 #include "curves.h" // load nonlinear throttle curve arrays
+#include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- Install it!
 
 //
 // =======================================================================================================
@@ -38,11 +39,28 @@ const float codeVersion = 1.1; // Software revision.
 #define THROTTLE_PIN 13 // connect to RC receiver throttle channel (caution, max. 3.3V, 10kOhm series resistor recommended!)
 #define HORN_PIN 12 // This input is triggering the horn, if connected to VCC or PWM pulse length above threshold (see variable pwmHornTrigger" in Adjustments.h)
 
+#define TAILLIGHT_PIN 4 // Red tail light
+#define HEADLIGHT_PIN 5 // White headllight
+#define INDICATOR_LEFT_PIN 18 // Orange indicator light
+#define INDICATOR_RIGHT_PIN 35 // Orange indicator light
+#define BEACONS_LIGHTS2_PIN 21 // Blue beacons light
+#define BEACONS_LIGHTS_PIN 33 // Blue beacons light
+#define REVERSING_LIGHT_PIN 32 // White reversing light
+
 #define DAC1 25 // connect pin25 to a 10kOhm resistor
 #define DAC2 26 // connect pin26 to a 10kOhm resistor
 // both outputs of the resistors above are connected together and then to the outer leg of a
 // 10kOhm potentiometer. The other outer leg connects to GND. The middle leg connects to both inputs
 // of a PAM8403 amplifier and allows to adjust the volume. This way, two speakers can be used.
+
+// Status LED objects
+statusLED tailLight(false); // "false" = output not inverted
+statusLED headLight(false);
+statusLED indicatorL(false);
+statusLED indicatorR(false);
+statusLED beaconLights2(false);
+statusLED beaconLights(false);
+statusLED reversingLight(false);
 
 // Define global variables
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
@@ -52,10 +70,13 @@ volatile uint8_t soundNo = 0; // 0 = horn, 1 = additional sound 1
 volatile boolean engineOn = false;              // Signal for engine on / off
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sound1On = false;              // Signal for additional sound 1  on / off
-volatile boolean reversingSoundOn = false;       // active during backing up
+volatile boolean reversingSoundOn = false;      // active during backing up
+
+volatile boolean lightsOn = false;             // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
+volatile boolean slowingDown = false;           // Engine is slowing down
 
 volatile boolean hornSwitch = false;            // Switch state for horn on / off triggering
 volatile boolean sound1Switch = false;          // Switch state for additional sound 1 triggering
@@ -116,7 +137,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   switch (engineState) {
 
-    case 0: // off ----
+    case 0: // Engine off ----
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -124,7 +145,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       if (engineOn) engineState = 1;
       break;
 
-    case 1: // starting ----
+    case 1: // Engine start ----
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -138,11 +159,11 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 2: // running ----
+    case 2: // Engine running ----
       variableTimerTicks = currentRpmScaled;  // our variable sampling rate!
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
-      // Engine
+      // Engine sound
       if (curEngineSample < sampleCount) {
         a = (int)(samples[curEngineSample] * idleVolumePercentage / 100) + 128;
         curEngineSample ++;
@@ -151,7 +172,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         curEngineSample = 0;
       }
 
-      // Air brake release noise, triggered after stop
+      // Air brake release sound, triggered after stop
       if (airBrakeTrigger) {
         if (curBrakeSample < brakeSampleCount) {
           b = (int)brakeSamples[curBrakeSample] + 128;
@@ -175,7 +196,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 3: // stopping ----
+    case 3: // Engine stop ----
       variableTimerTicks = 4000000 / sampleRate * speedPercentage / 100; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -188,10 +209,10 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
 
       // fade engine sound out
-      if (millis() - attenuatorMillis > 50) { // Every 50ms
+      if (millis() - attenuatorMillis > 100) { // Every 50ms
         attenuatorMillis = millis();
         attenuator ++; // attenuate volume
-        speedPercentage += 10; // make it slower
+        speedPercentage += 20; // make it slower (10)
       }
 
       if (attenuator >= 50 || speedPercentage >= 500) { // 50 & 500
@@ -314,6 +335,15 @@ void setup() {
   // Pin modes
   pinMode(THROTTLE_PIN, INPUT_PULLDOWN);
   pinMode(HORN_PIN, INPUT_PULLDOWN);
+
+  // LED Setup
+  tailLight.begin(TAILLIGHT_PIN, 1, 500); // Timer 1, 500Hz
+  headLight.begin(HEADLIGHT_PIN, 2, 500); // Timer 2, 500Hz
+  indicatorL.begin(INDICATOR_LEFT_PIN, 3, 500); // Timer 3, 500Hz
+  indicatorR.begin(INDICATOR_RIGHT_PIN, 4, 500); // Timer 4, 500Hz
+  beaconLights2.begin(BEACONS_LIGHTS_PIN, 5, 500); // Timer 5, 500Hz
+  beaconLights.begin(BEACONS_LIGHTS2_PIN, 6, 500); // Timer 5, 500Hz
+  reversingLight.begin(REVERSING_LIGHT_PIN, 7, 500); // Timer 6, 500Hz
 
 #ifdef DEBUG
   // Serial setup
@@ -484,7 +514,7 @@ void mapThrottle() {
 
 void engineMassSimulation() {
 
-  static uint32_t  mappedThrottle = 0;
+  static int32_t  mappedThrottle = 0;
   static unsigned long throtMillis;
   static unsigned long printMillis;
 
@@ -510,10 +540,14 @@ void engineMassSimulation() {
       if (currentRpm < minRpm) currentRpm = minRpm;
     }
 
+
     // Speed (sample rate) output
     currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
   }
 
+  // Brake light trigger
+  if (mappedThrottle < (currentRpm - 200)) slowingDown = true;
+  if (mappedThrottle >= (currentRpm - 10)) slowingDown = false;
 
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
@@ -553,11 +587,16 @@ void engineOnOff() {
     }
     else engineOn = true;
   }
+
   else { // Engine automatically switched on or off depending on throttle position and 15s delay timne
     if (currentThrottle > 80) idleDelayMillis = millis(); // reset delay timer, if throttle not in neutral
 
     if (millis() - idleDelayMillis > 15000) {
       engineOn = false; // after delay, switch engine off
+    }
+
+    if (millis() - idleDelayMillis > 10000) {
+      lightsOn = false; // after delay, switch light off
     }
 
     // air brake noise trigggering
@@ -570,9 +609,45 @@ void engineOnOff() {
     // Engine start detection
     if (currentThrottle > 100 && !airBrakeTrigger) {
       engineOn = true;
+      lightsOn = true;
       EngineWasAboveIdle = true;
     }
   }
+}
+
+//
+// =======================================================================================================
+// LED
+// =======================================================================================================
+//
+
+void led() {
+
+  // Reversing light
+  if (reversingSoundOn) reversingLight.on();
+  else reversingLight.off();
+
+  // Beacons (blue light)
+  if (hornOn) {
+    beaconLights.flash(30, 400, 0, 0); // Simulate rotating beacon lights with short flashes
+    beaconLights2.flash(30, 420, 0, 0); // Simulate rotating beacon lights with short flashes
+  }
+  else {
+    beaconLights.off();
+    beaconLights2.off();
+  }
+
+  // Headlights, tail lights
+  if (lightsOn) {
+    headLight.on();
+    if (slowingDown) tailLight.on();
+    else tailLight.pwm(50);
+  }
+  else {
+    headLight.off();
+    tailLight.off();
+  }
+
 }
 
 //
@@ -622,6 +697,9 @@ void Task1code(void *pvParameters) {
 
     // Switch engine on or off
     engineOnOff();
+
+    // LED control
+    led();
 
     loopTime = loopDuration(); // measure loop time
   }
