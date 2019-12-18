@@ -71,6 +71,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Light functions added: reversing light, beacons (blue light), headlights, taillights with integrated brake lights
 - My "statusLED" library is required: https://github.com/TheDIYGuy999/statusLED
 
+## New in V 1.3:
+- Irish fire truck horn
+- Double flash blue lights option
+- US fire truck air horn and air siren
+
 ## On the todo list:
 - more lights
 

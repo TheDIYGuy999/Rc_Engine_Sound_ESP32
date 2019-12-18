@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.2; // Software revision.
+const float codeVersion = 1.3; // Software revision.
 
 //
 // =======================================================================================================
@@ -629,8 +629,14 @@ void led() {
 
   // Beacons (blue light)
   if (hornOn) {
-    beaconLights.flash(30, 400, 0, 0); // Simulate rotating beacon lights with short flashes
-    beaconLights2.flash(30, 420, 0, 0); // Simulate rotating beacon lights with short flashes
+    if (doubleFlashBlueLight) {
+      beaconLights.flash(30, 80, 380, 2); // Simulate double flash lights
+      beaconLights2.flash(30, 80, 400, 2); // Simulate double flash lights
+    }
+    else {
+      beaconLights.flash(30, 400, 0, 0); // Simulate rotating beacon lights with short flashes
+      beaconLights2.flash(30, 420, 0, 0); // Simulate rotating beacon lights with short flashes
+    }
   }
   else {
     beaconLights.off();

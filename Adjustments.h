@@ -35,7 +35,9 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 // Choose the horn sound (uncomment the one you want)
 //#include "TrainHorn.h" // American train horn
 //#include "UsPoliceSiren.h" // US Police siren
-#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+#include "FireTruckAirSiren.h" // US fire truck air siren
+//#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+//#include "IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
 //#include "CarHorn.h" // A boring car horn
@@ -47,13 +49,17 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 
 // Choose the additional sound (uncomment the one you want)
 //#include "EMDLocomotiveBell.h" // American EMD locomotive bell
+#include "FireTruckAirHorn.h" // US fire truck air horn
 //#include "007JamesBond.h" // James Bond melody
-#include "M2Fire.h" // M2 salve
+//#include "M2Fire.h" // M2 salve
 
 // Choose the reversing beep sound
 volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = revesre
 volatile int reversingvolumePercentage = 30; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
 #include "TruckReversingBeep.h" // 1000Hz peep sound
+
+// Choose the light opions
+boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
 // PWM Throttle range calibration ---------------------------------------------------------------------------------------
 int16_t pulseZero = 1500; // Usually 1500 (range 1000 - 2000us) Autocalibration active, if "engineManualOnOff" = "false"
