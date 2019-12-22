@@ -9,6 +9,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - The horn is played on pin 26 (see wiring instructions in code)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max.! *** 10kOhm resistor recommended!
 - Gear shifting is simulated in "curves.h"
+- Light effects: headlights, tail lights, brake lights, reversing light, blue light
 - Use an ESP32, CPU frequency must be set to 240MHz
 
 ## New in V 0.1:
@@ -76,8 +77,14 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Double flash blue lights option
 - US fire truck air horn and air siren
 
+## New in V 1.4:
+- Indicator (turn signal) support added
+- RC signals now handled as arrays in order to simplify auto zero calibration of multiple channels
+
 ## On the todo list:
-- more lights
+- adding more sounds
+- cleaning up code
+- adding schematic for LED wiring (for now pinout see code)
 
 ## Ho to create new sound arrays:
 

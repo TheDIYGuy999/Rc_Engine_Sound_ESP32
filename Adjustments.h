@@ -35,8 +35,8 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 // Choose the horn sound (uncomment the one you want)
 //#include "TrainHorn.h" // American train horn
 //#include "UsPoliceSiren.h" // US Police siren
-#include "FireTruckAirSiren.h" // US fire truck air siren
-//#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+//#include "FireTruckAirSiren.h" // US fire truck air siren
+#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
@@ -58,14 +58,13 @@ volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = revesre
 volatile int reversingvolumePercentage = 30; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
 #include "TruckReversingBeep.h" // 1000Hz peep sound
 
-// Choose the light opions
-boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
+// Choose the light opions --------------------------------------------------------------------------------------------
+const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
+const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 
-// PWM Throttle range calibration ---------------------------------------------------------------------------------------
-int16_t pulseZero = 1500; // Usually 1500 (range 1000 - 2000us) Autocalibration active, if "engineManualOnOff" = "false"
-int16_t pulseNeutral = 20; // pulseZero +/- this value (20)
-int16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
-int16_t pulseLimit = 700; // pulseZero +/- this value (700)
+// PWM signal range calibration ---------------------------------------------------------------------------------------
+const uint16_t pulseNeutral = 20; // pulseZero +/- this value (20) is the neutral rqange
+const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
 const boolean pwmHornTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"

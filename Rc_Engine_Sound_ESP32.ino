@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.3; // Software revision.
+const float codeVersion = 1.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -18,7 +18,7 @@ const float codeVersion = 1.3; // Software revision.
 // All the required vehicle specific settings are done in Adjustments.h!
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
-#define DEBUG // can slow down the playback loop! Comment it out, if not needed
+//#define DEBUG // can slow down the playback loop! Comment it out, if not needed
 
 //
 // =======================================================================================================
@@ -37,12 +37,13 @@ const float codeVersion = 1.3; // Software revision.
 
 // Pin assignment and wiring instructions
 #define THROTTLE_PIN 13 // connect to RC receiver throttle channel (caution, max. 3.3V, 10kOhm series resistor recommended!)
+#define STEERING_PIN 14 // Steering angle RC signal input
 #define HORN_PIN 12 // This input is triggering the horn, if connected to VCC or PWM pulse length above threshold (see variable pwmHornTrigger" in Adjustments.h)
 
-#define TAILLIGHT_PIN 4 // Red tail light
-#define HEADLIGHT_PIN 5 // White headllight
-#define INDICATOR_LEFT_PIN 18 // Orange indicator light
-#define INDICATOR_RIGHT_PIN 35 // Orange indicator light
+#define TAILLIGHT_PIN 4 // Red tail- & brake-lights
+#define HEADLIGHT_PIN 5 // White headllights
+#define INDICATOR_LEFT_PIN 0 // Orange left indicator (turn signal) light
+#define INDICATOR_RIGHT_PIN 2 // Orange right indicator (turn signal) light
 #define BEACONS_LIGHTS2_PIN 21 // Blue beacons light
 #define BEACONS_LIGHTS_PIN 33 // Blue beacons light
 #define REVERSING_LIGHT_PIN 32 // White reversing light
@@ -81,21 +82,28 @@ volatile boolean slowingDown = false;           // Engine is slowing down
 volatile boolean hornSwitch = false;            // Switch state for horn on / off triggering
 volatile boolean sound1Switch = false;          // Switch state for additional sound 1 triggering
 
+boolean indicatorLon = false;                   // Left indicator
+boolean indicatorRon = false;                   // Right indicator
+
 uint32_t  currentThrottle = 0;                  // 0 - 500
-volatile uint32_t pulseWidth = 0;               // Current RC signal pulse width
+uint32_t pulseWidth[3];                // Current RC signal pulse width [0] = throttle, [1] = steering, [2] = additional signal
+
+uint16_t pulseMaxNeutral[3];                    // PWM signal configuration storage variables
+uint16_t pulseMinNeutral[3];
+uint16_t pulseMax[3];
+uint16_t pulseMin[3];
+uint16_t pulseMaxLimit[3];
+uint16_t pulseMinLimit[3];
+
 volatile boolean pulseAvailable;                // RC signal pulses are coming in
+
+uint16_t pulseZero[3];                           // Usually 1500 (range 1000 - 2000us) Autocalibration active, if "engineManualOnOff" = "false"
+uint16_t pulseLimit = 700; // pulseZero +/- this value (700)
 
 const int32_t maxRpm = 500;                     // always 500
 const int32_t minRpm = 0;                       // always 0
 int32_t currentRpm = 0;                         // 0 - 500 (signed required!)
 volatile uint32_t currentRpmScaled;
-
-uint16_t pulseMaxNeutral;                        // PWM throttle configuration storage variables
-uint16_t pulseMinNeutral;
-uint16_t pulseMax;
-uint16_t pulseMin;
-uint16_t pulseMaxLimit;
-uint16_t pulseMinLimit;
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -317,8 +325,6 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b = 0;
   }
 
-
-
   dacWrite(DAC2, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
@@ -332,8 +338,13 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
 void setup() {
 
+  // Watchdog timers need to be disabled, if task 1 is running without delay(1)
+  disableCore0WDT();
+  disableCore1WDT();
+
   // Pin modes
   pinMode(THROTTLE_PIN, INPUT_PULLDOWN);
+  pinMode(STEERING_PIN, INPUT_PULLDOWN);
   pinMode(HORN_PIN, INPUT_PULLDOWN);
 
   // LED Setup
@@ -351,12 +362,8 @@ void setup() {
 #endif
 
   // DAC
-  dacWrite(DAC1, 128);
+  dacWrite(DAC1, 128); // 128 = center / neutral position = 1.65V
   dacWrite(DAC2, 128);
-
-  // Watchdog timers need to be disabled, if task 1 is running without delay(1)
-  disableCore0WDT();
-  disableCore1WDT();
 
   // Task 1 setup (running on core 0)
   TaskHandle_t Task1;
@@ -385,29 +392,44 @@ void setup() {
   // wait for RC receiver to initialize
   delay(1000);
 
-  // then compute the RC channel offset (only, if "engineManualOnOff" inactive)
-  getRcSignal(); // Read RC signal for the first time (used for offset calculations)
-  if (!engineManualOnOff) pulseZero = pulseWidth; // store offset
+  // Read RC signals for the first time (used for offset calculations)
+  getRcSignals();
 
-  // Calculate throttle range
-  pulseMaxNeutral = pulseZero + pulseNeutral;
-  pulseMinNeutral = pulseZero - pulseNeutral;
-  pulseMax = pulseZero + pulseSpan;
-  pulseMin = pulseZero - pulseSpan;
-  pulseMaxLimit = pulseZero + pulseLimit;
-  pulseMinLimit = pulseZero - pulseLimit;
+  // then compute the RC channel offsets
+  if (!engineManualOnOff) pulseZero[0] = pulseWidth[0]; // store throttle offset (only, if "engineManualOnOff" inactive)
+  else pulseZero[0] = 1500;
 
+  if (indicators) pulseZero[1] = pulseWidth[1]; // store steering offset (only, if "indicators" active)
+  else pulseZero[1] = 1500;
+
+  pulseZero[2] = 1500; // This channel is controlled by a 3 position switch, so we don't want auto calibration!
+
+  // Calculate RC signal ranges for all channels (0, 1, 2)
+  for (uint8_t i = 0; i <= 2; i++) {
+    //uint8_t i = 0;
+    pulseMaxNeutral[i] = pulseZero[i] + pulseNeutral;
+    pulseMinNeutral[i] = pulseZero[i] - pulseNeutral;
+    pulseMax[i] = pulseZero[i] + pulseSpan;
+    pulseMin[i] = pulseZero[i] - pulseSpan;
+    pulseMaxLimit[i] = pulseZero[i] + pulseLimit;
+    pulseMinLimit[i] = pulseZero[i] - pulseLimit;
+  }
 }
 
 //
 // =======================================================================================================
-// GET RC SIGNAL
+// GET RC SIGNALS
 // =======================================================================================================
 //
 
-void getRcSignal() {
+void getRcSignals() {
   // measure RC signal mark space ratio
-  pulseWidth = pulseIn(THROTTLE_PIN, HIGH, 50000);
+  pulseWidth[0] = pulseIn(THROTTLE_PIN, HIGH, 50000); // Throttle
+  
+  if (indicators) pulseWidth[1] = pulseIn(STEERING_PIN, HIGH, 50000); // Steering
+  else pulseWidth[1] = 1500;
+  
+  if (pwmHornTrigger) pulseWidth[2] = pulseIn(HORN_PIN, HIGH, 50000); // Additional sound trigger (RC signal with 3 positions)
 }
 
 //
@@ -420,7 +442,7 @@ void triggerHorn() {
   if (pwmHornTrigger) { // PWM RC signal mode --------------------------------------------
 
     // detect horn trigger ( impulse length > 1700us) -------------
-    if (pulseIn(HORN_PIN, HIGH, 50000) > 1700) {
+    if (pulseWidth[2] > (pulseMaxNeutral[2] + 180)) {
       hornSwitch = true;
       soundNo = 0;  // 0 = horn
     }
@@ -428,7 +450,7 @@ void triggerHorn() {
 
 
     // detect sound 1 trigger ( impulse length < 1300us) ----------
-    if (pulseIn(HORN_PIN, HIGH, 50000) < 1300) {
+    if (pulseWidth[2] < (pulseMinNeutral[2] - 180)) {
       sound1Switch = true;
       soundNo = 1;  // 1 = sound 1
     }
@@ -454,6 +476,23 @@ void triggerHorn() {
 
 //
 // =======================================================================================================
+// INDICATOR (TURN SIGNAL) TRIGGERING
+// =======================================================================================================
+//
+
+void triggerIndicators() {
+  // detect left indicator trigger ( impulse length > 1700us) -------------
+  if (pulseWidth[1] > (pulseMaxNeutral[1] + 20)) indicatorLon = true;
+  if (pulseWidth[1] < pulseMaxNeutral[1]) indicatorLon = false;
+
+
+  // detect right indicator trigger ( impulse length < 1300us) ----------
+  if (pulseWidth[1] < (pulseMinNeutral[1] - 20)) indicatorRon = true;
+  if (pulseWidth[1] > pulseMinNeutral[1]) indicatorRon = false;
+}
+
+//
+// =======================================================================================================
 // MAP PULSEWIDTH TO THROTTLE
 // =======================================================================================================
 //
@@ -465,20 +504,20 @@ void mapThrottle() {
   // Input is around 1000 - 2000us, output 0-500 for forward and backwards
 
   // check if the pulsewidth looks like a servo pulse
-  if (pulseWidth > pulseMinLimit && pulseWidth < pulseMaxLimit) {
-    if (pulseWidth < pulseMin) pulseWidth = pulseMin; // Constrain the value
-    if (pulseWidth > pulseMax) pulseWidth = pulseMax;
+  if (pulseWidth[0] > pulseMinLimit[0] && pulseWidth[0] < pulseMaxLimit[0]) {
+    if (pulseWidth[0] < pulseMin[0]) pulseWidth[0] = pulseMin[0]; // Constrain the value
+    if (pulseWidth[0] > pulseMax[0]) pulseWidth[0] = pulseMax[0];
 
     // calculate a throttle value from the pulsewidth signal
-    if (pulseWidth > pulseMaxNeutral) currentThrottle = map(pulseWidth, pulseMaxNeutral, pulseMax, 0, 500);
-    else if (pulseWidth < pulseMinNeutral) currentThrottle = map(pulseWidth, pulseMinNeutral, pulseMin, 0, 500);
+    if (pulseWidth[0] > pulseMaxNeutral[0]) currentThrottle = map(pulseWidth[0], pulseMaxNeutral[0], pulseMax[0], 0, 500);
+    else if (pulseWidth[0] < pulseMinNeutral[0]) currentThrottle = map(pulseWidth[0], pulseMinNeutral[0], pulseMin[0], 0, 500);
     else currentThrottle = 0;
   }
 
 
   // reversing sound trigger signal
   if (reverseSoundMode == 1) {
-    if (pulseWidth <= pulseMaxNeutral) {
+    if (pulseWidth[0] <= pulseMaxNeutral[0]) {
       reversingMillis = millis();
     }
 
@@ -489,7 +528,7 @@ void mapThrottle() {
   }
 
   if (reverseSoundMode == 2) {
-    if (pulseWidth >= pulseMinNeutral) {
+    if (pulseWidth[0] >= pulseMinNeutral[0]) {
       reversingMillis = millis();
     }
 
@@ -551,9 +590,22 @@ void engineMassSimulation() {
 
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
-  if (millis() - printMillis > 200) { // Every 200ms
+  if (millis() - printMillis > 1000) { // Every 1000ms
     printMillis = millis();
 
+    Serial.println("CH0");
+    Serial.println(pulseWidth[0]);
+    Serial.println(pulseMinNeutral[0]);
+    Serial.println(pulseMaxNeutral[0]);
+    Serial.println("CH1");
+    Serial.println(pulseWidth[1]);
+    Serial.println(pulseMinNeutral[1]);
+    Serial.println(pulseMaxNeutral[1]);
+    Serial.println("CH2");
+    Serial.println(pulseWidth[2]);
+    Serial.println(pulseMinNeutral[2]);
+    Serial.println(pulseMaxNeutral[2]);
+    Serial.println(" ");
     Serial.println(currentThrottle);
     Serial.println(mappedThrottle);
     Serial.println(currentRpm);
@@ -623,11 +675,11 @@ void engineOnOff() {
 
 void led() {
 
-  // Reversing light
+  // Reversing light ----
   if (reversingSoundOn) reversingLight.on();
   else reversingLight.off();
 
-  // Beacons (blue light)
+  // Beacons (blue light) ----
   if (hornOn) {
     if (doubleFlashBlueLight) {
       beaconLights.flash(30, 80, 380, 2); // Simulate double flash lights
@@ -643,7 +695,7 @@ void led() {
     beaconLights2.off();
   }
 
-  // Headlights, tail lights
+  // Headlights, tail lights ----
   if (lightsOn) {
     headLight.on();
     if (slowingDown) tailLight.on();
@@ -653,6 +705,13 @@ void led() {
     headLight.off();
     tailLight.off();
   }
+
+  // Indicators (turn signals) ----
+  if (indicatorLon) indicatorL.flash(375, 375, 0, 0); // Left indicator
+  else indicatorL.off();
+
+  if (indicatorRon) indicatorR.flash(375, 375, 0, 0); // Right indicator
+  else indicatorR.off();
 
 }
 
@@ -679,11 +738,14 @@ unsigned long loopDuration() {
 
 void loop() {
 
-  // measure RC signal mark space ratio
-  getRcSignal();
+  // measure RC signals mark space ratio
+  getRcSignals();
 
   // Horn triggering
   triggerHorn();
+
+  // Indicator (turn signal) triggering
+  triggerIndicators();
 }
 
 //
