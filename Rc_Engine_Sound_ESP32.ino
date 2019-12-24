@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.4; // Software revision.
+const float codeVersion = 1.5; // Software revision.
 
 //
 // =======================================================================================================
@@ -268,7 +268,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   switch (soundNo) {
 
-    case 0: // Horn ----
+    case 0: // Horn "a" ----
       fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
       curSound1Sample = 0;
@@ -286,7 +286,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
       }
       break;
 
-    case 1: // Sound 1 ----
+    case 1: // Sound 1 "a" ----
       fixedTimerTicks = 4000000 / sound1SampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
       curHornSample = 0;
@@ -306,7 +306,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   } // end of switch case
 
-  // Reversing beep sound
+  // Reversing beep sound "b" (can play in parallel with sound "a") ----
   if (reversingSoundOn) {
     fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true

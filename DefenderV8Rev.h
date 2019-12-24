@@ -1,6 +1,6 @@
-const unsigned int sampleRate = 22050;
-const unsigned int sampleCount = 2105;
-const signed char samples[] = {
+const unsigned int revSampleRate = 22050;
+const unsigned int revSampleCount = 2105;
+const signed char revSamples[] = {
 0, 4, 9, 11, 16, 23, 35, 43, 49, 53, 56, 61, 68, 71, 74, 76, 
 79, 82, 85, 87, 91, 96, 101, 110, 114, 116, 119, 121, 123, 126, 127, 127, 
 126, 125, 121, 117, 113, 108, 104, 99, 92, 87, 81, 76, 72, 70, 67, 64, 

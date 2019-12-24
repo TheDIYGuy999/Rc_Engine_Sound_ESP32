@@ -81,6 +81,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Indicator (turn signal) support added
 - RC signals now handled as arrays in order to simplify auto zero calibration of multiple channels
 
+## New in V 1.5:
+- More Detroit Diesels added
+
+## New in V 1.51:
+- Solved issue: redefinition of 'const unsigned int sampleRate'
+
 ## On the todo list:
 - adding more sounds
 - cleaning up code

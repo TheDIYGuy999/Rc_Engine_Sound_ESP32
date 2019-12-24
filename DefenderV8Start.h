@@ -1,6 +1,6 @@
-const unsigned int sampleRate = 22050;
-const unsigned int sampleCount = 8844;
-const signed char samples[] = {
+const unsigned int startSampleRate = 22050;
+const unsigned int startSampleCount = 8844;
+const signed char startSamples[] = {
 -1, 2, 1, -5, -9, -9, 1, 8, 9, 5, 1, -2, -9, -11, -13, -14, 
 -18, -28, -33, -30, -19, -9, -4, -7, -14, -17, -12, 1, 8, -1, -15, -23, 
 -22, -18, -16, -13, -4, 4, 0, -8, 1, 15, 24, 27, 27, 24, 5, -5, 

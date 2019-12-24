@@ -7,7 +7,7 @@
 // Choose the start sound (uncomment the one you want)
 //#include "UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "ScaniaV8Start.h" // Scania V8 Start
-#include "UralV8Start.h" // Ural 4320 V8 Start
+#include "UralV8Start.h" // Ural 4320 V8 Start (use it for most D*-iesel trucks)
 //#include "HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "DefenderV8Start.h" // Land Rover Defender V8 Start <------- Check this one out!
 //#include "JaguarXjsHeStart.h" // Jaguar XJS HE Start
@@ -17,9 +17,12 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 //#include "UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "ScaniaV8Idle.h" // Scania V8
 //#include "UralV8Idle.h" // Ural 4320 V8
-#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel <------- nice turbo whining!
+//#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel <------- nice turbo whining!
 //#include "HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
-//#include "DetroitDieselIdle.h" // Detroit Diesel Truck (use multiplier = 2, acc = 2, dec = 2)
+//#include "DetroitDieselIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
+//#include "DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
+#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck
+//#include "DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
 //#include "DefenderV8Idle.h" // Land Rover Defender V8 <------- Check this one out!
 //#include "Mustang68Idle.h" // Ford Mustang 1968
 //#include "DodgeChallenger70Idle.h" // 1970 Dodge Challenger
@@ -36,9 +39,9 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 //#include "TrainHorn.h" // American train horn
 //#include "UsPoliceSiren.h" // US Police siren
 //#include "FireTruckAirSiren.h" // US fire truck air siren
-#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+//#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "IrishFireEngineHorn.h" // Irish fire truck horn
-//#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
+#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
 //#include "CarHorn.h" // A boring car horn
 
@@ -55,7 +58,7 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 
 // Choose the reversing beep sound
 volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = revesre
-volatile int reversingvolumePercentage = 30; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
+volatile int reversingvolumePercentage = 25; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
 #include "TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the light opions --------------------------------------------------------------------------------------------
@@ -63,12 +66,15 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 
 // PWM signal range calibration ---------------------------------------------------------------------------------------
-const uint16_t pulseNeutral = 20; // pulseZero +/- this value (20) is the neutral rqange
+const uint16_t pulseNeutral = 20; // pulseZero +/- this value (20) is the neutral range
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
 const boolean pwmHornTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays
+
+// Brake parameters ---------------------------------------------------------------------------------------------------
+const boolean directBrake = false; // true = ESC is braking immediately, if throttle stick is released
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
 const boolean shifted = false; // false = linear rpm curve, true = shifting points
@@ -77,7 +83,7 @@ const boolean shifted = false; // false = linear rpm curve, true = shifting poin
 //Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
 const boolean engineManualOnOff = false;
 
-// Engine RPM range (2 for locomotive, 4 for fast running motors)
+// Engine RPM range (2 for big Diesels, 4 for fast running motors)
 const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
