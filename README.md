@@ -8,6 +8,9 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Works best with a PAM8403 amplifier module, connected to pin 25, via a 10kOhm potentiometer
 - The horn is played on pin 26 (see wiring instructions in code)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max.! *** 10kOhm resistor recommended!
+- Fire truck sounds, police sounds, Swiss post bus sound
+- Truck air brake sounds
+- Truck reversing beep
 - Gear shifting is simulated in "curves.h"
 - Light effects: headlights, tail lights, brake lights, reversing light, blue light
 - Use an ESP32, CPU frequency must be set to 240MHz
@@ -87,7 +90,18 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## New in V 1.51:
 - Solved issue: redefinition of 'const unsigned int sampleRate'
 
+## New in V 1.6:
+- Servo input channels rearranged to match the pinout of the "Micro RC" receiver (you can change it in the pin assignment section)
+- Cleaned up the code a bit
+- An updated version (16 timers) of my "statusLED" library is required: https://github.com/TheDIYGuy999/statusLED
+- Added experimental support for serial communication with my "Micro RC" receiver: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+- Uncomment "#define SERIAL_COMMUNICATION" in Adjustments.h
+- Connect pin 36 "VP" to pin "TXO" of the receiver (disable "TXO_momentary1" & "TXO_toggle1" in vehicleConfig.h)
+- The "RC Servo Signals" are not required in this mode!
+- Added Scania R500 V8 sounds
+
 ## On the todo list:
+- solving ticking noise issue in serial communication mode
 - adding more sounds
 - cleaning up code
 - adding schematic for LED wiring (for now pinout see code)
@@ -122,7 +136,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/wiring.jpg)
 
 ## Pictures:
+First prototype
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/top.jpg)
+
+Micro RC receiver wiring (with RC signal and serial connections)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/receiver_wiring.jpg)
 
 
 2019, TheDIYGuy999

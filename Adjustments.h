@@ -3,11 +3,16 @@
 // Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
 // converter code by bitluni (send him a high five if you like the code)
 
+// Choose the communication mode ----------------------------------------------------------------------------------------
+#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want)
 //#include "UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "ScaniaV8Start.h" // Scania V8 Start
-#include "UralV8Start.h" // Ural 4320 V8 Start (use it for most D*-iesel trucks)
+//#include "ScaniaR500V8Start.h" // Scania R500 V8 Start
+#include "UralV8Start.h" // Ural 4320 V8 Start (use it for most Diesel trucks)
 //#include "HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "DefenderV8Start.h" // Land Rover Defender V8 Start <------- Check this one out!
 //#include "JaguarXjsHeStart.h" // Jaguar XJS HE Start
@@ -16,6 +21,7 @@
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, never more!),
 //#include "UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "ScaniaV8Idle.h" // Scania V8
+//#include "ScaniaR500V8Idle.h" // Scania R500 V8
 //#include "UralV8Idle.h" // Ural 4320 V8
 //#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel <------- nice turbo whining!
 //#include "HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
@@ -38,10 +44,10 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 // Choose the horn sound (uncomment the one you want)
 //#include "TrainHorn.h" // American train horn
 //#include "UsPoliceSiren.h" // US Police siren
-//#include "FireTruckAirSiren.h" // US fire truck air siren
+#include "FireTruckAirSiren.h" // US fire truck air siren
 //#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "IrishFireEngineHorn.h" // Irish fire truck horn
-#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
+//#include "ManTgeHorn.h" // MAN TGE truck horn <------- Bombastic!
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
 //#include "CarHorn.h" // A boring car horn
 
@@ -57,7 +63,7 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 //#include "M2Fire.h" // M2 salve
 
 // Choose the reversing beep sound
-volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = revesre
+volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = reverse (direction)
 volatile int reversingvolumePercentage = 25; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
 #include "TruckReversingBeep.h" // 1000Hz peep sound
 
@@ -87,5 +93,5 @@ const boolean engineManualOnOff = false;
 const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
-const int8_t acc = 2; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t acc = 3; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
 const int8_t dec = 1; // Deceleration step (2) 1 = slow for locomotive engine, 5 = fast for trophy truck
