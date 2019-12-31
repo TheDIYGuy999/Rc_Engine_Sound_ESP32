@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.6; // Software revision.
+const float codeVersion = 1.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -63,8 +63,9 @@ const float codeVersion = 1.6; // Software revision.
 #define BEACON_LIGHT2_PIN 16 // Blue beacons light
 #define BEACON_LIGHT1_PIN 17 // Blue beacons light
 #define REVERSING_LIGHT_PIN 5 // White reversing light
-#define FOGLIGHT_PIN 22 // Foglights
-#define SIDELIGHT_PIN 23 // Side lights
+#define FOGLIGHT_PIN 19 // Foglights
+#define SIDELIGHT_PIN 18 // Side lights
+#define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling)
 
 #define DAC1 25 // connect pin25 (do not change the pin) to a 10kOhm resistor
 #define DAC2 26 // connect pin26 (do not change the pin) to a 10kOhm resistor
@@ -72,7 +73,7 @@ const float codeVersion = 1.6; // Software revision.
 // 10kOhm potentiometer. The other outer leg connects to GND. The middle leg connects to both inputs
 // of a PAM8403 amplifier and allows to adjust the volume. This way, two speakers can be used.
 
-// Status LED objects
+// Status LED objects (also used for PWM shaker motor)
 statusLED tailLight(false); // "false" = output not inversed
 statusLED headLight(false);
 statusLED indicatorL(false);
@@ -82,6 +83,7 @@ statusLED beaconLight2(false);
 statusLED reversingLight(false);
 statusLED fogLight(false);
 statusLED sideLight(false);
+statusLED shakerMotor(false);
 
 // Define global variables
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
@@ -380,7 +382,7 @@ void setup() {
   pinMode(SERVO3_PIN, INPUT_PULLDOWN);
   pinMode(SERVO4_PIN, INPUT_PULLDOWN);
 
-  // LED Setup (note, that we only have timers from 0 - 15)
+  // LED & shaker motor setup (note, that we only have timers from 0 - 15)
   tailLight.begin(TAILLIGHT_PIN, 1, 500); // Timer 1, 500Hz
   headLight.begin(HEADLIGHT_PIN, 2, 500); // Timer 2, 500Hz
   indicatorL.begin(INDICATOR_LEFT_PIN, 3, 500); // Timer 3, 500Hz
@@ -388,8 +390,9 @@ void setup() {
   beaconLight1.begin(BEACON_LIGHT1_PIN, 5, 500); // Timer 5, 500Hz
   beaconLight2.begin(BEACON_LIGHT2_PIN, 6, 500); // Timer 6, 500Hz
   reversingLight.begin(REVERSING_LIGHT_PIN, 7, 500); // Timer 7, 500Hz
-  fogLight.begin(FOGLIGHT_PIN, 14, 500); // Timer 14, 500Hz
-  sideLight.begin(SIDELIGHT_PIN, 15, 500); // Timer 15, 500Hz
+  fogLight.begin(FOGLIGHT_PIN, 8, 500); // Timer 14, 500Hz
+  sideLight.begin(SIDELIGHT_PIN, 9, 500); // Timer 15, 500Hz
+  shakerMotor.begin(SHAKER_MOTOR_PIN, 15, 500); // Timer 15, 500Hz
 
   // Serial setup
   Serial.begin(115200); // USB serial
@@ -914,6 +917,18 @@ void led() {
 
 //
 // =======================================================================================================
+// SHAKER (simulates engine vibrations)
+// =======================================================================================================
+//
+
+void shaker() {
+  int32_t shakerRpm = map(currentRpm, minRpm, maxRpm, shakerMax, shakerMin);
+  if (engineOn) shakerMotor.pwm(shakerRpm);
+  else shakerMotor.off();
+}
+
+//
+// =======================================================================================================
 // LOOP TIME MEASUREMENT
 // =======================================================================================================
 //
@@ -972,6 +987,10 @@ void Task1code(void *pvParameters) {
     // LED control
     led();
 
-    loopTime = loopDuration(); // measure loop time
+    // Shaker control
+    shaker();
+
+    // measure loop time
+    loopTime = loopDuration(); 
   }
 }

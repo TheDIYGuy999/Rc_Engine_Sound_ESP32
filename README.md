@@ -7,12 +7,13 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Sound files up to 22'050Hz, 8bit, mono can be used
 - Works best with a PAM8403 amplifier module, connected to pin 25, via a 10kOhm potentiometer
 - The horn is played on pin 26 (see wiring instructions in code)
-- The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max.! *** 10kOhm resistor recommended!
+- The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max.! *** 330 Ohm resistors on all I/O pins recommended!
 - Fire truck sounds, police sounds, Swiss post bus sound
 - Truck air brake sounds
 - Truck reversing beep
 - Gear shifting is simulated in "curves.h"
 - Light effects: headlights, tail lights, brake lights, reversing light, blue light
+- Engine vibration simulation, using a shaker motor with excentric weight
 - Use an ESP32, CPU frequency must be set to 240MHz
 
 ## New in V 0.1:
@@ -100,6 +101,13 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - The "RC Servo Signals" are not required in this mode!
 - Added Scania R500 V8 sounds
 
+## New in V 1.7:
+- Added shaker motor control on pin 23. Simulates engine vibration. IRLZ44N Mosfet and freewheel diode 1N5819 required
+- Shaker power can be adjusted with the variables "shakerMin" & "shakerMax" in Adjustments.h
+- Driver schematic down below
+- I'm using a shaker motor from the G.T.Power kit 103061 (this controller is crap, but the accessories are useful)
+- Foglight and side light pins moved to pins 18 & 19
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
@@ -134,6 +142,8 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## Schematic:
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/wiring.jpg)
+
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/shakerDriver.jpg)
 
 ## Pictures:
 First prototype

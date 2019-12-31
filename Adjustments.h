@@ -26,8 +26,8 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 //#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel <------- nice turbo whining!
 //#include "HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "DetroitDieselIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
-//#include "DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
-#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck
+#include "DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
+//#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck
 //#include "DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
 //#include "DefenderV8Idle.h" // Land Rover Defender V8 <------- Check this one out!
 //#include "Mustang68Idle.h" // Ford Mustang 1968
@@ -64,7 +64,7 @@ volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 10
 
 // Choose the reversing beep sound
 volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = reverse (direction)
-volatile int reversingvolumePercentage = 25; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
+volatile int reversingvolumePercentage = 50; // Adjust the reversing sound volume (usually = 30%, never more than 100%!),
 #include "TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the light opions --------------------------------------------------------------------------------------------
@@ -84,6 +84,10 @@ const boolean directBrake = false; // true = ESC is braking immediately, if thro
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
 const boolean shifted = false; // false = linear rpm curve, true = shifting points
+
+// Shaker parameters (simulating engine vibrations while idling) --------------------------------------------------------
+const uint8_t shakerMin = 50; // Rhaker power while full throttle (about 50)
+const uint8_t shakerMax = 200; // Rhaker power while idling (max. 255)
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 //Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
