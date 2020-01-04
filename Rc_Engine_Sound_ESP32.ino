@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.7; // Software revision.
+const float codeVersion = 1.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -18,8 +18,8 @@ const float codeVersion = 1.7; // Software revision.
 // All the required vehicle specific settings are done in Adjustments.h!
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
-// DEBUG slow down the playback loop! Only comment them out for debugging
-#define DEBUG // uncomment it for general debugging informations
+// DEBUG can slow down the playback loop! Only comment them out for debugging
+//#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 
 //
@@ -56,8 +56,8 @@ const float codeVersion = 1.7; // Software revision.
 #define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle)
 #define SERVO4_PIN 27 // connect to RC receiver servo output channel 4 (rudder, pot)
 
-#define TAILLIGHT_PIN 0 // Red tail- & brake-lights
-#define HEADLIGHT_PIN 15 // White headllights
+#define HEADLIGHT_PIN 0 // White headllights
+#define TAILLIGHT_PIN 15 // Red tail- & brake-lights
 #define INDICATOR_LEFT_PIN 2 // Orange left indicator (turn signal) light
 #define INDICATOR_RIGHT_PIN 4 // Orange right indicator (turn signal) light
 #define BEACON_LIGHT2_PIN 16 // Blue beacons light
@@ -74,8 +74,8 @@ const float codeVersion = 1.7; // Software revision.
 // of a PAM8403 amplifier and allows to adjust the volume. This way, two speakers can be used.
 
 // Status LED objects (also used for PWM shaker motor)
-statusLED tailLight(false); // "false" = output not inversed
-statusLED headLight(false);
+statusLED headLight(false); // "false" = output not inversed
+statusLED tailLight(false);
 statusLED indicatorL(false);
 statusLED indicatorR(false);
 statusLED beaconLight1(false);
@@ -88,26 +88,29 @@ statusLED shakerMotor(false);
 // Define global variables
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
 
-volatile uint8_t soundNo = 0; // 0 = horn, 1 = additional sound 1
+volatile uint8_t soundNo = 0; // 0 = horn, 1 = siren, 2 = sound1
 
 volatile boolean engineOn = false;              // Signal for engine on / off
 volatile boolean hornOn = false;                // Signal for horn on / off
-volatile boolean sound1On = false;              // Signal for additional sound 1  on / off
+volatile boolean sirenOn = false;               // Signal for siren  on / off
+volatile boolean sound1On = false;              // Signal for sound1  on / off
 volatile boolean reversingSoundOn = false;      // active during backing up
+volatile boolean indicatorSoundOn = false;      // active, if indicator bulb is on
 
-volatile boolean lightsOn = false;             // Lights on
+volatile boolean lightsOn = false;              // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean slowingDown = false;           // Engine is slowing down
 
-volatile boolean hornSwitch = false;            // Switch state for horn on / off triggering
-volatile boolean sound1Switch = false;          // Switch state for additional sound 1 triggering
+volatile boolean hornSwitch = false;            // Switch state for horn triggering
+volatile boolean sirenSwitch = false;           // Switch state for siren triggering
+volatile boolean sound1Switch = false;          // Switch state for sound1 triggering
 
 boolean indicatorLon = false;                   // Left indicator
 boolean indicatorRon = false;                   // Right indicator
 
-uint32_t currentThrottle = 0;                  // 0 - 500
+uint32_t currentThrottle = 0;                   // 0 - 500
 uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
 
 uint16_t pulseMaxNeutral[4];                    // PWM signal configuration storage variables
@@ -116,6 +119,11 @@ uint16_t pulseMax[4];
 uint16_t pulseMin[4];
 uint16_t pulseMaxLimit[4];
 uint16_t pulseMinLimit[4];
+
+volatile boolean pulseAvailable;                // RC signal pulses are coming in
+
+uint16_t pulseZero[4];                           // Usually 1500 (range 1000 - 2000us) Autocalibration active, if "engineManualOnOff" = "false"
+uint16_t pulseLimit = 700; // pulseZero +/- this value (700)
 
 int32_t axis1;                                  // Temporary variables for serial command parsing (for signals from "Micro RC" receiver)
 int32_t axis2;                                  // See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
@@ -129,15 +137,11 @@ boolean hazard;
 boolean left;
 boolean right;
 
-volatile boolean pulseAvailable;                // RC signal pulses are coming in
-
-uint16_t pulseZero[4];                           // Usually 1500 (range 1000 - 2000us) Autocalibration active, if "engineManualOnOff" = "false"
-uint16_t pulseLimit = 700; // pulseZero +/- this value (700)
-
 const int32_t maxRpm = 500;                     // always 500
 const int32_t minRpm = 0;                       // always 0
 int32_t currentRpm = 0;                         // 0 - 500 (signed required!)
-volatile uint32_t currentRpmScaled;
+volatile uint32_t currentRpmScaled = 0;
+volatile uint8_t throttleDependentVolume = 0;   // engine volume according to throttle position
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -173,7 +177,7 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static uint32_t a, b;                         // Two input signals for mixer: a = engine, b = additional sound
+  static int32_t a, b;                         // Two input signals for mixer: a = engine, b = additional sound
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -192,7 +196,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curStartSample < startSampleCount) {
-        a = (int)startSamples[curStartSample] + 128;
+        a = (startSamples[curStartSample] * throttleDependentVolume / 100 * startVolumePercentage / 100) + 128;
         curStartSample ++;
       }
       else {
@@ -207,7 +211,8 @@ void IRAM_ATTR variablePlaybackTimer() {
 
       // Engine sound
       if (curEngineSample < sampleCount) {
-        a = (int)(samples[curEngineSample] * idleVolumePercentage / 100) + 128;
+        //a = (int)(samples[curEngineSample] * idleVolumePercentage / 100 * throttleDependentVolume / 100) + 128;
+        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100) + 128;
         curEngineSample ++;
       }
       else {
@@ -226,7 +231,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         }
       }
       else {
-        b = 0; // Ensure full engine volume
+        b = 0; // Ensure full engine volume, so 0!!
         curBrakeSample = 0; // ensure, next sound will start @ first sample
       }
 
@@ -243,7 +248,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curEngineSample < sampleCount) {
-        a = (int)(samples[curEngineSample] * idleVolumePercentage / 100 / attenuator) + 128;
+        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100 / attenuator) + 128;
         curEngineSample ++;
       }
       else {
@@ -269,7 +274,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curBrakeSample < brakeSampleCount) {
-        b = (int)brakeSamples[curBrakeSample] + 128;
+        b = (brakeSamples[curBrakeSample] * brakeVolumePercentage / 100) + 128;
         curBrakeSample ++;
       }
       else {
@@ -280,7 +285,10 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   } // end of switch case
 
-  dacWrite(DAC1, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
+  //dacWrite(DAC1, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
+  //dacWrite(DAC1, (int) ((a + b) / 2)); // Write mixed output signals to DAC
+  dacWrite(DAC1, (int) (constrain((a + (b / 2)), 0, 255))); // Write mixed output signals to DAC
+
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -294,22 +302,27 @@ void IRAM_ATTR variablePlaybackTimer() {
 void IRAM_ATTR fixedPlaybackTimer() {
 
   static uint32_t curHornSample;                // Index of currently loaded horn sample
-  static uint32_t curSound1Sample;              // Index of currently loaded sound 1 sample
-  static uint32_t curReversingSample;           // Index of currently loaded sound 1 sample
-  static uint32_t a, b;                         // Two input signals for mixer: a = horn, b = reversing sound
+  static uint32_t curSirenSample;               // Index of currently loaded siren sample
+  static uint32_t curSound1Sample;              // Index of currently loaded sound1 sample
+  static uint32_t curReversingSample;           // Index of currently loaded reversing beep sample
+  static uint32_t curIndicatorSample;           // Index of currently loaded indicator tick sample
+  static int32_t a, b, b1, b2;                 // Two input signals for mixer: a = horn or siren, b = reversing sound, indicator sound
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
   switch (soundNo) {
 
+    // Group "a" (never more than one active at a time) ----------------------------------------------
+
     case 0: // Horn "a" ----
       fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+      curSirenSample = 0;
       curSound1Sample = 0;
 
       if (hornOn) {
         if (curHornSample < hornSampleCount) {
-          a =  (int)hornSamples[curHornSample] + 128;
+          a =  (hornSamples[curHornSample] * hornVolumePercentage / 100) + 128;
           curHornSample ++;
         }
         else {
@@ -320,14 +333,34 @@ void IRAM_ATTR fixedPlaybackTimer() {
       }
       break;
 
-    case 1: // Sound 1 "a" ----
+    case 1: // Siren "a" ----
+      fixedTimerTicks = 4000000 / sirenSampleRate; // our fixed sampling rate
+      timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+      curHornSample = 0;
+      curSound1Sample = 0;
+
+      if (sirenOn) {
+        if (curSirenSample < sirenSampleCount) {
+          a = (sirenSamples[curSirenSample] * sirenVolumePercentage / 100) + 128;
+          curSirenSample ++;
+        }
+        else {
+          curSirenSample = 0;
+          a = 128;
+          if (!sirenSwitch) sirenOn = false; // Latch required to prevent it from popping
+        }
+      }
+      break;
+
+    case 2: // Sound 1 "a" ----
       fixedTimerTicks = 4000000 / sound1SampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+      curSirenSample = 0;
       curHornSample = 0;
 
       if (sound1On) {
         if (curSound1Sample < sound1SampleCount) {
-          a = (int)sound1Samples[curSound1Sample] + 128;
+          a = (sound1Samples[curSound1Sample] * sound1VolumePercentage / 100) + 128;
           curSound1Sample ++;
         }
         else {
@@ -340,26 +373,53 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   } // end of switch case
 
-  // Reversing beep sound "b" (can play in parallel with sound "a") ----
+  // Group "b" (multiple sounds are mixed together) ----------------------------------------------
+
+  // Reversing beep sound "b1" ----
   if (reversingSoundOn) {
     fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
     if (curReversingSample < reversingSampleCount) {
-      b = (int)reversingSamples[curReversingSample] + 128;
+      b1 = (reversingSamples[curReversingSample] * reversingVolumePercentage / 100) + 128;
       curReversingSample ++;
     }
     else {
       curReversingSample = 0;
     }
-    b = b * reversingvolumePercentage / 100; // Reversing volume
   }
   else {
     curReversingSample = 0;
-    b = 0;
+    b1 = 128;
   }
 
-  dacWrite(DAC2, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
+  // Indicator tick sound "b2" ----
+  if (indicatorSoundOn) {
+    fixedTimerTicks = 4000000 / indicatorSampleRate; // our fixed sampling rate
+    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+
+    if (curIndicatorSample < indicatorSampleCount) {
+      b2 = (indicatorSamples[curIndicatorSample] * indicatorVolumePercentage / 100) + 128;
+      curIndicatorSample ++;
+    }
+    else {
+      curIndicatorSample = 0;
+      indicatorSoundOn = false;
+    }
+  }
+  else {
+    curIndicatorSample = 0;
+    b2 = 128;
+  }
+
+  // Mixing "b1" + "b2" together ----
+  //b = (b1 + b2 - b1 * b2 / 255);
+  b = b1 + b2 / 2;
+
+  // DAC output (groups a + b mixed together) ----------------------------------------------------
+
+  //dacWrite(DAC2, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
+  dacWrite(DAC2, (int) ((a + b) / 2)); // Write mixed output signals to DAC
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -383,15 +443,15 @@ void setup() {
   pinMode(SERVO4_PIN, INPUT_PULLDOWN);
 
   // LED & shaker motor setup (note, that we only have timers from 0 - 15)
-  tailLight.begin(TAILLIGHT_PIN, 1, 500); // Timer 1, 500Hz
-  headLight.begin(HEADLIGHT_PIN, 2, 500); // Timer 2, 500Hz
+  headLight.begin(HEADLIGHT_PIN, 1, 500); // Timer 1, 500Hz
+  tailLight.begin(TAILLIGHT_PIN, 2, 500); // Timer 2, 500Hz
   indicatorL.begin(INDICATOR_LEFT_PIN, 3, 500); // Timer 3, 500Hz
   indicatorR.begin(INDICATOR_RIGHT_PIN, 4, 500); // Timer 4, 500Hz
   beaconLight1.begin(BEACON_LIGHT1_PIN, 5, 500); // Timer 5, 500Hz
   beaconLight2.begin(BEACON_LIGHT2_PIN, 6, 500); // Timer 6, 500Hz
   reversingLight.begin(REVERSING_LIGHT_PIN, 7, 500); // Timer 7, 500Hz
-  fogLight.begin(FOGLIGHT_PIN, 8, 500); // Timer 14, 500Hz
-  sideLight.begin(SIDELIGHT_PIN, 9, 500); // Timer 15, 500Hz
+  fogLight.begin(FOGLIGHT_PIN, 8, 500); // Timer 8, 500Hz
+  sideLight.begin(SIDELIGHT_PIN, 9, 500); // Timer 9, 500Hz
   shakerMotor.begin(SHAKER_MOTOR_PIN, 15, 500); // Timer 15, 500Hz
 
   // Serial setup
@@ -434,7 +494,7 @@ void setup() {
 
   // Read RC signals for the first time (used for offset calculations)
 #ifdef SERIAL_COMMUNICATION
-  for (int32_t i = 0; i <= 256; i++) { // We need to read the entire buffer, so we do it multiple times!
+  for (int32_t i = 0; i <= 255; i++) { // We need to read the entire buffer, so we do it multiple times!
     readSerialCommands(); // serial communication (pin 36)
   }
 #else
@@ -456,7 +516,7 @@ void setup() {
   else pulseZero[2] = 1500;
 
   // CH4
-  pulseZero[3] = 1500; // This channel is controlled by a 3 postentiometer, so we don't want auto calibration!
+  pulseZero[3] = 1500; // This channel is controlled by a potentiometer, so we don't want auto calibration!
 
   // Calculate RC signal ranges for all channels (0, 1, 2, 3)
   for (uint8_t i = 0; i <= 3; i++) {
@@ -471,7 +531,7 @@ void setup() {
 
 //
 // =======================================================================================================
-// READ SERIAL COMMANDS (only compatible with my "Micro RC" receiver)
+// READ SERIAL COMMMANDS (only compatible with my "Micro RC" receiver)
 // =======================================================================================================
 // See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 //      https://forum.arduino.cc/index.php?topic=288234.0
@@ -603,38 +663,46 @@ void getRcSignals() {
   if (indicators) pulseWidth[0] = pulseIn(SERVO1_PIN, HIGH, 50000);
   else pulseWidth[0] = 1500;
 
-  // CH2 (not used)
+  // CH2 (not used, gearbox servo)
   pulseWidth[1] = pulseIn(SERVO2_PIN, HIGH, 50000);
 
   // CH3 Throttle
   pulseWidth[2] = pulseIn(SERVO3_PIN, HIGH, 50000);
 
   // CH4 Additional sound trigger (RC signal with 3 positions)
-  if (pwmHornTrigger) pulseWidth[3] = pulseIn(SERVO4_PIN, HIGH, 50000);
+  if (pwmSoundTrigger) pulseWidth[3] = pulseIn(SERVO4_PIN, HIGH, 50000);
   else pulseWidth[3] = 1500;
 }
 
 //
 // =======================================================================================================
-// HORN TRIGGERING, ADDITIONAL SOUND TRIGGERING BY CH4 (POT)
+// HORN TRIGGERING, SIREN TRIGGERING, SOUND1 TRIGGERING BY CH4 (POT)
 // =======================================================================================================
 //
 
 void triggerHorn() {
-  if (pwmHornTrigger) { // PWM RC signal mode --------------------------------------------
+  if (pwmSoundTrigger) { // PWM RC signal mode --------------------------------------------
 
     // detect horn trigger ( impulse length > 1700us) -------------
     if (pulseWidth[3] > (pulseMaxNeutral[3] + 180) && pulseWidth[3] < pulseMaxLimit[3]) {
       hornSwitch = true;
+      //sirenSwitch = false;
       soundNo = 0;  // 0 = horn
     }
     else hornSwitch = false;
 
-
-    // detect sound 1 trigger ( impulse length < 1300us) ----------
+    // detect siren trigger ( impulse length < 1300us) ----------
     if (pulseWidth[3] < (pulseMinNeutral[3] - 180) && pulseWidth[3] > pulseMinLimit[3]) {
+      sirenSwitch = true;
+      //hornSwitch = false;
+      soundNo = 1;  // 1 = siren
+    }
+    else sirenSwitch = false;
+
+    // Sound 1 triggered via momentary1 button (Micro RC in serial mode only) ---------
+    if (momentary1  && !hornSwitch  && !sirenSwitch) {
       sound1Switch = true;
-      soundNo = 1;  // 1 = sound 1
+      soundNo = 2; // 2 = sound1
     }
     else sound1Switch = false;
 
@@ -651,9 +719,21 @@ void triggerHorn() {
 
   // Latches (required to prevent sound seams from popping) --------------------------------
 
-  if (hornSwitch) hornOn = true;
-  if (sound1Switch) sound1On = true;
-
+  if (hornSwitch) {
+    hornOn = true;
+    sirenOn = false;
+    sound1On = false;
+  }
+  if (sirenSwitch) {
+    sirenOn = true;
+    hornOn = false;
+    sound1On = false;
+  }
+  if (sound1Switch) {
+    sound1On = true;
+    sirenOn = false;
+    hornOn = false;
+  }
 }
 
 //
@@ -696,6 +776,8 @@ void mapThrottle() {
     else currentThrottle = 0;
   }
 
+  // Calculate throttle dependent engine volume
+  throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
 
   // reversing sound trigger signal
   if (reverseSoundMode == 1) {
@@ -802,6 +884,10 @@ void engineMassSimulation() {
     Serial.println(" ");
     Serial.println(airBrakeTrigger);
     Serial.println(EngineWasAboveIdle);
+    Serial.println(throttleDependentVolume);
+    Serial.println(sound1On);
+    Serial.println(soundNo);
+    
   }
 #endif
 }
@@ -866,7 +952,7 @@ void led() {
   else reversingLight.off();
 
   // Beacons (blue light) ----
-  if (hornOn) {
+  if (sirenOn) {
     if (doubleFlashBlueLight) {
       beaconLight2.flash(30, 80, 380, 2); // Simulate double flash lights
       beaconLight1.flash(30, 80, 400, 2); // Simulate double flash lights
@@ -893,15 +979,19 @@ void led() {
   }
 
   if (!hazard) {
-    // Indicators (turn signals) ----
-    if (indicatorLon) indicatorL.flash(375, 375, 0, 0); // Left indicator
+    // Indicators (turn signals, blinkers) ----
+    if (indicatorLon) {
+      if (indicatorL.flash(375, 375, 0, 0)) indicatorSoundOn = true; // Left indicator
+    }
     else indicatorL.off();
 
-    if (indicatorRon) indicatorR.flash(375, 375, 0, 0); // Right indicator
+    if (indicatorRon) {
+      if (indicatorR.flash(375, 375, 0, 0)) indicatorSoundOn = true; // Right indicator
+    }
     else indicatorR.off();
   }
   else { // Hazard lights on, if no connection to transmitter (serial control mode only)
-    indicatorL.flash(375, 375, 0, 0);
+    if (indicatorL.flash(375, 375, 0, 0)) indicatorSoundOn = true;
     indicatorR.flash(375, 375, 0, 0);
   }
 
@@ -991,6 +1081,6 @@ void Task1code(void *pvParameters) {
     shaker();
 
     // measure loop time
-    loopTime = loopDuration(); 
+    loopTime = loopDuration();
   }
 }

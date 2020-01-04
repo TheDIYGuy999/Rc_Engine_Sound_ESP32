@@ -108,10 +108,19 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - I'm using a shaker motor from the G.T.Power kit 103061 (this controller is crap, but the accessories are useful)
 - Foglight and side light pins moved to pins 18 & 19
 
+## New in V 1.8:
+- LED pins changed for trailer light driver
+- Horn sounds, siren sounds & additional sounds variable names changed! ---> Replace them all!
+- Added more horns
+- Added indicator (blinker) ticking sound
+- Added independent volume adjustment for every sound
+- Engine sound volume is now throttle dependent (adjustable)
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
 - cleaning up code
+- rewriting sound triggering
 - adding schematic for LED wiring (for now pinout see code)
 
 ## Ho to create new sound arrays:

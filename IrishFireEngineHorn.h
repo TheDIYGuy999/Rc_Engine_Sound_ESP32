@@ -1,6 +1,6 @@
-const unsigned int hornSampleRate = 22050;
-const unsigned int hornSampleCount = 18927;
-const signed char hornSamples[] = {
+const unsigned int sirenSampleRate = 22050;
+const unsigned int sirenSampleCount = 18927;
+const signed char sirenSamples[] = {
 0, 0, 0, 0, 0, 0, 0, -1, -1, -2, -3, -2, 0, 1, 1, -2, 
 -2, -2, -2, -3, -5, -5, -3, 2, 5, 7, 7, 8, 8, 0, -2, 0, 
 4, 6, 2, -2, -1, 3, 5, 1, -17, -20, -15, -6, -1, -1, 3, 8, 
