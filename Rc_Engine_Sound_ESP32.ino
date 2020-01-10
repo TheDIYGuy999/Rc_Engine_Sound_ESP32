@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 1.8; // Software revision.
+const float codeVersion = 1.9; // Software revision.
 
 //
 // =======================================================================================================
@@ -19,7 +19,7 @@ const float codeVersion = 1.8; // Software revision.
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
 // DEBUG can slow down the playback loop! Only comment them out for debugging
-//#define DEBUG // uncomment it for general debugging informations
+#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 
 //
@@ -48,6 +48,9 @@ const float codeVersion = 1.8; // Software revision.
 // This is still experimental! It works, but the sound quality is not perfect.
 #define COMMAND_RX 36 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
 #define COMMAND_TX 39 // pin 39, labelled with "VN", only used as a dummy, not connected
+
+// PPM signal pin (multiple channel input with only one wire)
+#define PPM_PIN 34
 
 // RC signal pins (active, if "SERIAL_COMMUNICATION" is commented out)
 // Channel numbers may be different on your recveiver!
@@ -148,6 +151,15 @@ TaskHandle_t Task1;
 
 // Loop time (for debug)
 uint16_t loopTime;
+
+// PPM signal processing variables
+volatile int valuesInt[NUM_OF_CHL + 1] = {0}; // Input values
+volatile int valuesBuf[NUM_OF_CHL + 1] = {0}; // Buffered values
+volatile byte counter = NUM_OF_CHL;
+volatile byte average  = NUM_OF_AVG;
+volatile boolean ready = false;
+volatile unsigned long timelast;
+unsigned long timelastloop;
 
 // Sampling intervals for interrupt timer (adjusted according to your sound file sampling rate)
 uint32_t maxSampleInterval = 4000000 / sampleRate;
@@ -426,6 +438,37 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
 //
 // =======================================================================================================
+// PPM SIGNAL READ INTERRUPT
+// =======================================================================================================
+//
+
+void readPpm() {
+  unsigned long timenew = micros();
+  unsigned long timediff = timenew - timelast;
+  timelast = timenew;
+  if (timediff > 2500) {  // Synch gap detected:
+    valuesInt[NUM_OF_CHL] = valuesInt[NUM_OF_CHL] + timediff; // add time
+    counter = 0;
+    if (average == NUM_OF_AVG) {
+      for (int i = 0; i < NUM_OF_CHL + 1; i++) {
+        valuesBuf[i] = valuesInt[i] / average;
+        valuesInt[i] = 0;
+      }
+      average = 0;
+      ready = true;
+    }
+    average++;
+  }
+  else {
+    if (counter < NUM_OF_CHL) {
+      valuesInt[counter] = valuesInt[counter] + timediff;
+      counter++;
+    }
+  }
+}
+
+//
+// =======================================================================================================
 // MAIN ARDUINO SETUP (1x during startup)
 // =======================================================================================================
 //
@@ -441,6 +484,8 @@ void setup() {
   pinMode(SERVO2_PIN, INPUT_PULLDOWN);
   pinMode(SERVO3_PIN, INPUT_PULLDOWN);
   pinMode(SERVO4_PIN, INPUT_PULLDOWN);
+
+  pinMode(PPM_PIN, INPUT_PULLDOWN);
 
   // LED & shaker motor setup (note, that we only have timers from 0 - 15)
   headLight.begin(HEADLIGHT_PIN, 1, 500); // Timer 1, 500Hz
@@ -460,6 +505,11 @@ void setup() {
 #ifdef SERIAL_COMMUNICATION
   Serial2.begin(115200, SERIAL_8N1, COMMAND_RX, COMMAND_TX);
 #endif
+
+  // PPM Setup
+  attachInterrupt(digitalPinToInterrupt(PPM_PIN), readPpm, RISING);
+  timelast = micros();
+  timelastloop = timelast;
 
   // DAC
   dacWrite(DAC1, 128); // 128 = center / neutral position = 1.65V
@@ -493,10 +543,12 @@ void setup() {
   delay(1000);
 
   // Read RC signals for the first time (used for offset calculations)
-#ifdef SERIAL_COMMUNICATION
+#if defined SERIAL_COMMUNICATION
   for (int32_t i = 0; i <= 255; i++) { // We need to read the entire buffer, so we do it multiple times!
     readSerialCommands(); // serial communication (pin 36)
   }
+#elif defined PPM_COMMUNICATION
+  readPpmCommands();
 #else
   // measure RC signals mark space ratio
   getRcSignals();
@@ -612,7 +664,20 @@ void parseSerialCommands() {
 
 //
 // =======================================================================================================
-// PRINT
+// READ PPM MULTI CHANNEL COMMMANDS (compatible with many receivers)
+// =======================================================================================================
+//
+
+void readPpmCommands() {
+  pulseWidth[0] = valuesBuf[0]; // CH1 Steering
+  pulseWidth[1] = 1500; // CH2
+  pulseWidth[2] = valuesBuf[1]; // CH3 Throttle
+  pulseWidth[3] = 1500; // Pot1 Horn
+}
+
+//
+// =======================================================================================================
+// PRINT SERIAL DATA
 // =======================================================================================================
 //
 
@@ -887,7 +952,7 @@ void engineMassSimulation() {
     Serial.println(throttleDependentVolume);
     Serial.println(sound1On);
     Serial.println(soundNo);
-    
+
   }
 #endif
 }
@@ -1041,9 +1106,11 @@ unsigned long loopDuration() {
 void loop() {
 
 
-#ifdef SERIAL_COMMUNICATION
-  readSerialCommands(); // serial communication (pin 36)
+#if defined  SERIAL_COMMUNICATION
+  readSerialCommands(); // Serial communication (pin 36)
   showParsedData();
+#elif defined PPM_COMMUNICATION
+  readPpmCommands(); // PPM communication (pin 34)
 #else
   // measure RC signals mark space ratio
   getRcSignals();

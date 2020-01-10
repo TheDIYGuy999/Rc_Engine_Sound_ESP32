@@ -116,6 +116,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Added independent volume adjustment for every sound
 - Engine sound volume is now throttle dependent (adjustable)
 
+## New in V 1.9:
+- Kenworth W900 added
+- Initial PPM signal input on pin 34 added. For now usable for steering and throttle signal. Uncomment "#define PPM_COMMUNICATION", if you want to use it.
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
