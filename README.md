@@ -120,6 +120,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Kenworth W900 added
 - Initial PPM signal input on pin 34 added. For now usable for steering and throttle signal. Uncomment "#define PPM_COMMUNICATION", if you want to use it.
 
+## New in V 2.0:
+- Swiss post bus horn moved to category "sirens" ---> Replace existing .h file!
+- Experimental ESC output (do not ouse it). Latest statusLED library update required: https://github.com/TheDIYGuy999/statusLED
+- Mack truck sounds added
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds

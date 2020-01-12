@@ -3,11 +3,13 @@
 // Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
 // converter code by bitluni (send him a high five if you like the code)
 
-// Choose the communication mode ----------------------------------------------------------------------------------------
+// **********************************************************************************************************************
+// Choose the receiver communication mode (never uncomment both! If both commented out, classic RC signal communication)--
+// Serial communication --------
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
-// PPM input settings ---------------------------------------------------------------------------------------------------
+// PPM communication --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
@@ -23,6 +25,7 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "DefenderV8Start.h" // Land Rover Defender V8 Start
 //#include "JaguarXjsHeStart.h" // Jaguar XJS HE Starts
 #include "KenworthW900Start.h" // Kenworth W900 Truck Start
+//#include "MackStart.h" // Mack Truck Start
 //#include "DetroitDieselStart.h" // Detroit Diesel generic Truck Start
 //#include "ActrosV8Start.h" // MB Actros V8 Truck Start
 
@@ -38,10 +41,11 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "DetroitDieselIdle.h" // Detroit Diesel generic Truck
 //#include "DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
 //#include "DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
-//#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck
+//#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start)
 //#include "DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
 //#include "ActrosV8Idle.h" // MB Actros V8 Truck Idle
 #include "KenworthW900Idle.h" // Kenworth W900 Truck Idle
+//#include "MackIdle.h" // Mack Truck Idle
 //#include "DefenderV8Idle.h" // Land Rover Defender V8
 //#include "Mustang68Idle.h" // Ford Mustang 1968
 //#include "DodgeChallenger70Idle.h" // 1970 Dodge Challenger
@@ -59,18 +63,18 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "TrainHorn.h" // American train horn
 //#include "ManTgeHorn.h" // MAN TGE truck horn
 #include "westinghouseHorn.h" // American truck horn
-//#include "PostAutoHorn.h" // The typical Swiss post bus horn
 //#include "FireTruckAirHorn.h" // US fire truck air horn
 //#include "CarHorn.h" // A boring car horn
 //#include "TruckHorn.h" // A generic truck horn
 //#include "PeterbiltHorn.h" // A Peterbilt truck horn
 
-// Choose the siren sound (uncomment the one you want) --------
+// Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%, never more!)
 //#include "UsPoliceSiren.h" // US Police siren
 //#include "FireTruckAirSiren.h" // US fire truck air siren
 //#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
-#include "IrishFireEngineHorn.h" // Irish fire truck horn
+//#include "IrishFireEngineHorn.h" // Irish fire truck horn
+#include "PostAutoHorn.h" // The typical Swiss post bus horn
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 100; // Adjust the brake volume (usually = 100%, never more!)
@@ -112,8 +116,9 @@ const boolean directBrake = false; // true = ESC is braking immediately, if thro
 const boolean shifted = false; // false = linear rpm curve, true = shifting points
 
 // Shaker parameters (simulating engine vibrations while idling) --------------------------------------------------------
-const uint8_t shakerMin = 50; // Rhaker power while full throttle (about 50)
-const uint8_t shakerMax = 200; // Rhaker power while idling (max. 255)
+const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 50)
+const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 80)
+const uint8_t shakerStartStop = 95; // Shaker power while engine start / stop (max. 255, about 100)
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 //Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!

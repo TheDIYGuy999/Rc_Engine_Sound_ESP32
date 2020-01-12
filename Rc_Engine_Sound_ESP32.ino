@@ -19,7 +19,7 @@ const float codeVersion = 1.9; // Software revision.
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
 // DEBUG can slow down the playback loop! Only comment them out for debugging
-#define DEBUG // uncomment it for general debugging informations
+//#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 
 //
@@ -59,6 +59,8 @@ const float codeVersion = 1.9; // Software revision.
 #define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle)
 #define SERVO4_PIN 27 // connect to RC receiver servo output channel 4 (rudder, pot)
 
+#define ESC_OUT_PIN 33 // connect ESC here (experimental)
+
 #define HEADLIGHT_PIN 0 // White headllights
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights
 #define INDICATOR_LEFT_PIN 2 // Orange left indicator (turn signal) light
@@ -87,6 +89,7 @@ statusLED reversingLight(false);
 statusLED fogLight(false);
 statusLED sideLight(false);
 statusLED shakerMotor(false);
+statusLED escOut(false);
 
 // Define global variables
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
@@ -94,6 +97,7 @@ volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = sto
 volatile uint8_t soundNo = 0; // 0 = horn, 1 = siren, 2 = sound1
 
 volatile boolean engineOn = false;              // Signal for engine on / off
+volatile boolean engineStartStop = false;       // Active, if engine is starting or shutting down
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sirenOn = false;               // Signal for siren  on / off
 volatile boolean sound1On = false;              // Signal for sound1  on / off
@@ -200,7 +204,10 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       a = 128; // volume = zero
-      if (engineOn) engineState = 1;
+      if (engineOn) {
+        engineState = 1;
+        engineStartStop = true;
+      }
       break;
 
     case 1: // Engine start ----
@@ -214,6 +221,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       else {
         curStartSample = 0;
         engineState = 2;
+        engineStartStop = false;
       }
       break;
 
@@ -252,6 +260,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         speedPercentage = 100;
         attenuator = 1;
         engineState = 3;
+        engineStartStop = true;
       }
       break;
 
@@ -278,6 +287,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         a = 128;
         speedPercentage = 100;
         engineState = 4;
+        engineStartStop = false;
       }
       break;
 
@@ -497,7 +507,10 @@ void setup() {
   reversingLight.begin(REVERSING_LIGHT_PIN, 7, 500); // Timer 7, 500Hz
   fogLight.begin(FOGLIGHT_PIN, 8, 500); // Timer 8, 500Hz
   sideLight.begin(SIDELIGHT_PIN, 9, 500); // Timer 9, 500Hz
-  shakerMotor.begin(SHAKER_MOTOR_PIN, 15, 500); // Timer 15, 500Hz
+
+  shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 500); // Timer 13, 500Hz
+
+  escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit
 
   // Serial setup
   Serial.begin(115200); // USB serial
@@ -672,7 +685,7 @@ void readPpmCommands() {
   pulseWidth[0] = valuesBuf[0]; // CH1 Steering
   pulseWidth[1] = 1500; // CH2
   pulseWidth[2] = valuesBuf[1]; // CH3 Throttle
-  pulseWidth[3] = 1500; // Pot1 Horn
+  pulseWidth[3] = valuesBuf[2]; // Pot1 Horn
 }
 
 //
@@ -1077,11 +1090,25 @@ void led() {
 //
 
 void shaker() {
-  int32_t shakerRpm = map(currentRpm, minRpm, maxRpm, shakerMax, shakerMin);
-  if (engineOn) shakerMotor.pwm(shakerRpm);
+  int32_t shakerRpm;
+
+  if (!engineStartStop) shakerRpm = map(currentRpm, minRpm, maxRpm, shakerIdle, shakerFullThrottle);
+  else shakerRpm = shakerStartStop;
+  if (engineOn || engineStartStop) shakerMotor.pwm(shakerRpm);
   else shakerMotor.off();
 }
 
+
+//
+// =======================================================================================================
+// SERVO (CONTROLLING SERVOS & ESC)
+// =======================================================================================================
+//
+
+void servo() {
+  uint32_t escInput = map(currentRpm, minRpm, maxRpm, 3855, 7710); // 15, 30
+  escOut.pwm(escInput);
+}
 //
 // =======================================================================================================
 // LOOP TIME MEASUREMENT
@@ -1146,6 +1173,9 @@ void Task1code(void *pvParameters) {
 
     // Shaker control
     shaker();
+
+    // Servo control
+    servo();
 
     // measure loop time
     loopTime = loopDuration();
