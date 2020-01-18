@@ -122,8 +122,15 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## New in V 2.0:
 - Swiss post bus horn moved to category "sirens" ---> Replace existing .h file!
-- Experimental ESC output (do not ouse it). Latest statusLED library update required: https://github.com/TheDIYGuy999/statusLED
+- Experimental ESC output (do not use it). Latest statusLED library update required: https://github.com/TheDIYGuy999/statusLED
 - Mack truck sounds added
+
+## New in V 2.1:
+- Additional turbo sound (playing in parallel with engine sound), volume and throttle dependent volume adjustable
+- Caterpillar 3406B sound added
+- VW Beetle sound added
+- Indicator direction adjustable with "INDICATOR_DIR" = "true" or "false"
+- Shaker rpm now adjustable for engine start, idle, full throttle & shutdown
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode

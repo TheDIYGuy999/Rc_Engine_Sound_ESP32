@@ -3,11 +3,11 @@
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
 
    Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
-   converter code by bitluni (send him a high five if you like the code)
+   converter code by bitluni (send him a high five, if you like the code)
 
 */
 
-const float codeVersion = 2.0; // Software revision.
+const float codeVersion = 2.1; // Software revision.
 
 //
 // =======================================================================================================
@@ -92,12 +92,16 @@ statusLED shakerMotor(false);
 statusLED escOut(false);
 
 // Define global variables
+
+boolean serialInit = false;
+
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
 
 volatile uint8_t soundNo = 0; // 0 = horn, 1 = siren, 2 = sound1
 
 volatile boolean engineOn = false;              // Signal for engine on / off
-volatile boolean engineStartStop = false;       // Active, if engine is starting or shutting down
+volatile boolean engineStart = false;           // Active, if engine is starting down
+volatile boolean engineStop = false;            // Active, if engine is shutting down
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sirenOn = false;               // Signal for siren  on / off
 volatile boolean sound1On = false;              // Signal for sound1  on / off
@@ -149,6 +153,7 @@ const int32_t minRpm = 0;                       // always 0
 int32_t currentRpm = 0;                         // 0 - 500 (signed required!)
 volatile uint32_t currentRpmScaled = 0;
 volatile uint8_t throttleDependentVolume = 0;   // engine volume according to throttle position
+volatile uint8_t throttleDependentTurboVolume = 0;   // turbo volume according to throttle position
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -189,11 +194,12 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   static uint32_t attenuatorMillis;
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
+  static uint32_t curTurboSample;              // Index of currently loaded turbo sample
   static uint32_t curBrakeSample;               // Index of currently loaded brake sound sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static int32_t a, b;                         // Two input signals for mixer: a = engine, b = additional sound
+  static int32_t a, b, c;                         // Two input signals for mixer: a = engine, b = additional sound, c = turbo sound
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -206,7 +212,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       a = 128; // volume = zero
       if (engineOn) {
         engineState = 1;
-        engineStartStop = true;
+        engineStart = true;
       }
       break;
 
@@ -221,7 +227,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       else {
         curStartSample = 0;
         engineState = 2;
-        engineStartStop = false;
+        engineStart = false;
       }
       break;
 
@@ -231,12 +237,20 @@ void IRAM_ATTR variablePlaybackTimer() {
 
       // Engine sound
       if (curEngineSample < sampleCount) {
-        //a = (int)(samples[curEngineSample] * idleVolumePercentage / 100 * throttleDependentVolume / 100) + 128;
         a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100) + 128;
         curEngineSample ++;
       }
       else {
         curEngineSample = 0;
+      }
+
+      // Turbo sound
+      if (curTurboSample < turboSampleCount) {
+        c = (turboSamples[curTurboSample] * throttleDependentTurboVolume / 100 * turboVolumePercentage / 100) + 128;
+        curTurboSample ++;
+      }
+      else {
+        curTurboSample = 0;
       }
 
       // Air brake release sound, triggered after stop
@@ -260,7 +274,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         speedPercentage = 100;
         attenuator = 1;
         engineState = 3;
-        engineStartStop = true;
+        engineStop = true;
       }
       break;
 
@@ -287,7 +301,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         a = 128;
         speedPercentage = 100;
         engineState = 4;
-        engineStartStop = false;
+        engineStop = false;
       }
       break;
 
@@ -309,7 +323,8 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   //dacWrite(DAC1, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
   //dacWrite(DAC1, (int) ((a + b) / 2)); // Write mixed output signals to DAC
-  dacWrite(DAC1, (int) (constrain((a + (b / 2)), 0, 255))); // Write mixed output signals to DAC
+  //dacWrite(DAC1, (int) (constrain((a + (b / 2)), 0, 255))); // Write mixed output signals to DAC
+  dacWrite(DAC1, (int) (constrain(((a * 8 / 10) + (b / 2) + (c / 5)), 0, 255))); // Write mixed output signals to DAC
 
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
@@ -510,7 +525,7 @@ void setup() {
 
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 500); // Timer 13, 500Hz
 
-  escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit
+  escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit (experimental)
 
   // Serial setup
   Serial.begin(115200); // USB serial
@@ -553,18 +568,18 @@ void setup() {
   timerAlarmEnable(fixedTimer); // enable
 
   // wait for RC receiver to initialize
-  delay(1000);
+  while (millis() <= 1000);
 
   // Read RC signals for the first time (used for offset calculations)
 #if defined SERIAL_COMMUNICATION
-  for (int32_t i = 0; i <= 255; i++) { // We need to read the entire buffer, so we do it multiple times!
+  while (!serialInit) { // We need to read the entire buffer, so we do it until the end mark was detected!
     readSerialCommands(); // serial communication (pin 36)
   }
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
 #else
   // measure RC signals mark space ratio
-  getRcSignals();
+  readRcSignals();
 #endif
 
   // then compute the RC channel offsets:
@@ -623,7 +638,7 @@ void readSerialCommands() {
         }
       }
       else { // End marker detected
-        receivedChars[index] = '\0'; // terminate the string
+        receivedChars[index] = '\0'; // terminate the string, if end marker detected
         recvInProgress = false;
         index = 0;
         parseSerialCommands(); // Call parsing sub function
@@ -667,12 +682,16 @@ void parseSerialCommands() {
   strtokIindex = strtok(NULL, delimiter);
   right = atoi(strtokIindex);
 
-
   // Convert signals to servo pulses in ms
   pulseWidth[0] = map(axis1, 0, 100, 1000, 2000); // CH1 Steering
   pulseWidth[1] = map(axis2, 0, 100, 1000, 2000); // CH2
   pulseWidth[2] = map(axis3, 0, 100, 1000, 2000); // CH3 Throttle
   pulseWidth[3] = map(pot1, 0, 100, 1000, 2000); // Pot1 Horn
+
+  // Invert RC signals
+  invertRcSignals();
+
+  serialInit = true; // first serial data block was processed
 }
 
 //
@@ -686,6 +705,9 @@ void readPpmCommands() {
   pulseWidth[1] = 1500; // CH2
   pulseWidth[2] = valuesBuf[1]; // CH3 Throttle
   pulseWidth[3] = valuesBuf[2]; // Pot1 Horn
+
+  // Invert RC signals
+  invertRcSignals();
 }
 
 //
@@ -730,11 +752,11 @@ void showParsedData() {
 
 //
 // =======================================================================================================
-// GET RC SIGNALS
+// READ PWM RC SIGNALS
 // =======================================================================================================
 //
 
-void getRcSignals() {
+void readRcSignals() {
   // measure RC signal pulsewidth:
 
   // CH1 Steering
@@ -750,6 +772,19 @@ void getRcSignals() {
   // CH4 Additional sound trigger (RC signal with 3 positions)
   if (pwmSoundTrigger) pulseWidth[3] = pulseIn(SERVO4_PIN, HIGH, 50000);
   else pulseWidth[3] = 1500;
+
+  // Invert RC signals
+  invertRcSignals();
+}
+
+//
+// =======================================================================================================
+// INVERT RC SIGNALS (if your signals are inverted)
+// =======================================================================================================
+//
+
+void invertRcSignals() {
+  if (INDICATOR_DIR) pulseWidth[0] = map(pulseWidth[0], 0, 3000, 3000, 0); // invert direction
 }
 
 //
@@ -821,6 +856,7 @@ void triggerHorn() {
 //
 
 void triggerIndicators() {
+
   // detect left indicator trigger ( impulse length > 1700us) -------------
   if (pulseWidth[0] > (pulseMaxNeutral[0] + 20) && pulseWidth[0] < pulseMaxLimit[0]) indicatorLon = true;
   if (pulseWidth[0] < pulseMaxNeutral[0]) indicatorLon = false;
@@ -857,6 +893,9 @@ void mapThrottle() {
   // Calculate throttle dependent engine volume
   throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
 
+  // Calculate throttle dependent turbo volume
+  throttleDependentTurboVolume = map(currentThrottle, 0, 500, turboIdleVolumePercentage, 100);
+
   // reversing sound trigger signal
   if (reverseSoundMode == 1) {
     if (pulseWidth[2] <= pulseMaxNeutral[2]) {
@@ -883,9 +922,7 @@ void mapThrottle() {
   if (reverseSoundMode == 0) {
     reversingSoundOn = false;
   }
-
 }
-
 
 //
 // =======================================================================================================
@@ -1092,9 +1129,13 @@ void led() {
 void shaker() {
   int32_t shakerRpm;
 
-  if (!engineStartStop) shakerRpm = map(currentRpm, minRpm, maxRpm, shakerIdle, shakerFullThrottle);
-  else shakerRpm = shakerStartStop;
-  if (engineOn || engineStartStop) shakerMotor.pwm(shakerRpm);
+  // Set desired shaker rpm
+  if (!engineStart || !engineStop) shakerRpm = map(currentRpm, minRpm, maxRpm, shakerIdle, shakerFullThrottle);
+  if (engineStart) shakerRpm = shakerStart;
+  if (engineStop) shakerRpm = shakerStop;
+
+  // Shaker on
+  if (engineOn || engineStart || engineStop) shakerMotor.pwm(shakerRpm);
   else shakerMotor.off();
 }
 
@@ -1132,7 +1173,6 @@ unsigned long loopDuration() {
 
 void loop() {
 
-
 #if defined  SERIAL_COMMUNICATION
   readSerialCommands(); // Serial communication (pin 36)
   showParsedData();
@@ -1140,7 +1180,7 @@ void loop() {
   readPpmCommands(); // PPM communication (pin 34)
 #else
   // measure RC signals mark space ratio
-  getRcSignals();
+  readRcSignals();
 #endif
 
   // Horn triggering
