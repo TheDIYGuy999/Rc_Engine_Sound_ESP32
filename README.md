@@ -14,6 +14,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Gear shifting is simulated in "curves.h"
 - Light effects: headlights, tail lights, brake lights, reversing light, blue light
 - Engine vibration simulation, using a shaker motor with excentric weight
+- Vehicle mass simulation (connect your crawler type ESC to pin 33)
 - Use an ESP32, CPU frequency must be set to 240MHz
 
 ## New in V 0.1:
@@ -182,5 +183,11 @@ First prototype
 Micro RC receiver wiring (with RC signal and serial connections)
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/receiver_wiring.jpg)
 
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Bestueckt_oben.jpg)
 
-2019, TheDIYGuy999
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/oben.jpg)
+
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/unten.jpg)
+
+
+2019 - 2020, TheDIYGuy999
