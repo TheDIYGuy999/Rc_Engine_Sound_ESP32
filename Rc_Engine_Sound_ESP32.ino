@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.1; // Software revision.
+const float codeVersion = 2.2; // Software revision.
 
 //
 // =======================================================================================================
@@ -21,6 +21,7 @@ const float codeVersion = 2.1; // Software revision.
 // DEBUG can slow down the playback loop! Only comment them out for debugging
 //#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
+#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
 //
 // =======================================================================================================
@@ -59,17 +60,20 @@ const float codeVersion = 2.1; // Software revision.
 #define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle)
 #define SERVO4_PIN 27 // connect to RC receiver servo output channel 4 (rudder, pot)
 
-#define ESC_OUT_PIN 33 // connect ESC here (experimental)
+#define ESC_OUT_PIN 33 // connect crawler  ESC here (experimental, use it at your own risk!)
 
 #define HEADLIGHT_PIN 0 // White headllights
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights
 #define INDICATOR_LEFT_PIN 2 // Orange left indicator (turn signal) light
 #define INDICATOR_RIGHT_PIN 4 // Orange right indicator (turn signal) light
-#define BEACON_LIGHT2_PIN 16 // Blue beacons light
-#define BEACON_LIGHT1_PIN 17 // Blue beacons light
-#define REVERSING_LIGHT_PIN 5 // White reversing light
-#define FOGLIGHT_PIN 19 // Foglights
+#define FOGLIGHT_PIN 16 // (RX2) Fog lights
+#define REVERSING_LIGHT_PIN 17 // (TX2) White reversing light
+#define ROOFLIGHT_PIN 5 // Roof lights
 #define SIDELIGHT_PIN 18 // Side lights
+
+#define BEACON_LIGHT2_PIN 19 // Blue beacons light
+#define BEACON_LIGHT1_PIN 21 // Blue beacons light
+
 #define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling)
 
 #define DAC1 25 // connect pin25 (do not change the pin) to a 10kOhm resistor
@@ -78,16 +82,17 @@ const float codeVersion = 2.1; // Software revision.
 // 10kOhm potentiometer. The other outer leg connects to GND. The middle leg connects to both inputs
 // of a PAM8403 amplifier and allows to adjust the volume. This way, two speakers can be used.
 
-// Status LED objects (also used for PWM shaker motor)
+// Status LED objects (also used for PWM shaker motor and ESC control)
 statusLED headLight(false); // "false" = output not inversed
 statusLED tailLight(false);
 statusLED indicatorL(false);
 statusLED indicatorR(false);
+statusLED fogLight(false);
+statusLED reversingLight(false);
+statusLED roofLight(false);
+statusLED sideLight(false);
 statusLED beaconLight1(false);
 statusLED beaconLight2(false);
-statusLED reversingLight(false);
-statusLED fogLight(false);
-statusLED sideLight(false);
 statusLED shakerMotor(false);
 statusLED escOut(false);
 
@@ -113,6 +118,7 @@ volatile boolean lightsOn = false;              // Lights on
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean slowingDown = false;           // Engine is slowing down
+volatile boolean escIsBraking = false;          // ESC is in a braking state
 
 volatile boolean hornSwitch = false;            // Switch state for horn triggering
 volatile boolean sirenSwitch = false;           // Switch state for siren triggering
@@ -122,14 +128,18 @@ boolean indicatorLon = false;                   // Left indicator
 boolean indicatorRon = false;                   // Right indicator
 
 uint32_t currentThrottle = 0;                   // 0 - 500
+boolean throttleReverse;                        // false = forward, true = reverse
 uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
 
-uint16_t pulseMaxNeutral[4];                    // PWM signal configuration storage variables
+uint16_t pulseMaxNeutral[4];                    // PWM input signal configuration storage variables
 uint16_t pulseMinNeutral[4];
 uint16_t pulseMax[4];
 uint16_t pulseMin[4];
 uint16_t pulseMaxLimit[4];
 uint16_t pulseMinLimit[4];
+
+uint16_t escPulseMax;                           // ESC calibration variables
+uint16_t escPulseMin;
 
 volatile boolean pulseAvailable;                // RC signal pulses are coming in
 
@@ -413,7 +423,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   // Group "b" (multiple sounds are mixed together) ----------------------------------------------
 
   // Reversing beep sound "b1" ----
-  if (reversingSoundOn) {
+  if (reversingSoundOn && !escIsBraking) {
     fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -517,11 +527,12 @@ void setup() {
   tailLight.begin(TAILLIGHT_PIN, 2, 500); // Timer 2, 500Hz
   indicatorL.begin(INDICATOR_LEFT_PIN, 3, 500); // Timer 3, 500Hz
   indicatorR.begin(INDICATOR_RIGHT_PIN, 4, 500); // Timer 4, 500Hz
-  beaconLight1.begin(BEACON_LIGHT1_PIN, 5, 500); // Timer 5, 500Hz
-  beaconLight2.begin(BEACON_LIGHT2_PIN, 6, 500); // Timer 6, 500Hz
-  reversingLight.begin(REVERSING_LIGHT_PIN, 7, 500); // Timer 7, 500Hz
-  fogLight.begin(FOGLIGHT_PIN, 8, 500); // Timer 8, 500Hz
-  sideLight.begin(SIDELIGHT_PIN, 9, 500); // Timer 9, 500Hz
+  fogLight.begin(FOGLIGHT_PIN, 5, 500); // Timer 5, 500Hz
+  reversingLight.begin(REVERSING_LIGHT_PIN, 6, 500); // Timer 6, 500Hz
+  roofLight.begin(ROOFLIGHT_PIN, 7, 500); // Timer 7, 500Hz
+  sideLight.begin(SIDELIGHT_PIN, 8, 500); // Timer 8, 500Hz
+  beaconLight1.begin(BEACON_LIGHT1_PIN, 9, 500); // Timer 9, 500Hz
+  beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 500); // Timer 10, 500Hz
 
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 500); // Timer 13, 500Hz
 
@@ -600,6 +611,7 @@ void setup() {
 
   // Calculate RC signal ranges for all channels (0, 1, 2, 3)
   for (uint8_t i = 0; i <= 3; i++) {
+    // Input signals
     pulseMaxNeutral[i] = pulseZero[i] + pulseNeutral;
     pulseMinNeutral[i] = pulseZero[i] - pulseNeutral;
     pulseMax[i] = pulseZero[i] + pulseSpan;
@@ -607,6 +619,9 @@ void setup() {
     pulseMaxLimit[i] = pulseZero[i] + pulseLimit;
     pulseMinLimit[i] = pulseZero[i] - pulseLimit;
   }
+  // ESC output
+  escPulseMax = pulseZero[2] + escPulseSpan;
+  escPulseMin = pulseZero[2] - escPulseSpan;
 }
 
 //
@@ -885,16 +900,26 @@ void mapThrottle() {
     if (pulseWidth[2] > pulseMax[2]) pulseWidth[2] = pulseMax[2];
 
     // calculate a throttle value from the pulsewidth signal
-    if (pulseWidth[2] > pulseMaxNeutral[2]) currentThrottle = map(pulseWidth[2], pulseMaxNeutral[2], pulseMax[2], 0, 500);
-    else if (pulseWidth[2] < pulseMinNeutral[2]) currentThrottle = map(pulseWidth[2], pulseMinNeutral[2], pulseMin[2], 0, 500);
-    else currentThrottle = 0;
+    if (pulseWidth[2] > pulseMaxNeutral[2]) {
+      currentThrottle = map(pulseWidth[2], pulseMaxNeutral[2], pulseMax[2], 0, 500);
+      throttleReverse = false;
+    }
+    else if (pulseWidth[2] < pulseMinNeutral[2]) {
+      currentThrottle = map(pulseWidth[2], pulseMinNeutral[2], pulseMin[2], 0, 500);
+      throttleReverse = true;
+    }
+    else {
+      currentThrottle = 0;
+    }
   }
 
   // Calculate throttle dependent engine volume
-  throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
+  if (!escIsBraking) throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
+  else throttleDependentVolume = engineIdleVolumePercentage;
 
-  // Calculate throttle dependent turbo volume
-  throttleDependentTurboVolume = map(currentThrottle, 0, 500, turboIdleVolumePercentage, 100);
+  // Calculate engine rpm dependent turbo volume
+  if (!escIsBraking) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
+  else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
   // reversing sound trigger signal
   if (reverseSoundMode == 1) {
@@ -945,7 +970,7 @@ void engineMassSimulation() {
 
 
     // Accelerate engine
-    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2) {
+    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && !escIsBraking) {
       if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
         currentRpm += acc;
         if (currentRpm > maxRpm) currentRpm = maxRpm;
@@ -953,7 +978,7 @@ void engineMassSimulation() {
     }
 
     // Decelerate engine
-    if (mappedThrottle < currentRpm) {
+    if (mappedThrottle < currentRpm || escIsBraking) {
       currentRpm -= dec;
       if (currentRpm < minRpm) currentRpm = minRpm;
     }
@@ -1114,6 +1139,10 @@ void led() {
   if (lightsOn && !mode2) fogLight.on();
   else fogLight.off();
 
+  // Roof lights (serial control mode only) ----
+  if (lightsOn && !mode1) roofLight.on();
+  else roofLight.off();
+
   // Sidelights ----
   if (engineOn) sideLight.on();
   else sideLight.off();
@@ -1142,14 +1171,105 @@ void shaker() {
 
 //
 // =======================================================================================================
-// SERVO (CONTROLLING SERVOS & ESC)
+// ESC CONTROL
 // =======================================================================================================
 //
 
-void servo() {
-  uint32_t escInput = map(currentRpm, minRpm, maxRpm, 3855, 7710); // 15, 30
-  escOut.pwm(escInput);
+// If you connect your ESC to pin 33, the vehicle mass is simulated. Direct brake (crawler) ESC required
+// *** WARNING!! Do it at your own risk!! If the ESP32 crashes, vehicle could get out of control!! ***
+
+void esc() {
+  static uint32_t escPulseWidth = 1500;
+  static uint32_t escSignal;
+  static unsigned long escMillis;
+  static unsigned long lastStateTime;
+  static int8_t pulse; // -1 = reverse, 0 = neutral, 1 = forward
+  static int8_t escPulse; // -1 = reverse, 0 = neutral, 1 = forward
+  static int8_t driveState = 0; // for state machine down below
+  static int8_t rampRate;
+
+  if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
+    escMillis = millis();
+
+    // calulate throttle dependent brake steps
+    rampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
+
+    // Comparators
+    if (pulseWidth[2] > pulseMaxNeutral[2] && pulseWidth[2] < pulseMaxLimit[2]) pulse = 1; // Forward
+    else if (pulseWidth[2] < pulseMinNeutral[2] && pulseWidth[2] > pulseMinLimit[2]) pulse = -1; // Backwards
+    else pulse = 0; // Neutral
+
+    if (escPulseWidth > pulseMaxNeutral[2] && escPulseWidth < pulseMaxLimit[2]) escPulse = 1; // Forward
+    else if (escPulseWidth < pulseMinNeutral[2] && escPulseWidth > pulseMinLimit[2]) escPulse = -1; // Backwards
+    else escPulse = 0; // Neutral
+
+#ifdef DRIVE_STATE_DEBUG
+    if (millis() - lastStateTime > 300) { // Print the data every 300ms
+      lastStateTime = millis();
+      Serial.println(driveState);
+      Serial.println(pulse);
+      Serial.println(escPulse);
+      Serial.println(escPulseMin);
+      Serial.println(escPulseMax);
+      Serial.println(rampRate);
+      Serial.println("");
+    }
+#endif
+
+    // Drive state state machine
+    switch (driveState) {
+
+      case 0: // Standing still ---------------------------------------------------------------------
+        escIsBraking = false;
+        escPulseWidth = pulseZero[2];  // ESC to neutral position
+
+        if (pulse == 1) driveState = 1; // Driving forward
+        if (pulse == -1) driveState = 3; // Driving backwards
+        break;
+
+      case 1: // Driving forward ---------------------------------------------------------------------
+        escIsBraking = false;
+        if (escPulseWidth < pulseWidth[2]) escPulseWidth ++;
+        if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth --;
+
+        if (pulse == -1 && escPulse == 1) driveState = 2; // Braking forward
+        if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
+        break;
+
+      case 2: // Braking forward ---------------------------------------------------------------------
+        escIsBraking = true;
+        if (escPulseWidth > pulseZero[2]) escPulseWidth -= rampRate; // brake with variable deceleration
+
+        if (pulse == 0 && escPulse == 1) driveState = 1; // Driving forward
+        if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
+        break;
+
+      case 3: // Driving backwards ---------------------------------------------------------------------
+        escIsBraking = false;
+        if (escPulseWidth > pulseWidth[2]) escPulseWidth --;
+        if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth ++;
+
+        if (pulse == 1 && escPulse == -1) driveState = 4; // Braking backwards
+        if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
+        break;
+
+      case 4: // Braking backwards ---------------------------------------------------------------------
+        escIsBraking = true;
+        if (escPulseWidth < pulseZero[2]) escPulseWidth += rampRate; // brake with variable deceleration
+
+        if (pulse == 0 && escPulse == 1) driveState = 3; // Driving backwards
+        if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
+        break;
+
+    } // End of state machine
+
+
+    // ESC control
+    escSignal = map(escPulseWidth, escPulseMin, escPulseMax, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534)
+    escOut.pwm(escSignal);
+  }
 }
+
 //
 // =======================================================================================================
 // LOOP TIME MEASUREMENT
@@ -1214,8 +1334,8 @@ void Task1code(void *pvParameters) {
     // Shaker control
     shaker();
 
-    // Servo control
-    servo();
+    // ESC control (experimental, optional)
+    esc();
 
     // measure loop time
     loopTime = loopDuration();

@@ -132,6 +132,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Indicator direction adjustable with "INDICATOR_DIR" = "true" or "false"
 - Shaker rpm now adjustable for engine start, idle, full throttle & shutdown
 
+## New in V 2.2:
+- Support for crawler ESC (with direct brake) on pin 33. Vehicle mass simulation with proportional brake! Tested in Tamiya King Hauler (REELY Model No H0050 ESC) and working fine, but use it at your own risk! If you want to test it, connect ESC to pin 33 instead of the receiver output.
+- LED pins rearranged  to fit my board layout (you can change it in the pin assignment section)
+- Scania R620 sound added
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds

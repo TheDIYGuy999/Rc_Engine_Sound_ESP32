@@ -6,7 +6,7 @@
 // **********************************************************************************************************************
 // Choose the receiver communication mode (never uncomment both! If both commented out, classic RC signal communication)--
 // Serial communication --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
 // PPM communication --------
@@ -37,13 +37,14 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "ScaniaV8Idle.h" // Scania V8
 //#include "ScaniaR500V8Idle.h" // Scania R500 V8
+//#include "ScaniaR620V8Idle.h" // Scania R620 V8 (a bit thin, add about 80% turbo volume)
 //#include "UralV8Idle.h" // Ural 4320 V8
 //#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
 //#include "HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "DetroitDieselIdle.h" // Detroit Diesel generic Truck
 //#include "DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
 //#include "DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
-//#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start)
+//#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
 //#include "Cat3406BIdle.h" // Caterpillar 3406B idle
 //#include "ActrosV8Idle.h" // MB Actros V8 Truck Idle (not very good)
@@ -111,9 +112,14 @@ const boolean INDICATOR_DIR = true; // adjust indicator direction with true or f
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 
-// PWM signal range calibration -----------------------------------------------------------------------------------------
+// PWM input signal range calibration ------------------------------------------------------------------------------------
 const uint16_t pulseNeutral = 20; // pulseZero +/- this value (20) is the neutral range
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
+
+// PWM ESC output signal range calibration -------------------------------------------------------------------------------
+const uint16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 800 for King Hauler)
+const uint8_t escRampTime = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
+const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 3 for King Hauler)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
 const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"
@@ -126,7 +132,7 @@ const boolean directBrake = false; // true = ESC is braking immediately, if thro
 const boolean shifted = false; // false = linear rpm curve, true = shifting points
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
-const uint8_t shakerStart = 95; // Shaker power while engine start (max. 255, about 95)
+const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
 const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
 const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
 const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
@@ -136,7 +142,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 const boolean engineManualOnOff = false;
 
 // Engine RPM range (2 for big Diesels, 4 for fast running motors)
-const uint32_t TOP_SPEED_MULTIPLIER = 3; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
+const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
 const int8_t acc = 3; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
