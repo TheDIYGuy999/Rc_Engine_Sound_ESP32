@@ -99,8 +99,8 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 //#include "M2Fire.h" // M2 salve
 
 // Choose the reversing beep sound --------
-volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = reverse (direction)
-volatile int reversingVolumePercentage = 40; // Adjust the reversing sound volume (usually = 40%, never more than 100%!)
+//volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = reverse (direction) TODO
+volatile int reversingVolumePercentage = 30; // Adjust the reversing sound volume (usually = 40%, never more than 100%!)
 #include "TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator options --------
@@ -117,9 +117,9 @@ const uint16_t pulseNeutral = 20; // pulseZero +/- this value (20) is the neutra
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
 // PWM ESC output signal range calibration -------------------------------------------------------------------------------
-const uint16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 800 for King Hauler)
+const uint16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
 const uint8_t escRampTime = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
-const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 3 for King Hauler)
+const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 5 for King Hauler)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
 const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"

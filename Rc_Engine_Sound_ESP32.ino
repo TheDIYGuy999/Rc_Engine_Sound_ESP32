@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.2; // Software revision.
+const float codeVersion = 2.3; // Software revision.
 
 //
 // =======================================================================================================
@@ -18,10 +18,12 @@ const float codeVersion = 2.2; // Software revision.
 // All the required vehicle specific settings are done in Adjustments.h!
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
-// DEBUG can slow down the playback loop! Only comment them out for debugging
+// DEBUG options can slow down the playback loop! Only comment them out for debugging
 //#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
-#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+//#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+
+// TODO = Things to clean up!
 
 //
 // =======================================================================================================
@@ -105,20 +107,24 @@ volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = sto
 volatile uint8_t soundNo = 0; // 0 = horn, 1 = siren, 2 = sound1
 
 volatile boolean engineOn = false;              // Signal for engine on / off
-volatile boolean engineStart = false;           // Active, if engine is starting down
+volatile boolean engineStart = false;           // Active, if engine is starting up
+volatile boolean engineRunning = false;         // Active, if engine is running
 volatile boolean engineStop = false;            // Active, if engine is shutting down
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sirenOn = false;               // Signal for siren  on / off
 volatile boolean sound1On = false;              // Signal for sound1  on / off
-volatile boolean reversingSoundOn = false;      // active during backing up
+volatile boolean reversingSoundOn = false;      // active during backing up TODO
 volatile boolean indicatorSoundOn = false;      // active, if indicator bulb is on
 
 volatile boolean lightsOn = false;              // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
-volatile boolean slowingDown = false;           // Engine is slowing down
+//volatile boolean slowingDown = false;           // Engine is slowing down TODO
+
 volatile boolean escIsBraking = false;          // ESC is in a braking state
+volatile boolean escInReverse = false;          // ESC is driving or braking backwards
+int8_t driveState = 0;                          // for ESC state machine
 
 volatile boolean hornSwitch = false;            // Switch state for horn triggering
 volatile boolean sirenSwitch = false;           // Switch state for siren triggering
@@ -238,6 +244,8 @@ void IRAM_ATTR variablePlaybackTimer() {
         curStartSample = 0;
         engineState = 2;
         engineStart = false;
+        engineRunning = true;
+        airBrakeTrigger = true;
       }
       break;
 
@@ -285,6 +293,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         attenuator = 1;
         engineState = 3;
         engineStop = true;
+        engineRunning = false;
       }
       break;
 
@@ -315,7 +324,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 4: // brake air sound after engine is off ----
+    case 4: // brake bleeding air sound after engine is off ----
       variableTimerTicks = 4000000 / brakeSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -417,13 +426,14 @@ void IRAM_ATTR fixedPlaybackTimer() {
         }
       }
       break;
-
+      
   } // end of switch case
 
   // Group "b" (multiple sounds are mixed together) ----------------------------------------------
 
   // Reversing beep sound "b1" ----
-  if (reversingSoundOn && !escIsBraking) {
+  if (engineRunning && escInReverse) {
+  //if (reversingSoundOn && !escIsBraking) { TODO
     fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -890,7 +900,7 @@ void triggerIndicators() {
 
 void mapThrottle() {
 
-  static unsigned long reversingMillis;
+  static unsigned long reversingMillis; // TODO
 
   // Input is around 1000 - 2000us, output 0-500 for forward and backwards
 
@@ -914,15 +924,15 @@ void mapThrottle() {
   }
 
   // Calculate throttle dependent engine volume
-  if (!escIsBraking) throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
+  if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
   else throttleDependentVolume = engineIdleVolumePercentage;
 
   // Calculate engine rpm dependent turbo volume
-  if (!escIsBraking) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
+  if (!escIsBraking && engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
-  // reversing sound trigger signal
-  if (reverseSoundMode == 1) {
+  // reversing sound trigger signal (TODO)
+  /*if (reverseSoundMode == 1) {
     if (pulseWidth[2] <= pulseMaxNeutral[2]) {
       reversingMillis = millis();
     }
@@ -946,7 +956,7 @@ void mapThrottle() {
 
   if (reverseSoundMode == 0) {
     reversingSoundOn = false;
-  }
+  }*/
 }
 
 //
@@ -970,7 +980,7 @@ void engineMassSimulation() {
 
 
     // Accelerate engine
-    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && !escIsBraking) {
+    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && !escIsBraking && engineRunning) {
       if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
         currentRpm += acc;
         if (currentRpm > maxRpm) currentRpm = maxRpm;
@@ -988,9 +998,9 @@ void engineMassSimulation() {
     currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
   }
 
-  // Brake light trigger
-  if (mappedThrottle < (currentRpm - 200)) slowingDown = true;
-  if (mappedThrottle >= (currentRpm - 10)) slowingDown = false;
+  // Brake light trigger TODO
+  /*if (mappedThrottle < (currentRpm - 200)) slowingDown = true;
+  if (mappedThrottle >= (currentRpm - 10)) slowingDown = false;*/
 
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
@@ -1053,7 +1063,7 @@ void engineOnOff() {
   }
 
   else { // Engine automatically switched on or off depending on throttle position and 15s delay timne
-    if (currentThrottle > 80) idleDelayMillis = millis(); // reset delay timer, if throttle not in neutral
+    if (currentThrottle > 80 || driveState != 0) idleDelayMillis = millis(); // reset delay timer, if throttle not in neutral
 
     if (millis() - idleDelayMillis > 15000) {
       engineOn = false; // after delay, switch engine off
@@ -1063,12 +1073,12 @@ void engineOnOff() {
       lightsOn = false; // after delay, switch light off
     }
 
-    // air brake noise trigggering
-    if (millis() - idleDelayMillis > 1000) {
+    // air brake noise trigggering TODO
+    /*if (millis() - idleDelayMillis > 1000) {
       if (EngineWasAboveIdle) {
         airBrakeTrigger = true; // after delay, trigger air brake noise
       }
-    }
+    }*/
 
     // Engine start detection
     if (currentThrottle > 100 && !airBrakeTrigger) {
@@ -1088,7 +1098,8 @@ void engineOnOff() {
 void led() {
 
   // Reversing light ----
-  if (reversingSoundOn) reversingLight.on();
+  //if (reversingSoundOn) reversingLight.on();
+  if (engineRunning && escInReverse) reversingLight.on();
   else reversingLight.off();
 
   // Beacons (blue light) ----
@@ -1110,8 +1121,9 @@ void led() {
   // Headlights, tail lights ----
   if (lightsOn) {
     headLight.on();
-    if (slowingDown) tailLight.on();
-    else tailLight.pwm(50);
+    //if (slowingDown) tailLight.on();  // Brake lights (full brightness) TODO
+    if (escIsBraking) tailLight.on();  // Brake lights (full brightness)
+    else tailLight.pwm(50); // Taillights (reduced brightness)
   }
   else {
     headLight.off();
@@ -1159,12 +1171,12 @@ void shaker() {
   int32_t shakerRpm;
 
   // Set desired shaker rpm
-  if (!engineStart || !engineStop) shakerRpm = map(currentRpm, minRpm, maxRpm, shakerIdle, shakerFullThrottle);
+  if (engineRunning) shakerRpm = map(currentRpm, minRpm, maxRpm, shakerIdle, shakerFullThrottle);
   if (engineStart) shakerRpm = shakerStart;
   if (engineStop) shakerRpm = shakerStop;
 
   // Shaker on
-  if (engineOn || engineStart || engineStop) shakerMotor.pwm(shakerRpm);
+  if (engineRunning || engineStart || engineStop) shakerMotor.pwm(shakerRpm);
   else shakerMotor.off();
 }
 
@@ -1185,7 +1197,6 @@ void esc() {
   static unsigned long lastStateTime;
   static int8_t pulse; // -1 = reverse, 0 = neutral, 1 = forward
   static int8_t escPulse; // -1 = reverse, 0 = neutral, 1 = forward
-  static int8_t driveState = 0; // for state machine down below
   static int8_t rampRate;
 
   if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
@@ -1221,14 +1232,16 @@ void esc() {
 
       case 0: // Standing still ---------------------------------------------------------------------
         escIsBraking = false;
+        escInReverse = false;
         escPulseWidth = pulseZero[2];  // ESC to neutral position
 
-        if (pulse == 1) driveState = 1; // Driving forward
-        if (pulse == -1) driveState = 3; // Driving backwards
+        if (pulse == 1 && engineRunning) driveState = 1; // Driving forward
+        if (pulse == -1 && engineRunning) driveState = 3; // Driving backwards
         break;
 
       case 1: // Driving forward ---------------------------------------------------------------------
         escIsBraking = false;
+        escInReverse = false;
         if (escPulseWidth < pulseWidth[2]) escPulseWidth ++;
         if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth --;
 
@@ -1238,14 +1251,22 @@ void esc() {
 
       case 2: // Braking forward ---------------------------------------------------------------------
         escIsBraking = true;
+        escInReverse = false;
         if (escPulseWidth > pulseZero[2]) escPulseWidth -= rampRate; // brake with variable deceleration
 
-        if (pulse == 0 && escPulse == 1) driveState = 1; // Driving forward
-        if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
+        if (pulse == 0 && escPulse == 1) {
+          driveState = 1; // Driving forward
+          airBrakeTrigger = true;
+        }
+        if (pulse == 0 && escPulse == 0) {
+          driveState = 0; // standing still
+          airBrakeTrigger = true;
+        }
         break;
 
       case 3: // Driving backwards ---------------------------------------------------------------------
         escIsBraking = false;
+        escInReverse = true;
         if (escPulseWidth > pulseWidth[2]) escPulseWidth --;
         if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth ++;
 
@@ -1255,10 +1276,17 @@ void esc() {
 
       case 4: // Braking backwards ---------------------------------------------------------------------
         escIsBraking = true;
+        escInReverse = true;
         if (escPulseWidth < pulseZero[2]) escPulseWidth += rampRate; // brake with variable deceleration
 
-        if (pulse == 0 && escPulse == 1) driveState = 3; // Driving backwards
-        if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
+        if (pulse == 0 && escPulse == 1) {
+          driveState = 3; // Driving backwards
+          airBrakeTrigger = true;
+        }
+        if (pulse == 0 && escPulse == 0) {
+          driveState = 0; // standing still
+          airBrakeTrigger = true;
+        }
         break;
 
     } // End of state machine

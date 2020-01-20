@@ -134,15 +134,21 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Shaker rpm now adjustable for engine start, idle, full throttle & shutdown
 
 ## New in V 2.2:
-- Support for crawler ESC (with direct brake) on pin 33. Vehicle mass simulation with proportional brake! Tested in Tamiya King Hauler (REELY Model No H0050 ESC) and working fine, but use it at your own risk! If you want to test it, connect ESC to pin 33 instead of the receiver output.
+- Support for crawler ESC (with direct brake) on pin 33. Vehicle mass simulation with proportional brake! Tested in Tamiya King Hauler (REELY Model No H0050 ESC) and working fine, but use it at your own risk! If you want to test it, connect ESC to pin 33 of the ESP32 instead of the receiver output.
 - LED pins rearranged  to fit my board layout (you can change it in the pin assignment section)
 - Scania R620 sound added
+
+## New in V 2.3:
+- Reversing light, reversing beep and brake light behaviour changed in order to interact correctly with the new vehicle mass simulation
+- ESC is locked, if engine is not running ;-)
+- Air brake sound now triggered correctly, as soon as the brake pedal is released
+- I'm really amazed about this update! The vecihle almost behaves like a real truck now.
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
+- adding brake sound
 - cleaning up code
-- rewriting sound triggering
 - adding schematic for LED wiring (for now pinout see code)
 
 ## Ho to create new sound arrays:
