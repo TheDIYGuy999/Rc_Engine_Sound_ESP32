@@ -6,11 +6,11 @@
 // **********************************************************************************************************************
 // Choose the receiver communication mode (never uncomment both! If both commented out, classic RC signal communication)--
 // Serial communication --------
-#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
 // PPM communication --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 
@@ -22,9 +22,9 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "ScaniaR500V8Start.h" // Scania R500 V8 Start
 //#include "UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available)
 //#include "HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
-//#include "DefenderV8Start.h" // Land Rover Defender V8 Start
+#include "DefenderV8Start.h" // Land Rover Defender V8 Start
 //#include "JaguarXjsHeStart.h" // Jaguar XJS HE Starts
-#include "KenworthW900Start.h" // Kenworth W900 Truck Start
+//#include "KenworthW900Start.h" // Kenworth W900 Truck Start
 //#include "MackStart.h" // Mack Truck Start
 //#include "DetroitDieselStart.h" // Detroit Diesel generic Truck Start
 //#include "Cat3404BStart.h" // Caterpillar 3406B start
@@ -48,9 +48,9 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
 //#include "Cat3406BIdle.h" // Caterpillar 3406B idle
 //#include "ActrosV8Idle.h" // MB Actros V8 Truck Idle (not very good)
-#include "KenworthW900Idle.h" // Kenworth W900 Truck Idle
+//#include "KenworthW900Idle.h" // Kenworth W900 Truck Idle
 //#include "MackIdle.h" // Mack Truck Idle
-//#include "DefenderV8Idle.h" // Land Rover Defender V8
+#include "DefenderV8Idle.h" // Land Rover Defender V8
 //#include "Mustang68Idle.h" // Ford Mustang 1968
 //#include "DodgeChallenger70Idle.h" // 1970 Dodge Challenger
 //#include "MgBGtV8Idle.h" // MG B GT V8
@@ -64,7 +64,7 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "1000Hz.h" // 1000Hz test tone
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 100; // Adjust the turbo volume (usually = 100%, never more!)
+volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 100%, never more!)
 volatile int turboIdleVolumePercentage = 10; // the turbo volume will be throttle dependent (usually = 10%, never more than 100%!)
 #include "TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
@@ -113,10 +113,10 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 
 // PWM input signal range calibration ------------------------------------------------------------------------------------
-const uint16_t pulseNeutral = 20; // pulseZero +/- this value (20) is the neutral range
+const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
-// PWM ESC output signal range calibration -------------------------------------------------------------------------------
+// PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
 const uint16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
 const uint8_t escRampTime = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
 const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 5 for King Hauler)

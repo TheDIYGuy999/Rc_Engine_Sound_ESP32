@@ -144,6 +144,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Air brake sound now triggered correctly, as soon as the brake pedal is released
 - I'm really amazed about this update! The vecihle almost behaves like a real truck now.
 
+## New in V 2.4:
+- Bug fixed: direct transition from state "braking backwards" to "driving backwards" now working
+- failsafe function for serial signal added. Emergency brake is triggered in case of RC signal loss (serial & PWM mode only, PPM will follow)
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds

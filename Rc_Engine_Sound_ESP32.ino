@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.3; // Software revision.
+const float codeVersion = 2.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -19,7 +19,7 @@ const float codeVersion = 2.3; // Software revision.
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
-//#define DEBUG // uncomment it for general debugging informations
+#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
@@ -101,6 +101,9 @@ statusLED escOut(false);
 // Define global variables
 
 boolean serialInit = false;
+
+volatile boolean failSafe = false;              // Triggered in emergency situations like: serial signal lost etc.
+volatile int8_t ppmFailsafeCounter = 0;
 
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
 
@@ -426,14 +429,14 @@ void IRAM_ATTR fixedPlaybackTimer() {
         }
       }
       break;
-      
+
   } // end of switch case
 
   // Group "b" (multiple sounds are mixed together) ----------------------------------------------
 
   // Reversing beep sound "b1" ----
   if (engineRunning && escInReverse) {
-  //if (reversingSoundOn && !escIsBraking) { TODO
+    //if (reversingSoundOn && !escIsBraking) { TODO
     fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -487,10 +490,15 @@ void IRAM_ATTR fixedPlaybackTimer() {
 // =======================================================================================================
 //
 
-void readPpm() {
+void IRAM_ATTR readPpm() {
   unsigned long timenew = micros();
   unsigned long timediff = timenew - timelast;
   timelast = timenew;
+
+  // reset ppm failsafe trigger signals
+  ppmFailsafeCounter = 0;
+  failSafe = false;
+
   if (timediff > 2500) {  // Synch gap detected:
     valuesInt[NUM_OF_CHL] = valuesInt[NUM_OF_CHL] + timediff; // add time
     counter = 0;
@@ -645,14 +653,19 @@ const int32_t numChars = 256;
 char receivedChars[numChars];
 
 void readSerialCommands() {
+  static unsigned long lastSerialRcv;
   static boolean recvInProgress = false;
   static byte index = 0;
   char startMarker = '<'; // Indicates the begin of our data
   char endMarker = '>'; // Indicates the end of our data
   char currentChar; // The currently read character
 
+  if (millis() - lastSerialRcv > 300) failSafe = true; // Set failsafe mode, if serial command watchdog was triggered
+  else failSafe = false;
+
   if (Serial2.available() > 0) {
     currentChar = Serial2.read();
+    lastSerialRcv = millis();
 
     if (recvInProgress == true) {
       if (currentChar != endMarker) { // End marker not yet detected
@@ -674,6 +687,10 @@ void readSerialCommands() {
       recvInProgress = true;
     }
   }
+
+  // Falisafe for RC signals
+  failsafeRcSignals();
+
 }
 
 // Parsing sub function ----
@@ -733,6 +750,9 @@ void readPpmCommands() {
 
   // Invert RC signals
   invertRcSignals();
+
+  // Falisafe for RC signals
+  failsafeRcSignals();
 }
 
 //
@@ -793,6 +813,8 @@ void readRcSignals() {
 
   // CH3 Throttle
   pulseWidth[2] = pulseIn(SERVO3_PIN, HIGH, 50000);
+  if (pulseWidth[2] == 0) failSafe = true; // 0, if timeout (signal loss)
+  else failSafe = false;
 
   // CH4 Additional sound trigger (RC signal with 3 positions)
   if (pwmSoundTrigger) pulseWidth[3] = pulseIn(SERVO4_PIN, HIGH, 50000);
@@ -800,6 +822,9 @@ void readRcSignals() {
 
   // Invert RC signals
   invertRcSignals();
+
+  // Falisafe for RC signals
+  failsafeRcSignals();
 }
 
 //
@@ -809,7 +834,31 @@ void readRcSignals() {
 //
 
 void invertRcSignals() {
-  if (INDICATOR_DIR) pulseWidth[0] = map(pulseWidth[0], 0, 3000, 3000, 0); // invert direction
+  if (INDICATOR_DIR) pulseWidth[0] = map(pulseWidth[0], 0, 3000, 3000, 0); // invert steering direction
+}
+
+//
+// =======================================================================================================
+// RC SIGNAL FAILSAFE POSITIONS (if serial signal lost)
+// =======================================================================================================
+//
+
+void failsafeRcSignals() {
+
+  // PPM signal surveillance (serial & PWM communication does not need any actions here) --------
+#if defined PPM_COMMUNICATION
+  static unsigned long ppmFailsafeMillis;
+
+  if (millis() - ppmFailsafeMillis > 50) { // Every 50ms
+    ppmFailsafeMillis = millis();
+
+    if (ppmFailsafeCounter < 10) ppmFailsafeCounter ++ ; //it will be reset in the ppm interrupt
+  }
+  if (ppmFailsafeCounter > 5) failSafe = true;
+#endif
+
+  // Failsafe actions --------
+  if (failSafe) pulseWidth[2] = pulseZero[2]; // Throttle to zero position!
 }
 
 //
@@ -883,12 +932,12 @@ void triggerHorn() {
 void triggerIndicators() {
 
   // detect left indicator trigger ( impulse length > 1700us) -------------
-  if (pulseWidth[0] > (pulseMaxNeutral[0] + 20) && pulseWidth[0] < pulseMaxLimit[0]) indicatorLon = true;
+  if (pulseWidth[0] > (pulseMaxNeutral[0] + 30) && pulseWidth[0] < pulseMaxLimit[0]) indicatorLon = true;
   if (pulseWidth[0] < pulseMaxNeutral[0]) indicatorLon = false;
 
 
   // detect right indicator trigger ( impulse length < 1300us) ----------
-  if (pulseWidth[0] < (pulseMinNeutral[0] - 20) && pulseWidth[0] > pulseMinLimit[0]) indicatorRon = true;
+  if (pulseWidth[0] < (pulseMinNeutral[0] - 30) && pulseWidth[0] > pulseMinLimit[0]) indicatorRon = true;
   if (pulseWidth[0] > pulseMinNeutral[0]) indicatorRon = false;
 }
 
@@ -941,9 +990,9 @@ void mapThrottle() {
       reversingSoundOn = true;
     }
     else reversingSoundOn = false;
-  }
+    }
 
-  if (reverseSoundMode == 2) {
+    if (reverseSoundMode == 2) {
     if (pulseWidth[2] >= pulseMinNeutral[2]) {
       reversingMillis = millis();
     }
@@ -952,11 +1001,11 @@ void mapThrottle() {
       reversingSoundOn = true;
     }
     else reversingSoundOn = false;
-  }
+    }
 
-  if (reverseSoundMode == 0) {
+    if (reverseSoundMode == 0) {
     reversingSoundOn = false;
-  }*/
+    }*/
 }
 
 //
@@ -1000,7 +1049,7 @@ void engineMassSimulation() {
 
   // Brake light trigger TODO
   /*if (mappedThrottle < (currentRpm - 200)) slowingDown = true;
-  if (mappedThrottle >= (currentRpm - 10)) slowingDown = false;*/
+    if (mappedThrottle >= (currentRpm - 10)) slowingDown = false;*/
 
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
@@ -1024,7 +1073,7 @@ void engineMassSimulation() {
     Serial.println(pulseMinNeutral[3]);
     Serial.println(pulseMaxNeutral[3]);
     Serial.println(" ");
-    Serial.println(currentThrottle);
+    /*Serial.println(currentThrottle);
     Serial.println(mappedThrottle);
     Serial.println(currentRpm);
     Serial.println(currentRpmScaled);
@@ -1037,6 +1086,10 @@ void engineMassSimulation() {
     Serial.println(throttleDependentVolume);
     Serial.println(sound1On);
     Serial.println(soundNo);
+    Serial.print("PPM Failsafe Counter ");
+    Serial.println(ppmFailsafeCounter);
+    Serial.print("failSafe ");
+    Serial.println(failSafe);*/
 
   }
 #endif
@@ -1078,7 +1131,7 @@ void engineOnOff() {
       if (EngineWasAboveIdle) {
         airBrakeTrigger = true; // after delay, trigger air brake noise
       }
-    }*/
+      }*/
 
     // Engine start detection
     if (currentThrottle > 100 && !airBrakeTrigger) {
@@ -1187,8 +1240,9 @@ void shaker() {
 // =======================================================================================================
 //
 
-// If you connect your ESC to pin 33, the vehicle mass is simulated. Direct brake (crawler) ESC required
-// *** WARNING!! Do it at your own risk!! If the ESP32 crashes, vehicle could get out of control!! ***
+// If you connect your ESC to pin 33, the vehicle inertia is simulated. Direct brake (crawler) ESC required
+// *** WARNING!! Do it at your own risk!! There is a falisafe function in case, the signal input from the
+// receiver is lost, but if the ESP32 crashes, the vehicle could get out of control!! ***
 
 void esc() {
   static uint32_t escPulseWidth = 1500;
@@ -1197,22 +1251,30 @@ void esc() {
   static unsigned long lastStateTime;
   static int8_t pulse; // -1 = reverse, 0 = neutral, 1 = forward
   static int8_t escPulse; // -1 = reverse, 0 = neutral, 1 = forward
-  static int8_t rampRate;
+  static int8_t driveRampRate;
+  static int8_t brakeRampRate;
 
   if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
     escMillis = millis();
 
     // calulate throttle dependent brake steps
-    rampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
+    brakeRampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
+
+    // Emergency ramp rates for falisafe
+    if (failSafe) {
+      brakeRampRate = escBrakeSteps;
+      driveRampRate = escBrakeSteps;
+    }
+    else driveRampRate = 1;
 
     // Comparators
-    if (pulseWidth[2] > pulseMaxNeutral[2] && pulseWidth[2] < pulseMaxLimit[2]) pulse = 1; // Forward
-    else if (pulseWidth[2] < pulseMinNeutral[2] && pulseWidth[2] > pulseMinLimit[2]) pulse = -1; // Backwards
-    else pulse = 0; // Neutral
+    if (pulseWidth[2] > pulseMaxNeutral[2] && pulseWidth[2] < pulseMaxLimit[2]) pulse = 1; // 1 = Forward
+    else if (pulseWidth[2] < pulseMinNeutral[2] && pulseWidth[2] > pulseMinLimit[2]) pulse = -1; // -1 = Backwards
+    else pulse = 0; // 0 = Neutral
 
-    if (escPulseWidth > pulseMaxNeutral[2] && escPulseWidth < pulseMaxLimit[2]) escPulse = 1; // Forward
-    else if (escPulseWidth < pulseMinNeutral[2] && escPulseWidth > pulseMinLimit[2]) escPulse = -1; // Backwards
-    else escPulse = 0; // Neutral
+    if (escPulseWidth > pulseMaxNeutral[2] && escPulseWidth < pulseMaxLimit[2]) escPulse = 1; // 1 = Forward
+    else if (escPulseWidth < pulseMinNeutral[2] && escPulseWidth > pulseMinLimit[2]) escPulse = -1; // -1 = Backwards
+    else escPulse = 0; // 0 = Neutral
 
 #ifdef DRIVE_STATE_DEBUG
     if (millis() - lastStateTime > 300) { // Print the data every 300ms
@@ -1222,7 +1284,7 @@ void esc() {
       Serial.println(escPulse);
       Serial.println(escPulseMin);
       Serial.println(escPulseMax);
-      Serial.println(rampRate);
+      Serial.println(brakeRampRate);
       Serial.println("");
     }
 #endif
@@ -1242,8 +1304,8 @@ void esc() {
       case 1: // Driving forward ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = false;
-        if (escPulseWidth < pulseWidth[2]) escPulseWidth ++;
-        if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth --;
+        if (escPulseWidth < pulseWidth[2]) escPulseWidth += driveRampRate;
+        if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth -= driveRampRate;
 
         if (pulse == -1 && escPulse == 1) driveState = 2; // Braking forward
         if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
@@ -1252,7 +1314,7 @@ void esc() {
       case 2: // Braking forward ---------------------------------------------------------------------
         escIsBraking = true;
         escInReverse = false;
-        if (escPulseWidth > pulseZero[2]) escPulseWidth -= rampRate; // brake with variable deceleration
+        if (escPulseWidth > pulseZero[2]) escPulseWidth -= brakeRampRate; // brake with variable deceleration
 
         if (pulse == 0 && escPulse == 1) {
           driveState = 1; // Driving forward
@@ -1267,8 +1329,8 @@ void esc() {
       case 3: // Driving backwards ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = true;
-        if (escPulseWidth > pulseWidth[2]) escPulseWidth --;
-        if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth ++;
+        if (escPulseWidth > pulseWidth[2]) escPulseWidth -= driveRampRate;
+        if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth += driveRampRate;
 
         if (pulse == 1 && escPulse == -1) driveState = 4; // Braking backwards
         if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
@@ -1277,9 +1339,9 @@ void esc() {
       case 4: // Braking backwards ---------------------------------------------------------------------
         escIsBraking = true;
         escInReverse = true;
-        if (escPulseWidth < pulseZero[2]) escPulseWidth += rampRate; // brake with variable deceleration
+        if (escPulseWidth < pulseZero[2]) escPulseWidth += brakeRampRate; // brake with variable deceleration
 
-        if (pulse == 0 && escPulse == 1) {
+        if (pulse == 0 && escPulse == -1) {
           driveState = 3; // Driving backwards
           airBrakeTrigger = true;
         }
@@ -1362,7 +1424,7 @@ void Task1code(void *pvParameters) {
     // Shaker control
     shaker();
 
-    // ESC control (experimental, optional)
+    // ESC control (Crawler ESC with direct brake on pin 33)
     esc();
 
     // measure loop time
