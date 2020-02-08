@@ -4,13 +4,13 @@
 // converter code by bitluni (send him a high five, if you like the code)
 
 // **********************************************************************************************************************
-// Choose the receiver communication mode (never uncomment both! If both commented out, classic RC signal communication)--
+// Choose the receiver communication mode (never uncomment both! If both commented out, classic PWM RC signal communication)--
 // Serial communication --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
 // PPM communication --------
-#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 
@@ -20,9 +20,9 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "ScaniaV8Start.h" // Scania V8 Start
 //#include "ScaniaR500V8Start.h" // Scania R500 V8 Start
-//#include "UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available)
+#include "UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available)
 //#include "HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
-#include "DefenderV8Start.h" // Land Rover Defender V8 Start
+//#include "DefenderV8Start.h" // Land Rover Defender V8 Start
 //#include "JaguarXjsHeStart.h" // Jaguar XJS HE Starts
 //#include "KenworthW900Start.h" // Kenworth W900 Truck Start
 //#include "MackStart.h" // Mack Truck Start
@@ -42,7 +42,7 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
 //#include "HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "DetroitDieselIdle.h" // Detroit Diesel generic Truck
-//#include "DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
+#include "DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
 //#include "DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
 //#include "DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
@@ -50,7 +50,7 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "ActrosV8Idle.h" // MB Actros V8 Truck Idle (not very good)
 //#include "KenworthW900Idle.h" // Kenworth W900 Truck Idle
 //#include "MackIdle.h" // Mack Truck Idle
-#include "DefenderV8Idle.h" // Land Rover Defender V8
+//#include "DefenderV8Idle.h" // Land Rover Defender V8
 //#include "Mustang68Idle.h" // Ford Mustang 1968
 //#include "DodgeChallenger70Idle.h" // 1970 Dodge Challenger
 //#include "MgBGtV8Idle.h" // MG B GT V8
@@ -64,15 +64,15 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "1000Hz.h" // 1000Hz test tone
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 100%, never more!)
+volatile int turboVolumePercentage = 70; // Adjust the turbo volume (usually = 100%, never more!)
 volatile int turboIdleVolumePercentage = 10; // the turbo volume will be throttle dependent (usually = 10%, never more than 100%!)
 #include "TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%, never more!)
 //#include "TrainHorn.h" // American train horn
-#include "ManTgeHorn.h" // MAN TGE truck horn
-//#include "westinghouseHorn.h" // American truck horn
+//#include "ManTgeHorn.h" // MAN TGE truck horn
+#include "westinghouseHorn.h" // American truck horn
 //#include "FireTruckAirHorn.h" // US fire truck air horn
 //#include "CarHorn.h" // A boring car horn
 //#include "TruckHorn.h" // A generic truck horn
@@ -81,7 +81,7 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%, never more!)
 //#include "UsPoliceSiren.h" // US Police siren
-#include "FireTruckAirSiren.h" // US fire truck air siren
+#include "FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
 //#include "FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "PostAutoHorn.h" // The typical Swiss post bus horn
@@ -117,7 +117,7 @@ const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutra
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const uint16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
+const int16_t escPulseSpan = 1600; // pulseZero +/- this value (> 500 = limited top speed, about 1600 for King Hauler)
 const uint8_t escRampTime = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
 const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 5 for King Hauler)
 

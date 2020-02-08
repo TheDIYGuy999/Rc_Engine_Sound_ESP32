@@ -148,6 +148,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Bug fixed: direct transition from state "braking backwards" to "driving backwards" now working
 - failsafe function for serial signal added. Emergency brake is triggered in case of RC signal loss (serial & PWM mode only, PPM will follow)
 
+## New in V 2.5:
+- 3rd brake light on pin 32 added
+- "escPulseSpan" > 1400 now working properly. Allows to accelerate and decelerate even smoother as well as limiting the top speed to a realistic level
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds

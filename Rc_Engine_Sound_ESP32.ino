@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.4; // Software revision.
+const float codeVersion = 2.5; // Software revision.
 
 //
 // =======================================================================================================
@@ -19,9 +19,9 @@ const float codeVersion = 2.4; // Software revision.
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
-#define DEBUG // uncomment it for general debugging informations
+//#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
-//#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
 // TODO = Things to clean up!
 
@@ -65,7 +65,7 @@ const float codeVersion = 2.4; // Software revision.
 #define ESC_OUT_PIN 33 // connect crawler  ESC here (experimental, use it at your own risk!)
 
 #define HEADLIGHT_PIN 0 // White headllights
-#define TAILLIGHT_PIN 15 // Red tail- & brake-lights
+#define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
 #define INDICATOR_LEFT_PIN 2 // Orange left indicator (turn signal) light
 #define INDICATOR_RIGHT_PIN 4 // Orange right indicator (turn signal) light
 #define FOGLIGHT_PIN 16 // (RX2) Fog lights
@@ -75,6 +75,8 @@ const float codeVersion = 2.4; // Software revision.
 
 #define BEACON_LIGHT2_PIN 19 // Blue beacons light
 #define BEACON_LIGHT1_PIN 21 // Blue beacons light
+
+#define BRAKELIGHT_PIN 32 // Upper brake lights
 
 #define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling)
 
@@ -95,6 +97,7 @@ statusLED roofLight(false);
 statusLED sideLight(false);
 statusLED beaconLight1(false);
 statusLED beaconLight2(false);
+statusLED brakeLight(false);
 statusLED shakerMotor(false);
 statusLED escOut(false);
 
@@ -147,8 +150,8 @@ uint16_t pulseMin[4];
 uint16_t pulseMaxLimit[4];
 uint16_t pulseMinLimit[4];
 
-uint16_t escPulseMax;                           // ESC calibration variables
-uint16_t escPulseMin;
+int16_t escPulseMax;                           // ESC calibration variables
+int16_t escPulseMin;
 
 volatile boolean pulseAvailable;                // RC signal pulses are coming in
 
@@ -551,6 +554,8 @@ void setup() {
   sideLight.begin(SIDELIGHT_PIN, 8, 500); // Timer 8, 500Hz
   beaconLight1.begin(BEACON_LIGHT1_PIN, 9, 500); // Timer 9, 500Hz
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 500); // Timer 10, 500Hz
+
+  brakeLight.begin(BRAKELIGHT_PIN, 11, 500); // Timer 11, 500Hz
 
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 500); // Timer 13, 500Hz
 
@@ -1174,13 +1179,19 @@ void led() {
   // Headlights, tail lights ----
   if (lightsOn) {
     headLight.on();
-    //if (slowingDown) tailLight.on();  // Brake lights (full brightness) TODO
-    if (escIsBraking) tailLight.on();  // Brake lights (full brightness)
-    else tailLight.pwm(50); // Taillights (reduced brightness)
+    if (escIsBraking) {
+      tailLight.on();  // Taillights (full brightness)
+      brakeLight.on(); // Brakelight on
+    }
+    else {
+      tailLight.pwm(50); // Taillights (reduced brightness)
+      brakeLight.off(); // Brakelight off
+    }
   }
   else {
     headLight.off();
     tailLight.off();
+    brakeLight.off();
   }
 
   if (!hazard) {
