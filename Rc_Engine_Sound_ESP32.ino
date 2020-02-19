@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.5; // Software revision.
+const float codeVersion = 2.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -21,7 +21,7 @@ const float codeVersion = 2.5; // Software revision.
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
 //#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
-#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+//#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
 // TODO = Things to clean up!
 
@@ -75,10 +75,10 @@ const float codeVersion = 2.5; // Software revision.
 
 #define BEACON_LIGHT2_PIN 19 // Blue beacons light
 #define BEACON_LIGHT1_PIN 21 // Blue beacons light
-
+#define CABLIGHT_PIN 22 // Cabin lights
 #define BRAKELIGHT_PIN 32 // Upper brake lights
 
-#define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling)
+#define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling and engine start / stop)
 
 #define DAC1 25 // connect pin25 (do not change the pin) to a 10kOhm resistor
 #define DAC2 26 // connect pin26 (do not change the pin) to a 10kOhm resistor
@@ -97,6 +97,7 @@ statusLED roofLight(false);
 statusLED sideLight(false);
 statusLED beaconLight1(false);
 statusLED beaconLight2(false);
+statusLED cabLight(false);
 statusLED brakeLight(false);
 statusLED shakerMotor(false);
 statusLED escOut(false);
@@ -552,10 +553,11 @@ void setup() {
   reversingLight.begin(REVERSING_LIGHT_PIN, 6, 500); // Timer 6, 500Hz
   roofLight.begin(ROOFLIGHT_PIN, 7, 500); // Timer 7, 500Hz
   sideLight.begin(SIDELIGHT_PIN, 8, 500); // Timer 8, 500Hz
+
   beaconLight1.begin(BEACON_LIGHT1_PIN, 9, 500); // Timer 9, 500Hz
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 500); // Timer 10, 500Hz
-
   brakeLight.begin(BRAKELIGHT_PIN, 11, 500); // Timer 11, 500Hz
+  cabLight.begin(CABLIGHT_PIN, 12, 500); // Timer 12, 500Hz
 
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 500); // Timer 13, 500Hz
 
@@ -937,12 +939,12 @@ void triggerHorn() {
 void triggerIndicators() {
 
   // detect left indicator trigger ( impulse length > 1700us) -------------
-  if (pulseWidth[0] > (pulseMaxNeutral[0] + 30) && pulseWidth[0] < pulseMaxLimit[0]) indicatorLon = true;
+  if (pulseWidth[0] > (pulseMaxNeutral[0] + indicatorOn) && pulseWidth[0] < pulseMaxLimit[0]) indicatorLon = true;
   if (pulseWidth[0] < pulseMaxNeutral[0]) indicatorLon = false;
 
 
   // detect right indicator trigger ( impulse length < 1300us) ----------
-  if (pulseWidth[0] < (pulseMinNeutral[0] - 30) && pulseWidth[0] > pulseMinLimit[0]) indicatorRon = true;
+  if (pulseWidth[0] < (pulseMinNeutral[0] - indicatorOn) && pulseWidth[0] > pulseMinLimit[0]) indicatorRon = true;
   if (pulseWidth[0] > pulseMinNeutral[0]) indicatorRon = false;
 }
 
@@ -1079,22 +1081,22 @@ void engineMassSimulation() {
     Serial.println(pulseMaxNeutral[3]);
     Serial.println(" ");
     /*Serial.println(currentThrottle);
-    Serial.println(mappedThrottle);
-    Serial.println(currentRpm);
-    Serial.println(currentRpmScaled);
-    Serial.println(engineState);
-    Serial.println(" ");
-    Serial.println(loopTime);
-    Serial.println(" ");
-    Serial.println(airBrakeTrigger);
-    Serial.println(EngineWasAboveIdle);
-    Serial.println(throttleDependentVolume);
-    Serial.println(sound1On);
-    Serial.println(soundNo);
-    Serial.print("PPM Failsafe Counter ");
-    Serial.println(ppmFailsafeCounter);
-    Serial.print("failSafe ");
-    Serial.println(failSafe);*/
+      Serial.println(mappedThrottle);
+      Serial.println(currentRpm);
+      Serial.println(currentRpmScaled);
+      Serial.println(engineState);
+      Serial.println(" ");
+      Serial.println(loopTime);
+      Serial.println(" ");
+      Serial.println(airBrakeTrigger);
+      Serial.println(EngineWasAboveIdle);
+      Serial.println(throttleDependentVolume);
+      Serial.println(sound1On);
+      Serial.println(soundNo);
+      Serial.print("PPM Failsafe Counter ");
+      Serial.println(ppmFailsafeCounter);
+      Serial.print("failSafe ");
+      Serial.println(failSafe);*/
 
   }
 #endif
@@ -1163,12 +1165,12 @@ void led() {
   // Beacons (blue light) ----
   if (sirenOn) {
     if (doubleFlashBlueLight) {
-      beaconLight2.flash(30, 80, 380, 2); // Simulate double flash lights
       beaconLight1.flash(30, 80, 400, 2); // Simulate double flash lights
+      beaconLight2.flash(30, 80, 400, 2, 205); // Simulate double flash lights (with delay for first pass)
     }
     else {
-      beaconLight2.flash(30, 400, 0, 0); // Simulate rotating beacon lights with short flashes
-      beaconLight1.flash(30, 420, 0, 0); // Simulate rotating beacon lights with short flashes
+      beaconLight1.flash(30, 500, 0, 0); // Simulate rotating beacon lights with short flashes
+      beaconLight2.flash(30, 500, 0, 0, 100); // Simulate rotating beacon lights with short flashes
     }
   }
   else {
@@ -1185,7 +1187,7 @@ void led() {
     }
     else {
       tailLight.pwm(50); // Taillights (reduced brightness)
-      brakeLight.off(); // Brakelight off
+      brakeLight.pwm(50); // Brakelight reduced brightness
     }
   }
   else {
@@ -1222,6 +1224,10 @@ void led() {
   // Sidelights ----
   if (engineOn) sideLight.on();
   else sideLight.off();
+
+  // Cabin lights ----
+  if (!lightsOn) cabLight.on();
+  else cabLight.off();
 
 }
 

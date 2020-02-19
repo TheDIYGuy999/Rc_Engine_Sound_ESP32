@@ -152,6 +152,14 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - 3rd brake light on pin 32 added
 - "escPulseSpan" > 1400 now working properly. Allows to accelerate and decelerate even smoother as well as limiting the top speed to a realistic level
 
+## New in V 2.6:
+- Indicator activation point adjustable with "indicatorOn"
+- Norwegian siren, new air brake sound
+- Door noise
+- sound files moved to /sounds
+- optimized bluelight patterns, using the new, optional "delay" variable. Latest statusLED library update required: https://github.com/TheDIYGuy999/statusLED
+
+
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
