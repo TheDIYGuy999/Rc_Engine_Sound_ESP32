@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.6; // Software revision.
+const float codeVersion = 2.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -120,14 +120,14 @@ volatile boolean engineStop = false;            // Active, if engine is shutting
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sirenOn = false;               // Signal for siren  on / off
 volatile boolean sound1On = false;              // Signal for sound1  on / off
-volatile boolean reversingSoundOn = false;      // active during backing up TODO
 volatile boolean indicatorSoundOn = false;      // active, if indicator bulb is on
 
 volatile boolean lightsOn = false;              // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
-//volatile boolean slowingDown = false;           // Engine is slowing down TODO
+
+uint8_t selectedGear = 1;                 // The currently used gear of our shifting gearbox
 
 volatile boolean escIsBraking = false;          // ESC is in a braking state
 volatile boolean escInReverse = false;          // ESC is driving or braking backwards
@@ -347,11 +347,9 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   } // end of switch case
 
-  //dacWrite(DAC1, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
-  //dacWrite(DAC1, (int) ((a + b) / 2)); // Write mixed output signals to DAC
-  //dacWrite(DAC1, (int) (constrain((a + (b / 2)), 0, 255))); // Write mixed output signals to DAC
-  dacWrite(DAC1, (int) (constrain(((a * 8 / 10) + (b / 2) + (c / 5)), 0, 255))); // Write mixed output signals to DAC
+  // DAC output (groups a, b + c mixed together) ----------------------------------------------------
 
+  dacWrite(DAC1, (int) (constrain(((a * 8 / 10) + (b / 2) + (c / 5)), 0, 255))); // Write mixed output signals to DAC
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -440,7 +438,6 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   // Reversing beep sound "b1" ----
   if (engineRunning && escInReverse) {
-    //if (reversingSoundOn && !escIsBraking) { TODO
     fixedTimerTicks = 4000000 / reversingSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -482,8 +479,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   // DAC output (groups a + b mixed together) ----------------------------------------------------
 
-  //dacWrite(DAC2, (int) (a + b - a * b / 255)); // Write mixed output signals to DAC: http://www.vttoth.com/CMS/index.php/technical-notes/68
-  dacWrite(DAC2, (int) ((a + b) / 2)); // Write mixed output signals to DAC
+  dacWrite(DAC2, (int) (constrain((a * 8 / 10) + (b * 2 / 10), 0, 255))); // Write mixed output signals to DAC
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -733,7 +729,7 @@ void parseSerialCommands() {
 
   // Convert signals to servo pulses in ms
   pulseWidth[0] = map(axis1, 0, 100, 1000, 2000); // CH1 Steering
-  pulseWidth[1] = map(axis2, 0, 100, 1000, 2000); // CH2
+  pulseWidth[1] = map(axis2, 0, 100, 1000, 2000); // CH2 Gearbox
   pulseWidth[2] = map(axis3, 0, 100, 1000, 2000); // CH3 Throttle
   pulseWidth[3] = map(pot1, 0, 100, 1000, 2000); // Pot1 Horn
 
@@ -751,7 +747,7 @@ void parseSerialCommands() {
 
 void readPpmCommands() {
   pulseWidth[0] = valuesBuf[0]; // CH1 Steering
-  pulseWidth[1] = 1500; // CH2
+  pulseWidth[1] = 1500;         // CH2 Gearbox
   pulseWidth[2] = valuesBuf[1]; // CH3 Throttle
   pulseWidth[3] = valuesBuf[2]; // Pot1 Horn
 
@@ -842,6 +838,18 @@ void readRcSignals() {
 
 void invertRcSignals() {
   if (INDICATOR_DIR) pulseWidth[0] = map(pulseWidth[0], 0, 3000, 3000, 0); // invert steering direction
+}
+
+//
+// =======================================================================================================
+// GEARBOX DETECTION
+// =======================================================================================================
+//
+
+void gearboxDetection() {
+  if (pulseWidth[1] > 1700) selectedGear = 3;
+  else if (pulseWidth[1] < 1300) selectedGear = 1;
+  else selectedGear = 2;
 }
 
 //
@@ -956,8 +964,6 @@ void triggerIndicators() {
 
 void mapThrottle() {
 
-  static unsigned long reversingMillis; // TODO
-
   // Input is around 1000 - 2000us, output 0-500 for forward and backwards
 
   // check if the pulsewidth looks like a servo pulse
@@ -987,32 +993,6 @@ void mapThrottle() {
   if (!escIsBraking && engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
-  // reversing sound trigger signal (TODO)
-  /*if (reverseSoundMode == 1) {
-    if (pulseWidth[2] <= pulseMaxNeutral[2]) {
-      reversingMillis = millis();
-    }
-
-    if (millis() - reversingMillis > 200) {
-      reversingSoundOn = true;
-    }
-    else reversingSoundOn = false;
-    }
-
-    if (reverseSoundMode == 2) {
-    if (pulseWidth[2] >= pulseMinNeutral[2]) {
-      reversingMillis = millis();
-    }
-
-    if (millis() - reversingMillis > 200) {
-      reversingSoundOn = true;
-    }
-    else reversingSoundOn = false;
-    }
-
-    if (reverseSoundMode == 0) {
-    reversingSoundOn = false;
-    }*/
 }
 
 //
@@ -1054,10 +1034,6 @@ void engineMassSimulation() {
     currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
   }
 
-  // Brake light trigger TODO
-  /*if (mappedThrottle < (currentRpm - 200)) slowingDown = true;
-    if (mappedThrottle >= (currentRpm - 10)) slowingDown = false;*/
-
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
   if (millis() - printMillis > 1000) { // Every 1000ms
@@ -1079,7 +1055,8 @@ void engineMassSimulation() {
     Serial.println(pulseWidth[3]);
     Serial.println(pulseMinNeutral[3]);
     Serial.println(pulseMaxNeutral[3]);
-    Serial.println(" ");
+    Serial.println("Gear");
+    Serial.println(selectedGear);
     /*Serial.println(currentThrottle);
       Serial.println(mappedThrottle);
       Serial.println(currentRpm);
@@ -1133,13 +1110,6 @@ void engineOnOff() {
       lightsOn = false; // after delay, switch light off
     }
 
-    // air brake noise trigggering TODO
-    /*if (millis() - idleDelayMillis > 1000) {
-      if (EngineWasAboveIdle) {
-        airBrakeTrigger = true; // after delay, trigger air brake noise
-      }
-      }*/
-
     // Engine start detection
     if (currentThrottle > 100 && !airBrakeTrigger) {
       engineOn = true;
@@ -1158,7 +1128,6 @@ void engineOnOff() {
 void led() {
 
   // Reversing light ----
-  //if (reversingSoundOn) reversingLight.on();
   if (engineRunning && escInReverse) reversingLight.on();
   else reversingLight.off();
 
@@ -1166,7 +1135,7 @@ void led() {
   if (sirenOn) {
     if (doubleFlashBlueLight) {
       beaconLight1.flash(30, 80, 400, 2); // Simulate double flash lights
-      beaconLight2.flash(30, 80, 400, 2, 205); // Simulate double flash lights (with delay for first pass)
+      beaconLight2.flash(30, 80, 400, 2, 330); // Simulate double flash lights (with delay for first pass)
     }
     else {
       beaconLight1.flash(30, 500, 0, 0); // Simulate rotating beacon lights with short flashes
@@ -1270,6 +1239,12 @@ void esc() {
   static int8_t escPulse; // -1 = reverse, 0 = neutral, 1 = forward
   static int8_t driveRampRate;
   static int8_t brakeRampRate;
+  uint8_t escRampTime;
+
+  // Gear dependent ramp speed for acceleration & deceleration
+  if (selectedGear == 1) escRampTime = escRampTimeFirstGear;
+  if (selectedGear == 2) escRampTime = escRampTimeSecondGear;
+  if (selectedGear == 3) escRampTime = escRampTimeThirdGear;
 
   if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
     escMillis = millis();
@@ -1440,6 +1415,9 @@ void Task1code(void *pvParameters) {
 
     // Shaker control
     shaker();
+
+    // Gearbox detection
+    gearboxDetection();
 
     // ESC control (Crawler ESC with direct brake on pin 33)
     esc();

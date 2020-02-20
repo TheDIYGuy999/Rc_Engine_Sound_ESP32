@@ -70,9 +70,11 @@ volatile int turboIdleVolumePercentage = 10; // the turbo volume will be throttl
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%, never more!)
-#include "sounds/TrainHorn.h" // American train horn
+//#include "sounds/TrainHorn.h" // American train horn
+//#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
+//#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn
-//#include "sounds/westinghouseHorn.h" // American truck horn
+#include "sounds/westinghouseHorn.h" // American truck horn
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
 //#include "sounds/CarHorn.h" // A boring car horn
 //#include "sounds/TruckHorn.h" // A generic truck horn
@@ -105,27 +107,28 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-//volatile uint8_t reverseSoundMode = 2; // 0 = off, 1 = forward, 2 = reverse (direction) TODO
-volatile int reversingVolumePercentage = 30; // Adjust the reversing sound volume (usually = 40%, never more than 100%!)
+volatile int reversingVolumePercentage = 80; // Adjust the reversing sound volume (usually = 80%, never more than 100%!)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
-// Choose the indicator options --------
-volatile int indicatorVolumePercentage = 70; // Adjust the indicator sound volume (usually = 70%, never more than 100%!)
+// Choose the indicator / turn signal options --------
+const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
+volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%, never more than 100%!)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
 // Choose the blue light opions -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
-const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 
 // PWM input signal range calibration ------------------------------------------------------------------------------------
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const int16_t escPulseSpan = 1600; // pulseZero +/- this value (> 500 = limited top speed, about 1600 for King Hauler)
-const uint8_t escRampTime = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
+const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
+const uint8_t escRampTimeFirstGear = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
+const uint8_t escRampTimeSecondGear = 12;
+const uint8_t escRampTimeThirdGear = 18;
 const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 5 for King Hauler)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------

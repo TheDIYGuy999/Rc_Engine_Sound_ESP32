@@ -159,6 +159,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - sound files moved to /sounds
 - optimized bluelight patterns, using the new, optional "delay" variable. Latest statusLED library update required: https://github.com/TheDIYGuy999/statusLED
 
+## New in V 2.7:
+- Hornblasters train horns added
+- Horns are now louder
+- Trash removed
+- Acceleratoin & deceleration now shifting transmission gear dependent
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
