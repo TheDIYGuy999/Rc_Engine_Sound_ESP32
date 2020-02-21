@@ -126,10 +126,11 @@ const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
-const uint8_t escRampTimeFirstGear = 6; // determines, how fast the acceleration and deceleration happens (about 2 - 6, 6 for King Hauler)
-const uint8_t escRampTimeSecondGear = 12;
-const uint8_t escRampTimeThirdGear = 18;
-const uint8_t escBrakeSteps = 5; // determines, how fast the ESC is able to brake down (2 - 5, 5 for King Hauler)
+const uint8_t escRampTimeFirstGear = 9; // determines, how fast the acceleration and deceleration happens (about 2 - 9, 9 for King Hauler)
+const uint8_t escRampTimeSecondGear = 18; // 18 for king Hauler
+const uint8_t escRampTimeThirdGear = 27; // 27 for king Hauler
+const uint8_t escBrakeSteps = 10; // determines, how fast the ESC is able to brake down (4 - 10, 10 for King Hauler)
+const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
 const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"
@@ -137,6 +138,9 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
 const boolean shifted = false; // false = linear rpm curve, true = shifting points (experimental)
+
+// Clutch parameters ---------------------------------------------------------------------------------------------------
+const uint8_t clutchClosingPoint = 150; // The "clutch" is closing above this point (about 150), = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
@@ -153,4 +157,4 @@ const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the numbe
 
 // Engine mass simulation
 const int8_t acc = 3; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
-const int8_t dec = 1; // Deceleration step (2) 1 = slow for locomotive engine, 5 = fast for trophy truck
+const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck

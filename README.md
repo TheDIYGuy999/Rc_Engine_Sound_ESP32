@@ -165,12 +165,18 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Trash removed
 - Acceleratoin & deceleration now shifting transmission gear dependent
 
+## New in V 2.8:
+- "clutchClosingPoint" configuration variable added. Prevents engine sound from "rubber band effect". Engine sound is in synch (clutch engaged) with ESC power above this value
+- Virtual clutch is also disengaging during gear shifting, allowing the engine rpm to settle down during shifting
+- Acceleration speed now variable, depending on throttle position
+- Added way more inertia to make vehicle behavior even more realistic
+- Brake has now much finer granularity
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
-- adding brake sound
-- cleaning up code
+- adding SBUS protocol
 - adding schematic for LED wiring (for now pinout see code)
 
 ## Ho to create new sound arrays:

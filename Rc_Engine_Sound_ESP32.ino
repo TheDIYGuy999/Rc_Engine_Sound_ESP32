@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.7; // Software revision.
+const float codeVersion = 2.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -21,7 +21,7 @@ const float codeVersion = 2.7; // Software revision.
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
 //#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
-//#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
 // TODO = Things to clean up!
 
@@ -127,7 +127,8 @@ volatile boolean lightsOn = false;              // Lights on
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 
-uint8_t selectedGear = 1;                 // The currently used gear of our shifting gearbox
+uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
+boolean gearShiftingInProgress;                 // Active while gears are changed
 
 volatile boolean escIsBraking = false;          // ESC is in a braking state
 volatile boolean escInReverse = false;          // ESC is driving or braking backwards
@@ -140,7 +141,8 @@ volatile boolean sound1Switch = false;          // Switch state for sound1 trigg
 boolean indicatorLon = false;                   // Left indicator
 boolean indicatorRon = false;                   // Right indicator
 
-uint32_t currentThrottle = 0;                   // 0 - 500
+uint32_t currentThrottle = 0;                   // 0 - 500 (Throttle trigger input)
+uint32_t currentSpeed = 0;                      // 0 - 500 (current ESC power)
 boolean throttleReverse;                        // false = forward, true = reverse
 uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
 
@@ -847,9 +849,24 @@ void invertRcSignals() {
 //
 
 void gearboxDetection() {
+
+  static uint8_t previousGear;
+  static unsigned long shiftingMillis;
+
+  // Gear detection
   if (pulseWidth[1] > 1700) selectedGear = 3;
   else if (pulseWidth[1] < 1300) selectedGear = 1;
   else selectedGear = 2;
+
+  // Gear shifting detection
+  if (selectedGear != previousGear) {
+    gearShiftingInProgress = true;
+    previousGear = selectedGear;
+  }
+
+  // Gear shifting duration
+  if (!gearShiftingInProgress) shiftingMillis = millis();
+  if (millis() - shiftingMillis > 1000) gearShiftingInProgress = false;
 }
 
 //
@@ -1011,8 +1028,14 @@ void engineMassSimulation() {
     throtMillis = millis();
 
     // compute rpm curves
-    if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
-    else mappedThrottle = reMap(curveLinear, currentThrottle);
+    if (currentSpeed < clutchClosingPoint || gearShiftingInProgress) { // Engine revving allowed during low speed ("clutch" is engaging at this point)
+      if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
+      else mappedThrottle = reMap(curveLinear, currentThrottle);
+    }
+    else { // Engine RMP synchronized with ESC power (speed)
+      if (shifted) mappedThrottle = reMap(curveShifting, currentSpeed);
+      else mappedThrottle = reMap(curveLinear, currentSpeed);
+    }
 
 
     // Accelerate engine
@@ -1249,15 +1272,15 @@ void esc() {
   if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
     escMillis = millis();
 
-    // calulate throttle dependent brake steps
+    // calulate throttle dependent brake & acceleration steps
     brakeRampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
+    driveRampRate = map (currentThrottle, 0, 500, 1, escAccelerationSteps);
 
     // Emergency ramp rates for falisafe
     if (failSafe) {
       brakeRampRate = escBrakeSteps;
       driveRampRate = escBrakeSteps;
     }
-    else driveRampRate = 1;
 
     // Comparators
     if (pulseWidth[2] > pulseMaxNeutral[2] && pulseWidth[2] < pulseMaxLimit[2]) pulse = 1; // 1 = Forward
@@ -1277,6 +1300,7 @@ void esc() {
       Serial.println(escPulseMin);
       Serial.println(escPulseMax);
       Serial.println(brakeRampRate);
+      Serial.println(currentSpeed);
       Serial.println("");
     }
 #endif
@@ -1349,6 +1373,17 @@ void esc() {
     // ESC control
     escSignal = map(escPulseWidth, escPulseMin, escPulseMax, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534)
     escOut.pwm(escSignal);
+
+
+    // calculate a speed value from the pulsewidth signal (used as base for engine sound RPM limit)
+    if (escPulseWidth > pulseMaxNeutral[2]) {
+      currentSpeed = map(escPulseWidth, pulseMaxNeutral[2], pulseMax[2], 0, 500);
+    }
+    else if (escPulseWidth < pulseMinNeutral[2]) {
+      currentSpeed = map(escPulseWidth, pulseMinNeutral[2], pulseMin[2], 0, 500);
+    }
+    else currentSpeed = 0;
+
   }
 }
 
