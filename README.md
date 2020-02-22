@@ -172,6 +172,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Added way more inertia to make vehicle behavior even more realistic
 - Brake has now much finer granularity
 
+## New in V 2.9:
+- "shiftingAutoThrottle" is altering throttle for synchronizing while shifting the TAMIYA 3 speed transmission -> Gerabox is protected, extreme realism in engine sound!
+- More inertia added, engine idle volume lowered to 40%
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode

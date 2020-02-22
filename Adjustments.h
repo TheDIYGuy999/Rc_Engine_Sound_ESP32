@@ -33,7 +33,7 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 
 // Choose the motor sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, never more!)
-volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 60%, never more than 100%!)
+volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/ScaniaV8Idle.h" // Scania V8
 //#include "sounds/ScaniaR500V8Idle.h" // Scania R500 V8
@@ -126,10 +126,10 @@ const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
-const uint8_t escRampTimeFirstGear = 9; // determines, how fast the acceleration and deceleration happens (about 2 - 9, 9 for King Hauler)
-const uint8_t escRampTimeSecondGear = 18; // 18 for king Hauler
-const uint8_t escRampTimeThirdGear = 27; // 27 for king Hauler
-const uint8_t escBrakeSteps = 10; // determines, how fast the ESC is able to brake down (4 - 10, 10 for King Hauler)
+const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 10 - 20, 20 for King Hauler)
+const uint8_t escRampTimeSecondGear = 40; // 40 for king Hauler
+const uint8_t escRampTimeThirdGear = 60; // 60 for king Hauler
+const uint8_t escBrakeSteps = 25; // determines, how fast the ESC is able to brake down (4 - 10, 10 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
@@ -137,10 +137,11 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
-const boolean shifted = false; // false = linear rpm curve, true = shifting points (experimental)
+const boolean shifted = false; // false = linear rpm curve, true = shifting points (experimental old stuff, do not use it)
+const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-const uint8_t clutchClosingPoint = 150; // The "clutch" is closing above this point (about 150), = engine rpm sound in synch with ESC power
+const uint8_t clutchClosingPoint = 70; // The "clutch" is closing above this point (about 70), = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)

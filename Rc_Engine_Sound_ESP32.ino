@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.8; // Software revision.
+const float codeVersion = 2.9; // Software revision.
 
 //
 // =======================================================================================================
@@ -21,7 +21,7 @@ const float codeVersion = 2.8; // Software revision.
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
 //#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
-#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+//#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
 // TODO = Things to clean up!
 
@@ -128,9 +128,13 @@ volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 
 uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
-boolean gearShiftingInProgress;                 // Active while gears are changed
+boolean gearUpShiftingInProgress;               // Active while shifting upwards
+boolean gearDownShiftingInProgress;             // Active while shifting downwards
+boolean gearUpShiftingPulse;                    // Active, if shifting upwards begins
+boolean gearDownShiftingPulse;                    // Active, if shifting downwards begins
 
 volatile boolean escIsBraking = false;          // ESC is in a braking state
+volatile boolean escIsDriving = false;          // ESC is in a driving state
 volatile boolean escInReverse = false;          // ESC is driving or braking backwards
 int8_t driveState = 0;                          // for ESC state machine
 
@@ -844,33 +848,6 @@ void invertRcSignals() {
 
 //
 // =======================================================================================================
-// GEARBOX DETECTION
-// =======================================================================================================
-//
-
-void gearboxDetection() {
-
-  static uint8_t previousGear;
-  static unsigned long shiftingMillis;
-
-  // Gear detection
-  if (pulseWidth[1] > 1700) selectedGear = 3;
-  else if (pulseWidth[1] < 1300) selectedGear = 1;
-  else selectedGear = 2;
-
-  // Gear shifting detection
-  if (selectedGear != previousGear) {
-    gearShiftingInProgress = true;
-    previousGear = selectedGear;
-  }
-
-  // Gear shifting duration
-  if (!gearShiftingInProgress) shiftingMillis = millis();
-  if (millis() - shiftingMillis > 1000) gearShiftingInProgress = false;
-}
-
-//
-// =======================================================================================================
 // RC SIGNAL FAILSAFE POSITIONS (if serial signal lost)
 // =======================================================================================================
 //
@@ -1002,6 +979,13 @@ void mapThrottle() {
     }
   }
 
+  // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
+  if (!escIsBraking && escIsDriving && shiftingAutoThrottle) {
+    if (gearUpShiftingInProgress) currentThrottle = 0; // No throttle
+    if (gearDownShiftingInProgress) currentThrottle = 500; // Full throttle
+    currentThrottle = constrain (currentThrottle, 0, 500);
+  }
+
   // Calculate throttle dependent engine volume
   if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
   else throttleDependentVolume = engineIdleVolumePercentage;
@@ -1028,11 +1012,11 @@ void engineMassSimulation() {
     throtMillis = millis();
 
     // compute rpm curves
-    if (currentSpeed < clutchClosingPoint || gearShiftingInProgress) { // Engine revving allowed during low speed ("clutch" is engaging at this point)
+    if (currentSpeed < clutchClosingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Engine revving allowed during low speed ("clutch" is engaging at this point)
       if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
       else mappedThrottle = reMap(curveLinear, currentThrottle);
     }
-    else { // Engine RMP synchronized with ESC power (speed)
+    else { // Engine rpm synchronized with ESC power (speed)
       if (shifted) mappedThrottle = reMap(curveShifting, currentSpeed);
       else mappedThrottle = reMap(curveLinear, currentSpeed);
     }
@@ -1242,6 +1226,45 @@ void shaker() {
   else shakerMotor.off();
 }
 
+//
+// =======================================================================================================
+// GEARBOX DETECTION
+// =======================================================================================================
+//
+
+void gearboxDetection() {
+
+  static uint8_t previousGear;
+  static unsigned long upShiftingMillis;
+  static unsigned long downShiftingMillis;
+
+  // Gear detection
+  if (pulseWidth[1] > 1700) selectedGear = 3;
+  else if (pulseWidth[1] < 1300) selectedGear = 1;
+  else selectedGear = 2;
+
+  // Gear upshifting detection
+  if (selectedGear > previousGear) {
+    gearUpShiftingInProgress = true;
+    gearUpShiftingPulse = true;
+    previousGear = selectedGear;
+  }
+
+  // Gear upshifting duration
+  if (!gearUpShiftingInProgress) upShiftingMillis = millis();
+  if (millis() - upShiftingMillis > 700) gearUpShiftingInProgress = false;
+
+  // Gear downshifting detection
+  if (selectedGear < previousGear) {
+    gearDownShiftingInProgress = true;
+    gearDownShiftingPulse = true;
+    previousGear = selectedGear;
+  }
+
+  // Gear downshifting duration
+  if (!gearDownShiftingInProgress) downShiftingMillis = millis();
+  if (millis() - downShiftingMillis > 200) gearDownShiftingInProgress = false;
+}
 
 //
 // =======================================================================================================
@@ -1254,7 +1277,7 @@ void shaker() {
 // receiver is lost, but if the ESP32 crashes, the vehicle could get out of control!! ***
 
 void esc() {
-  static uint32_t escPulseWidth = 1500;
+  static int32_t escPulseWidth = 1500;
   static uint32_t escSignal;
   static unsigned long escMillis;
   static unsigned long lastStateTime;
@@ -1311,6 +1334,7 @@ void esc() {
       case 0: // Standing still ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = false;
+        escIsDriving = false;
         escPulseWidth = pulseZero[2];  // ESC to neutral position
 
         if (pulse == 1 && engineRunning) driveState = 1; // Driving forward
@@ -1320,8 +1344,21 @@ void esc() {
       case 1: // Driving forward ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = false;
+        escIsDriving = true;
         if (escPulseWidth < pulseWidth[2]) escPulseWidth += driveRampRate;
         if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth -= driveRampRate;
+
+        if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
+          escPulseWidth = escPulseWidth -= currentSpeed / 4;
+          gearUpShiftingPulse = false;
+          escPulseWidth = constrain(escPulseWidth, pulseZero[2], pulseMax[2]);
+        }
+
+        if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
+          escPulseWidth = escPulseWidth += currentSpeed / 5;
+          gearDownShiftingPulse = false;
+          escPulseWidth = constrain(escPulseWidth, pulseZero[2], pulseMax[2]);
+        }
 
         if (pulse == -1 && escPulse == 1) driveState = 2; // Braking forward
         if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
@@ -1330,6 +1367,7 @@ void esc() {
       case 2: // Braking forward ---------------------------------------------------------------------
         escIsBraking = true;
         escInReverse = false;
+        escIsDriving = false;
         if (escPulseWidth > pulseZero[2]) escPulseWidth -= brakeRampRate; // brake with variable deceleration
 
         if (pulse == 0 && escPulse == 1) {
@@ -1345,8 +1383,21 @@ void esc() {
       case 3: // Driving backwards ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = true;
+        escIsDriving = true;
         if (escPulseWidth > pulseWidth[2]) escPulseWidth -= driveRampRate;
         if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth += driveRampRate;
+
+        if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
+          escPulseWidth = escPulseWidth += currentSpeed / 4;
+          gearUpShiftingPulse = false;
+          escPulseWidth = constrain(escPulseWidth, pulseMin[2], pulseZero[2]);
+        }
+
+        if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
+          escPulseWidth = escPulseWidth -= currentSpeed / 5;
+          gearDownShiftingPulse = false;
+          escPulseWidth = constrain(escPulseWidth, pulseMin[2], pulseZero[2]);
+        }
 
         if (pulse == 1 && escPulse == -1) driveState = 4; // Braking backwards
         if (pulse == 0 && escPulse == 0) driveState = 0; // standing still
@@ -1355,6 +1406,7 @@ void esc() {
       case 4: // Braking backwards ---------------------------------------------------------------------
         escIsBraking = true;
         escInReverse = true;
+        escIsDriving = false;
         if (escPulseWidth < pulseZero[2]) escPulseWidth += brakeRampRate; // brake with variable deceleration
 
         if (pulse == 0 && escPulse == -1) {
@@ -1375,7 +1427,7 @@ void esc() {
     escOut.pwm(escSignal);
 
 
-    // calculate a speed value from the pulsewidth signal (used as base for engine sound RPM limit)
+    // Calculate a speed value from the pulsewidth signal (used as base for engine sound RPM while clutch is engaged)
     if (escPulseWidth > pulseMaxNeutral[2]) {
       currentSpeed = map(escPulseWidth, pulseMaxNeutral[2], pulseMax[2], 0, 500);
     }
