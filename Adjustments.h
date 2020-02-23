@@ -35,14 +35,14 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, never more!)
 volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
-//#include "sounds/ScaniaV8Idle.h" // Scania V8
+//#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)
 //#include "sounds/ScaniaR500V8Idle.h" // Scania R500 V8
 //#include "sounds/ScaniaR620V8Idle.h" // Scania R620 V8 (a bit thin, add about 80% turbo volume)
 //#include "sounds/UralV8Idle.h" // Ural 4320 V8
 //#include "sounds/HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
 //#include "sounds/HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/DetroitDieselIdle.h" // Detroit Diesel generic Truck
-#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 2)
+#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1)
 //#include "sounds/DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
 //#include "sounds/DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "sounds/DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
@@ -126,10 +126,10 @@ const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
-const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 10 - 20, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 40; // 40 for king Hauler
-const uint8_t escRampTimeThirdGear = 60; // 60 for king Hauler
-const uint8_t escBrakeSteps = 25; // determines, how fast the ESC is able to brake down (4 - 10, 10 for King Hauler)
+const uint8_t escRampTimeFirstGear = 25; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 25 for King Hauler)
+const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler
+const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
+const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Horn trigger signal type (true / false)-------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ const boolean shifted = false; // false = linear rpm curve, true = shifting poin
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-const uint8_t clutchClosingPoint = 70; // The "clutch" is closing above this point (about 70), = engine rpm sound in synch with ESC power
+const uint8_t clutchEngagingPoint = 60; // The "clutch" is engaging above this point (about 60), = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
@@ -157,5 +157,5 @@ const boolean engineManualOnOff = false;
 const uint32_t TOP_SPEED_MULTIPLIER = 2; // RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
-const int8_t acc = 3; // Acceleration step (3) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
 const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck

@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.9; // Software revision.
+const float codeVersion = 2.91; // Software revision.
 
 //
 // =======================================================================================================
@@ -62,7 +62,7 @@ const float codeVersion = 2.9; // Software revision.
 #define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle)
 #define SERVO4_PIN 27 // connect to RC receiver servo output channel 4 (rudder, pot)
 
-#define ESC_OUT_PIN 33 // connect crawler  ESC here (experimental, use it at your own risk!)
+#define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk!)
 
 #define HEADLIGHT_PIN 0 // White headllights
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
@@ -131,7 +131,7 @@ uint8_t selectedGear = 1;                       // The currently used gear of ou
 boolean gearUpShiftingInProgress;               // Active while shifting upwards
 boolean gearDownShiftingInProgress;             // Active while shifting downwards
 boolean gearUpShiftingPulse;                    // Active, if shifting upwards begins
-boolean gearDownShiftingPulse;                    // Active, if shifting downwards begins
+boolean gearDownShiftingPulse;                  // Active, if shifting downwards begins
 
 volatile boolean escIsBraking = false;          // ESC is in a braking state
 volatile boolean escIsDriving = false;          // ESC is in a driving state
@@ -480,7 +480,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 
   // Mixing "b1" + "b2" together ----
-  //b = (b1 + b2 - b1 * b2 / 255);
+  //b = (b1 + b2 - b1 * b2 / 255); // TODO
   b = b1 + b2 / 2;
 
   // DAC output (groups a + b mixed together) ----------------------------------------------------
@@ -991,7 +991,7 @@ void mapThrottle() {
   else throttleDependentVolume = engineIdleVolumePercentage;
 
   // Calculate engine rpm dependent turbo volume
-  if (!escIsBraking && engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
+  if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
 }
@@ -1012,7 +1012,7 @@ void engineMassSimulation() {
     throtMillis = millis();
 
     // compute rpm curves
-    if (currentSpeed < clutchClosingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Engine revving allowed during low speed ("clutch" is engaging at this point)
+    if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Engine revving allowed during low speed ("clutch" is engaging at this point)
       if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
       else mappedThrottle = reMap(curveLinear, currentThrottle);
     }
@@ -1031,7 +1031,8 @@ void engineMassSimulation() {
     }
 
     // Decelerate engine
-    if (mappedThrottle < currentRpm || escIsBraking) {
+    //if (mappedThrottle < currentRpm || escIsBraking) { // TODO
+    if (mappedThrottle < currentRpm) {
       currentRpm -= dec;
       if (currentRpm < minRpm) currentRpm = minRpm;
     }
@@ -1263,7 +1264,7 @@ void gearboxDetection() {
 
   // Gear downshifting duration
   if (!gearDownShiftingInProgress) downShiftingMillis = millis();
-  if (millis() - downShiftingMillis > 200) gearDownShiftingInProgress = false;
+  if (millis() - downShiftingMillis > 300) gearDownShiftingInProgress = false;
 }
 
 //
@@ -1355,7 +1356,7 @@ void esc() {
         }
 
         if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
-          escPulseWidth = escPulseWidth += currentSpeed / 5;
+          escPulseWidth = escPulseWidth += currentSpeed / 6;
           gearDownShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseZero[2], pulseMax[2]);
         }
@@ -1394,7 +1395,7 @@ void esc() {
         }
 
         if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
-          escPulseWidth = escPulseWidth -= currentSpeed / 5;
+          escPulseWidth = escPulseWidth -= currentSpeed / 6;
           gearDownShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseMin[2], pulseZero[2]);
         }

@@ -173,8 +173,14 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Brake has now much finer granularity
 
 ## New in V 2.9:
-- "shiftingAutoThrottle" is altering throttle for synchronizing while shifting the TAMIYA 3 speed transmission -> Gerabox is protected, extreme realism in engine sound!
+- "shiftingAutoThrottle" is altering throttle for synchronizing while shifting the TAMIYA 3 speed transmission -> Gearbox is protected, extreme realism in engine sound!
 - More inertia added, engine idle volume lowered to 40%
+
+## New in V 2.91:
+- Engine sound was slowing down too much during braking. This bug is now solved
+- No turbo sound while braking: Bug solved
+- King Hauler parameters fine adjusted
+- "clutchClosingPoint" renamed to "clutchEngagingPoint"
 
 
 ## On the todo list:
