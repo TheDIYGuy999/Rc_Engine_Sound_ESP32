@@ -182,6 +182,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - King Hauler parameters fine adjusted
 - "clutchClosingPoint" renamed to "clutchEngagingPoint"
 
+## New in V 3.0:
+- Ramping ESC signal faster below "clutchEngagingPoint" to prevent clutch from excessive slipping
+- Solved a 2nd engine rpm bug during braking
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode

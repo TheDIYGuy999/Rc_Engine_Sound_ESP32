@@ -1,9 +1,30 @@
-// ******* RECOMMENDED Audacity Settings: 22'050 Hz, 8 bit PCM **********
+/* ******* RECOMMENDED Audacity Settings: 22'050 Hz, 8 bit PCM **********
 
 // Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
 // converter code by bitluni (send him a high five, if you like the code)
 
-// **********************************************************************************************************************
+Recommended parts & settings for TAMIYA King Hauler:
+
+ESC: HOBBYWING QUICRUN WP Crawler Brushed with the following settings:
+1: 3
+2: 1
+3: 3
+4: 3
+5: 4
+6: 2
+7: 9
+8: 1
+9: 8 (change it, important)
+10: 4
+11: 4
+12: 5
+13: 4
+14: 1 (be careful here!!)
+15: 1 (change it, important)
+
+Motor: 540 size, 35 turns, stock pinion
+
+// ********************************************************************************************************************* */
 // Choose the receiver communication mode (never uncomment both! If both commented out, classic PWM RC signal communication)--
 // Serial communication --------
 #define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
@@ -20,7 +41,7 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "sounds/ScaniaV8Start.h" // Scania V8 Start
 //#include "sounds/ScaniaR500V8Start.h" // Scania R500 V8 Start
-#include "sounds/UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available)
+#include "sounds/UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available) use it for King Hauler
 //#include "sounds/HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
 //#include "sounds/JaguarXjsHeStart.h" // Jaguar XJS HE Starts
@@ -42,7 +63,7 @@ volatile int engineIdleVolumePercentage = 40; // the engine volume will be throt
 //#include "sounds/HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
 //#include "sounds/HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/DetroitDieselIdle.h" // Detroit Diesel generic Truck
-#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1)
+#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1) use it for King Hauler
 //#include "sounds/DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
 //#include "sounds/DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "sounds/DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
@@ -126,7 +147,7 @@ const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
-const uint8_t escRampTimeFirstGear = 25; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 25 for King Hauler)
+const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 25 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
@@ -141,7 +162,7 @@ const boolean shifted = false; // false = linear rpm curve, true = shifting poin
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-const uint8_t clutchEngagingPoint = 60; // The "clutch" is engaging above this point (about 60), = engine rpm sound in synch with ESC power
+const uint16_t clutchEngagingPoint = 150; // The "clutch" is engaging above this point (about 150), = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)

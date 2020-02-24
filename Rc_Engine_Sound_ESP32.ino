@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 2.91; // Software revision.
+const float codeVersion = 3.0; // Software revision.
 
 //
 // =======================================================================================================
@@ -58,7 +58,7 @@ const float codeVersion = 2.91; // Software revision.
 // RC signal pins (active, if "SERIAL_COMMUNICATION" is commented out)
 // Channel numbers may be different on your recveiver!
 #define SERVO1_PIN 13 // connect to RC receiver servo output channel 1 (aileron, steering)
-#define SERVO2_PIN 12 // connect to RC receiver servo output channel 2 (elevator, 3 pos. switch)
+#define SERVO2_PIN 12 // connect to RC receiver servo output channel 2 (elevator, 3 pos. switch for shifting)
 #define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle)
 #define SERVO4_PIN 27 // connect to RC receiver servo output channel 4 (rudder, pot)
 
@@ -1012,18 +1012,20 @@ void engineMassSimulation() {
     throtMillis = millis();
 
     // compute rpm curves
-    if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Engine revving allowed during low speed ("clutch" is engaging at this point)
+    if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
       if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
       else mappedThrottle = reMap(curveLinear, currentThrottle);
+      if (escIsBraking) mappedThrottle = 0;
     }
-    else { // Engine rpm synchronized with ESC power (speed)
+    else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
       if (shifted) mappedThrottle = reMap(curveShifting, currentSpeed);
       else mappedThrottle = reMap(curveLinear, currentSpeed);
     }
 
 
     // Accelerate engine
-    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && !escIsBraking && engineRunning) {
+    //if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && !escIsBraking && engineRunning) {
+    if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && engineRunning) {
       if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
         currentRpm += acc;
         if (currentRpm > maxRpm) currentRpm = maxRpm;
@@ -1065,9 +1067,9 @@ void engineMassSimulation() {
     Serial.println(pulseMaxNeutral[3]);
     Serial.println("Gear");
     Serial.println(selectedGear);
-    /*Serial.println(currentThrottle);
+    Serial.println(currentThrottle);
       Serial.println(mappedThrottle);
-      Serial.println(currentRpm);
+      /*Serial.println(currentRpm);
       Serial.println(currentRpmScaled);
       Serial.println(engineState);
       Serial.println(" ");
@@ -1285,6 +1287,7 @@ void esc() {
   static int8_t pulse; // -1 = reverse, 0 = neutral, 1 = forward
   static int8_t escPulse; // -1 = reverse, 0 = neutral, 1 = forward
   static int8_t driveRampRate;
+  static int8_t driveRampGain;
   static int8_t brakeRampRate;
   uint8_t escRampTime;
 
@@ -1346,8 +1349,8 @@ void esc() {
         escIsBraking = false;
         escInReverse = false;
         escIsDriving = true;
-        if (escPulseWidth < pulseWidth[2]) escPulseWidth += driveRampRate;
-        if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth -= driveRampRate;
+        if (escPulseWidth < pulseWidth[2]) escPulseWidth += (driveRampRate * driveRampGain);
+        if (escPulseWidth > pulseWidth[2] && escPulseWidth > pulseZero[2]) escPulseWidth -= (driveRampRate * driveRampGain);
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
           escPulseWidth = escPulseWidth -= currentSpeed / 4;
@@ -1356,7 +1359,7 @@ void esc() {
         }
 
         if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
-          escPulseWidth = escPulseWidth += currentSpeed / 6;
+          escPulseWidth = escPulseWidth += 40;
           gearDownShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseZero[2], pulseMax[2]);
         }
@@ -1385,8 +1388,8 @@ void esc() {
         escIsBraking = false;
         escInReverse = true;
         escIsDriving = true;
-        if (escPulseWidth > pulseWidth[2]) escPulseWidth -= driveRampRate;
-        if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth += driveRampRate;
+        if (escPulseWidth > pulseWidth[2]) escPulseWidth -= (driveRampRate * driveRampGain);
+        if (escPulseWidth < pulseWidth[2] && escPulseWidth < pulseZero[2]) escPulseWidth += (driveRampRate * driveRampGain);
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
           escPulseWidth = escPulseWidth += currentSpeed / 4;
@@ -1395,7 +1398,7 @@ void esc() {
         }
 
         if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
-          escPulseWidth = escPulseWidth -= currentSpeed / 6;
+          escPulseWidth = escPulseWidth -= 40;
           gearDownShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseMin[2], pulseZero[2]);
         }
@@ -1421,6 +1424,11 @@ void esc() {
         break;
 
     } // End of state machine
+
+
+    // Gain for drive ramp rate, depending on clutchEngagingPoint
+    if (currentSpeed < clutchEngagingPoint) driveRampGain = 2; // prevent clutch from slipping too much
+    else driveRampGain = 1;
 
 
     // ESC control
