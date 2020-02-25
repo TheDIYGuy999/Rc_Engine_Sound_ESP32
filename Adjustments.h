@@ -53,17 +53,21 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "sounds/VWBeetleStart.h" // VW Beetle or Bug
 
 // Choose the motor sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, never more!)
-volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int idleVolumePercentage = 130; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int engineIdleVolumePercentage = 35; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)
 //#include "sounds/ScaniaR500V8Idle.h" // Scania R500 V8
 //#include "sounds/ScaniaR620V8Idle.h" // Scania R620 V8 (a bit thin, add about 80% turbo volume)
+//#include "sounds/ScaniaR620Uphill.h" // Scania R620 V8 going uphill, typical knock - knock under load
+//#include "sounds/ScaniaR620Uphill2.h" // Scania R620 V8 going uphill, typical knock - knock under load (this one is better, Volume 200%, 20%, Turbo 70%, 10%)
 //#include "sounds/UralV8Idle.h" // Ural 4320 V8
 //#include "sounds/HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
 //#include "sounds/HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/DetroitDieselIdle.h" // Detroit Diesel generic Truck
-#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1) use it for King Hauler
+//#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1)
+//#include "sounds/DetroitDieselBassBoost15db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 15dB
+#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 130%, 35%, Turbo 70%, 10%)
 //#include "sounds/DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
 //#include "sounds/DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "sounds/DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
@@ -162,7 +166,7 @@ const boolean shifted = false; // false = linear rpm curve, true = shifting poin
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-const uint16_t clutchEngagingPoint = 150; // The "clutch" is engaging above this point (about 150), = engine rpm sound in synch with ESC power
+const uint16_t clutchEngagingPoint = 150; // The "clutch" is engaging above this point (about 150 for King Hauler, 50 for Scania R620), = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
