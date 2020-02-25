@@ -186,6 +186,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Ramping ESC signal faster below "clutchEngagingPoint" to prevent clutch from excessive slipping
 - Solved a 2nd engine rpm bug during braking
 
+## New in V 3.1:
+- Added a new, pretty realistic SCANIA R620 "Straight Pipe" engine sound (ScaniaR620Uphill2.h). Pure goose flesh!
+- Detroit diesel sounds with more bass added
+- A speaker with good bass reproduction is required!
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
