@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.0; // Software revision.
+const float codeVersion = 3.1; // Software revision.
 
 //
 // =======================================================================================================
@@ -19,7 +19,7 @@ const float codeVersion = 3.0; // Software revision.
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
-//#define DEBUG // uncomment it for general debugging informations
+#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
@@ -126,6 +126,7 @@ volatile boolean lightsOn = false;              // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
+volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid throttle drop
 
 uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
 boolean gearUpShiftingInProgress;               // Active while shifting upwards
@@ -145,7 +146,7 @@ volatile boolean sound1Switch = false;          // Switch state for sound1 trigg
 boolean indicatorLon = false;                   // Left indicator
 boolean indicatorRon = false;                   // Right indicator
 
-uint32_t currentThrottle = 0;                   // 0 - 500 (Throttle trigger input)
+int32_t currentThrottle = 0;                   // 0 - 500 (Throttle trigger input)
 uint32_t currentSpeed = 0;                      // 0 - 500 (current ESC power)
 boolean throttleReverse;                        // false = forward, true = reverse
 uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
@@ -223,12 +224,12 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   static uint32_t attenuatorMillis;
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
-  static uint32_t curTurboSample;              // Index of currently loaded turbo sample
+  static uint32_t curTurboSample;               // Index of currently loaded turbo sample
   static uint32_t curBrakeSample;               // Index of currently loaded brake sound sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static int32_t a, b, c;                         // Two input signals for mixer: a = engine, b = additional sound, c = turbo sound
+  static int32_t a, b, c;                       // Input signals for mixer: a = engine, b = additional sound, c = turbo sound
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -353,7 +354,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   } // end of switch case
 
-  // DAC output (groups a, b + c mixed together) ----------------------------------------------------
+  // DAC output (groups a, b, c mixed together) ----------------------------------------------------
 
   dacWrite(DAC1, (int) (constrain(((a * 8 / 10) + (b / 2) + (c / 5)), 0, 255))); // Write mixed output signals to DAC
 
@@ -373,7 +374,8 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curSound1Sample;              // Index of currently loaded sound1 sample
   static uint32_t curReversingSample;           // Index of currently loaded reversing beep sample
   static uint32_t curIndicatorSample;           // Index of currently loaded indicator tick sample
-  static int32_t a, b, b1, b2;                 // Two input signals for mixer: a = horn or siren, b = reversing sound, indicator sound
+  static uint32_t curWastegateSample;           // Index of currently loaded wastegate sample
+  static int32_t a, b, b1, b2, b3;              // Two input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -479,9 +481,25 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b2 = 128;
   }
 
-  // Mixing "b1" + "b2" together ----
+  // Wastegate sound, triggered after rapid throttle drop
+  if (wastegateTrigger) {
+    if (curWastegateSample < wastegateSampleCount) {
+      b3 = (wastegateSamples[curWastegateSample] * throttleDependentTurboVolume / 100 * wastegateVolumePercentage / 100) + 128;
+      curWastegateSample ++;
+    }
+    else {
+      wastegateTrigger = false;
+    }
+  }
+  else {
+    b3 = 128; // Ensure full engine volume, so 0!!
+    curWastegateSample = 0; // ensure, next sound will start @ first sample
+  }
+
+  // Mixing "b1" + "b2" + "b3" together ----
   //b = (b1 + b2 - b1 * b2 / 255); // TODO
-  b = b1 + b2 / 2;
+  //b = b1 + b2 / 2;
+  b = b1 + b2 / 2 + b3;
 
   // DAC output (groups a + b mixed together) ----------------------------------------------------
 
@@ -1005,6 +1023,7 @@ void mapThrottle() {
 void engineMassSimulation() {
 
   static int32_t  mappedThrottle = 0;
+  static int32_t  lastThrottle;
   static unsigned long throtMillis;
   static unsigned long printMillis;
 
@@ -1039,10 +1058,17 @@ void engineMassSimulation() {
       if (currentRpm < minRpm) currentRpm = minRpm;
     }
 
-
     // Speed (sample rate) output
     currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
   }
+
+  // Trigger Wastegate, if throttle rapidly dropped
+  if (lastThrottle - currentThrottle > 200) {
+  //if (lastThrottle > 400 && (lastThrottle - currentThrottle) > 200) {
+  //if (lastThrottle > 400 && currentThrottle < 200) {
+    wastegateTrigger = true;
+  }
+  lastThrottle = currentThrottle;
 
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
@@ -1068,8 +1094,10 @@ void engineMassSimulation() {
     Serial.println("Gear");
     Serial.println(selectedGear);
     Serial.println(currentThrottle);
-      Serial.println(mappedThrottle);
-      /*Serial.println(currentRpm);
+    Serial.println(mappedThrottle);
+    Serial.println("Wastegate");
+    Serial.println(wastegateTrigger);
+    /*Serial.println(currentRpm);
       Serial.println(currentRpmScaled);
       Serial.println(engineState);
       Serial.println(" ");

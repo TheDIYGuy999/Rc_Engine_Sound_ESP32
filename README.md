@@ -191,6 +191,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Detroit diesel sounds with more bass added
 - A speaker with good bass reproduction is required!
 
+## New in V 3.2:
+- Added the new "Wastegate" sound. It is triggered, if the throttle is dropped rapidly
+- Added Unimog U 1000, uses the new Wastegate sound
+- Added AM General M35 truck
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode

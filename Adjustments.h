@@ -53,7 +53,7 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "sounds/VWBeetleStart.h" // VW Beetle or Bug
 
 // Choose the motor sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 130; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
 volatile int engineIdleVolumePercentage = 35; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)
@@ -67,11 +67,14 @@ volatile int engineIdleVolumePercentage = 35; // the engine volume will be throt
 //#include "sounds/DetroitDieselIdle.h" // Detroit Diesel generic Truck
 //#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1)
 //#include "sounds/DetroitDieselBassBoost15db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 15dB
-#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 130%, 35%, Turbo 70%, 10%)
+//#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 130%, 35%, Turbo 70%, 10%)
 //#include "sounds/DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
 //#include "sounds/DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "sounds/DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
 //#include "sounds/Cat3406BIdle.h" // Caterpillar 3406B idle
+//#include "sounds/M35Idle.h" // AM General M35 Truck
+//#include "sounds/M35BassBoost7db.h" // AM General M35 Truck Bass 100-200Hz + 7dB (Volume 130%, 35%, Turbo 150%, 30%)
+#include "sounds/UnimogU1000TurboFullLoad.h" // Unimog U1000 Turbo (Volume 100%, 35%, Turbo 50%, 10%, Wastegate 250%)
 //#include "sounds/ActrosV8Idle.h" // MB Actros V8 Truck Idle (not very good)
 //#include "sounds/KenworthW900Idle.h" // Kenworth W900 Truck Idle
 //#include "sounds/MackIdle.h" // Mack Truck Idle
@@ -89,9 +92,13 @@ volatile int engineIdleVolumePercentage = 35; // the engine volume will be throt
 //#include "sounds/1000Hz.h" // 1000Hz test tone
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 70; // Adjust the turbo volume (usually = 70%, never more than 100%!)
+volatile int turboVolumePercentage = 50; // Adjust the turbo volume (usually = 70%, never more than 100%!)
 volatile int turboIdleVolumePercentage = 10; // the turbo volume will be throttle dependent (usually = 10%, never more than 100%!)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
+
+// Adjust the additional Wastegate sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
+volatile int wastegateVolumePercentage = 250; // Adjust the wastegate volume (usually = 70%, up to 250%)
+#include "sounds/UnimogU1000TurboWastegate.h" // Wastegate sound is played, after rapid throttle drop with engaged clutch
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%, never more!)
@@ -132,7 +139,7 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-volatile int reversingVolumePercentage = 80; // Adjust the reversing sound volume (usually = 80%, never more than 100%!)
+volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%, never more than 100%!)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
