@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.1; // Software revision.
+const float codeVersion = 3.3; // Software revision.
 
 //
 // =======================================================================================================
@@ -19,7 +19,7 @@ const float codeVersion = 3.1; // Software revision.
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
-#define DEBUG // uncomment it for general debugging informations
+//#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
@@ -125,6 +125,8 @@ volatile boolean indicatorSoundOn = false;      // active, if indicator bulb is 
 volatile boolean lightsOn = false;              // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
+volatile boolean parkingBrakeTrigger = false;   // Trigger for air parking brake noise
+volatile boolean shiftingTrigger = false;       // Trigger for air shifting noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid throttle drop
 
@@ -183,7 +185,8 @@ const int32_t minRpm = 0;                       // always 0
 int32_t currentRpm = 0;                         // 0 - 500 (signed required!)
 volatile uint32_t currentRpmScaled = 0;
 volatile uint8_t throttleDependentVolume = 0;   // engine volume according to throttle position
-volatile uint8_t throttleDependentTurboVolume = 0;   // turbo volume according to throttle position
+volatile uint8_t throttleDependentTurboVolume = 0;   // turbo volume according to rpm
+volatile uint8_t throttleDependentWastegateVolume = 0;   // wastegate volume according to rpm
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -225,7 +228,6 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t attenuatorMillis;
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
   static uint32_t curTurboSample;               // Index of currently loaded turbo sample
-  static uint32_t curBrakeSample;               // Index of currently loaded brake sound sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
@@ -239,7 +241,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
-      a = 128; // volume = zero
+      a = 0; // volume = zero
       if (engineOn) {
         engineState = 1;
         engineStart = true;
@@ -251,7 +253,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curStartSample < startSampleCount) {
-        a = (startSamples[curStartSample] * throttleDependentVolume / 100 * startVolumePercentage / 100) + 128;
+        a = (startSamples[curStartSample] * throttleDependentVolume / 100 * startVolumePercentage / 100);
         curStartSample ++;
       }
       else {
@@ -269,7 +271,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
       // Engine sound
       if (curEngineSample < sampleCount) {
-        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100) + 128;
+        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100);
         curEngineSample ++;
       }
       else {
@@ -278,29 +280,12 @@ void IRAM_ATTR variablePlaybackTimer() {
 
       // Turbo sound
       if (curTurboSample < turboSampleCount) {
-        c = (turboSamples[curTurboSample] * throttleDependentTurboVolume / 100 * turboVolumePercentage / 100) + 128;
+        c = (turboSamples[curTurboSample] * throttleDependentTurboVolume / 100 * turboVolumePercentage / 100);
         curTurboSample ++;
       }
       else {
         curTurboSample = 0;
       }
-
-      // Air brake release sound, triggered after stop
-      if (airBrakeTrigger) {
-        if (curBrakeSample < brakeSampleCount) {
-          b = (int)brakeSamples[curBrakeSample] + 128;
-          curBrakeSample ++;
-        }
-        else {
-          airBrakeTrigger = false;
-          EngineWasAboveIdle = false;
-        }
-      }
-      else {
-        b = 0; // Ensure full engine volume, so 0!!
-        curBrakeSample = 0; // ensure, next sound will start @ first sample
-      }
-
 
       if (!engineOn) {
         speedPercentage = 100;
@@ -316,7 +301,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curEngineSample < sampleCount) {
-        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100 / attenuator) + 128;
+        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100 / attenuator);
         curEngineSample ++;
       }
       else {
@@ -331,23 +316,17 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
 
       if (attenuator >= 50 || speedPercentage >= 500) { // 50 & 500
-        a = 128;
+        a = 0;
         speedPercentage = 100;
+        parkingBrakeTrigger = true;
         engineState = 4;
         engineStop = false;
       }
       break;
 
-    case 4: // brake bleeding air sound after engine is off ----
-      variableTimerTicks = 4000000 / brakeSampleRate; // our fixed sampling rate
-      timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+    case 4: // parking brake bleeding air sound after engine is off ----
 
-      if (curBrakeSample < brakeSampleCount) {
-        b = (brakeSamples[curBrakeSample] * brakeVolumePercentage / 100) + 128;
-        curBrakeSample ++;
-      }
-      else {
-        curBrakeSample = 0;
+      if (!parkingBrakeTrigger) {
         engineState = 0;
       }
       break;
@@ -356,7 +335,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ----------------------------------------------------
 
-  dacWrite(DAC1, (int) (constrain(((a * 8 / 10) + (b / 2) + (c / 5)), 0, 255))); // Write mixed output signals to DAC
+  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + 128, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -375,7 +354,10 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curReversingSample;           // Index of currently loaded reversing beep sample
   static uint32_t curIndicatorSample;           // Index of currently loaded indicator tick sample
   static uint32_t curWastegateSample;           // Index of currently loaded wastegate sample
-  static int32_t a, b, b1, b2, b3;              // Two input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate
+  static uint32_t curBrakeSample;               // Index of currently loaded brake sound sample
+  static uint32_t curParkingBrakeSample;        // Index of currently loaded brake sound sample
+  static uint32_t curShiftingSample;            // Index of currently loaded shifting sample
+  static int32_t a, b, b1, b2, b3, b4, b5, b6;  // Two input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -391,12 +373,12 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
       if (hornOn) {
         if (curHornSample < hornSampleCount) {
-          a =  (hornSamples[curHornSample] * hornVolumePercentage / 100) + 128;
+          a =  (hornSamples[curHornSample] * hornVolumePercentage / 100);
           curHornSample ++;
         }
         else {
           curHornSample = 0;
-          a = 128;
+          a = 0;
           if (!hornSwitch) hornOn = false; // Latch required to prevent it from popping
         }
       }
@@ -410,12 +392,12 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
       if (sirenOn) {
         if (curSirenSample < sirenSampleCount) {
-          a = (sirenSamples[curSirenSample] * sirenVolumePercentage / 100) + 128;
+          a = (sirenSamples[curSirenSample] * sirenVolumePercentage / 100);
           curSirenSample ++;
         }
         else {
           curSirenSample = 0;
-          a = 128;
+          a = 0;
           if (!sirenSwitch) sirenOn = false; // Latch required to prevent it from popping
         }
       }
@@ -429,12 +411,12 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
       if (sound1On) {
         if (curSound1Sample < sound1SampleCount) {
-          a = (sound1Samples[curSound1Sample] * sound1VolumePercentage / 100) + 128;
+          a = (sound1Samples[curSound1Sample] * sound1VolumePercentage / 100);
           curSound1Sample ++;
         }
         else {
           curSound1Sample = 0;
-          a = 128;
+          a = 0;
           if (!sound1Switch) sound1On = false; // Latch required to prevent it from popping
         }
       }
@@ -450,7 +432,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
     if (curReversingSample < reversingSampleCount) {
-      b1 = (reversingSamples[curReversingSample] * reversingVolumePercentage / 100) + 128;
+      b1 = (reversingSamples[curReversingSample] * reversingVolumePercentage / 100);
       curReversingSample ++;
     }
     else {
@@ -459,7 +441,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
   else {
     curReversingSample = 0;
-    b1 = 128;
+    b1 = 0;
   }
 
   // Indicator tick sound "b2" ----
@@ -468,7 +450,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
     if (curIndicatorSample < indicatorSampleCount) {
-      b2 = (indicatorSamples[curIndicatorSample] * indicatorVolumePercentage / 100) + 128;
+      b2 = (indicatorSamples[curIndicatorSample] * indicatorVolumePercentage / 100);
       curIndicatorSample ++;
     }
     else {
@@ -478,13 +460,13 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
   else {
     curIndicatorSample = 0;
-    b2 = 128;
+    b2 = 0;
   }
 
   // Wastegate sound, triggered after rapid throttle drop
   if (wastegateTrigger) {
     if (curWastegateSample < wastegateSampleCount) {
-      b3 = (wastegateSamples[curWastegateSample] * throttleDependentTurboVolume / 100 * wastegateVolumePercentage / 100) + 128;
+      b3 = (wastegateSamples[curWastegateSample] * throttleDependentWastegateVolume / 100 * wastegateVolumePercentage / 100);
       curWastegateSample ++;
     }
     else {
@@ -492,18 +474,62 @@ void IRAM_ATTR fixedPlaybackTimer() {
     }
   }
   else {
-    b3 = 128; // Ensure full engine volume, so 0!!
+    b3 = 0;
     curWastegateSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Mixing "b1" + "b2" + "b3" together ----
-  //b = (b1 + b2 - b1 * b2 / 255); // TODO
-  //b = b1 + b2 / 2;
-  b = b1 + b2 / 2 + b3;
+  // Air brake release sound, triggered after stop
+  if (airBrakeTrigger) {
+    if (curBrakeSample < brakeSampleCount) {
+      b4 = (brakeSamples[curBrakeSample] * brakeVolumePercentage / 100);
+      curBrakeSample ++;
+    }
+    else {
+      airBrakeTrigger = false;
+      EngineWasAboveIdle = false;
+    }
+  }
+  else {
+    b4 = 0;
+    curBrakeSample = 0; // ensure, next sound will start @ first sample
+  }
+
+  // Air parking brake release sound, triggered after engine off
+  if (parkingBrakeTrigger) {
+    if (curParkingBrakeSample < parkingBrakeSampleCount) {
+      b5 = (parkingBrakeSamples[curParkingBrakeSample] * parkingBrakeVolumePercentage / 100);
+      curParkingBrakeSample ++;
+    }
+    else {
+      parkingBrakeTrigger = false;
+    }
+  }
+  else {
+    b5 = 0;
+    curParkingBrakeSample = 0; // ensure, next sound will start @ first sample
+  }
+
+  // Pneumatic gear shifting sound, triggered while shifting the TAMIYA 3 speed transmission
+  if (shiftingTrigger) {
+    if (curShiftingSample < shiftingSampleCount) {
+      b6 = (shiftingSamples[curShiftingSample] * shiftingVolumePercentage / 100);
+      curShiftingSample ++;
+    }
+    else {
+      shiftingTrigger = false;
+    }
+  }
+  else {
+    b6 = 0;
+    curShiftingSample = 0; // ensure, next sound will start @ first sample
+  }
+
+  // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" together ----
+  b = b1 + b2 / 2 + b3 + b4 + b5 + b6;
 
   // DAC output (groups a + b mixed together) ----------------------------------------------------
 
-  dacWrite(DAC2, (int) (constrain((a * 8 / 10) + (b * 2 / 10), 0, 255))); // Write mixed output signals to DAC
+  dacWrite(DAC2, (constrain((a * 8 / 10) + (b * 2 / 10) + 128, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -1012,6 +1038,11 @@ void mapThrottle() {
   if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
+
+  // Calculate engine rpm dependentwastegate volume
+  if (engineRunning) throttleDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);
+  else throttleDependentWastegateVolume = wastegateIdleVolumePercentage;
+
 }
 
 //
@@ -1064,8 +1095,8 @@ void engineMassSimulation() {
 
   // Trigger Wastegate, if throttle rapidly dropped
   if (lastThrottle - currentThrottle > 200) {
-  //if (lastThrottle > 400 && (lastThrottle - currentThrottle) > 200) {
-  //if (lastThrottle > 400 && currentThrottle < 200) {
+    //if (lastThrottle > 400 && (lastThrottle - currentThrottle) > 200) {
+    //if (lastThrottle > 400 && currentThrottle < 200) {
     wastegateTrigger = true;
   }
   lastThrottle = currentThrottle;
@@ -1119,7 +1150,7 @@ void engineMassSimulation() {
 
 //
 // =======================================================================================================
-// SWITCH ENGINE ON OR OFF, AIR BRAKE TRIGGERING
+// SWITCH ENGINE ON OR OFF
 // =======================================================================================================
 //
 
@@ -1187,7 +1218,8 @@ void led() {
 
   // Headlights, tail lights ----
   if (lightsOn) {
-    headLight.on();
+    if (engineRunning) headLight.on();
+    if (engineStart) headLight.pwm(50);
     if (escIsBraking) {
       tailLight.on();  // Taillights (full brightness)
       brakeLight.on(); // Brakelight on
@@ -1221,7 +1253,7 @@ void led() {
   }
 
   // Foglights (serial control mode only) ----
-  if (lightsOn && !mode2) fogLight.on();
+  if (lightsOn && engineRunning && !mode2) fogLight.on();
   else fogLight.off();
 
   // Roof lights (serial control mode only) ----
@@ -1278,6 +1310,7 @@ void gearboxDetection() {
   if (selectedGear > previousGear) {
     gearUpShiftingInProgress = true;
     gearUpShiftingPulse = true;
+    shiftingTrigger = true;
     previousGear = selectedGear;
   }
 
@@ -1289,6 +1322,7 @@ void gearboxDetection() {
   if (selectedGear < previousGear) {
     gearDownShiftingInProgress = true;
     gearDownShiftingPulse = true;
+    shiftingTrigger = true;
     previousGear = selectedGear;
   }
 

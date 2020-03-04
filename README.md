@@ -196,6 +196,17 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Added Unimog U 1000, uses the new Wastegate sound
 - Added AM General M35 truck
 
+## New in V 3.3:
+- Dimmed headlights during engine start
+- International DT-466 sounds added
+- New SCANIA V8 added
+- Brake sound moved to the fixed sample rate playback interrupt
+- Cleaned up placback interrupt functions
+- DAC offset 128 moved to dacWrite()
+- Brake sounds dont' have to start & end @ -128
+- Parking brake sound added
+- Pneumatic shifting sound added
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode

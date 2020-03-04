@@ -1,4 +1,4 @@
-const unsigned int sampleRate = 14000;  // 22050, but we want to slow it down a bit
+const unsigned int sampleRate = 15000;  // 22050, but we want to slow it down a bit
 const unsigned int sampleCount = 18477;
 const signed char samples[] = {
 0, 0, 2, 9, 19, 26, 22, 17, 16, 15, 15, 16, 10, 1, -7, -13,
