@@ -1,4 +1,4 @@
-const unsigned int startSampleRate = 18000; // 22050, but we want to slow it down a bit
+const unsigned int startSampleRate = 22050;
 const unsigned int startSampleCount = 68464;
 const signed char startSamples[] = {
 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0,
