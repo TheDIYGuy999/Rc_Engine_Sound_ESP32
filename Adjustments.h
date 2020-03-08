@@ -37,7 +37,7 @@ Motor: 540 size, 35 turns, stock pinion
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
-volatile int startVolumePercentage = 120; // Adjust the start volume (usually = 100%)
+volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 100%)
 //#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "sounds/ScaniaV8Start.h" // Scania V8 Start
 //#include "sounds/ScaniaR500V8Start.h" // Scania R500 V8 Start
@@ -54,14 +54,14 @@ volatile int startVolumePercentage = 120; // Adjust the start volume (usually = 
 //#include "sounds/ActrosV8Start.h" // MB Actros V8 Truck Start
 //#include "sounds/VWBeetleStart.h" // VW Beetle or Bug
 
-// Choose the motor sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+// Choose the motor idle sound (uncomment the one you want) --------
+volatile int idleVolumePercentage = 60; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50% if diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 35; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)
 //#include "sounds/ScaniaR500V8Idle.h" // Scania R500 V8
 //#include "sounds/ScaniaV8IdleNew.h" // Scania V8 (Volume 100%, 35%, Turbo 70%, 10%, Wastegate 50%, 1%, CEP 100, TSM 2)
-#include "sounds/ScaniaV8IdleNewWarm.h" // Scania V8 (Volume 100%, 35%, Turbo 70%, 10%, Wastegate 50%, 1%, CEP 100, TSM 2)
+#include "sounds/ScaniaV8IdleNewWarm.h" // Scania V8 (Volume 100%, 35%, Turbo 70%, 10%, Wastegate 50%, 1%, CEP 100, TSM 2) a good one!
 //#include "sounds/ScaniaR620V8Idle2.h" // Scania R620 V8 (a bit thin, add about 80% turbo volume)
 //#include "sounds/ScaniaR620Uphill.h" // Scania R620 V8 going uphill, typical knock - knock under load
 //#include "sounds/ScaniaR620Uphill2.h" // Scania R620 V8 going uphill, typical knock - knock under load (this one is better, Volume 180%, 20%, Turbo 60%, 10%, Wastegate 50%, 1%, CEP 100, TSM 2)
@@ -96,12 +96,32 @@ volatile int engineIdleVolumePercentage = 35; // the engine volume will be throt
 //#include "sounds/100Hz.h" // 100Hz test tone
 //#include "sounds/1000Hz.h" // 1000Hz test tone
 
+// Choose the motor revving sound (experimental, uncomment the one you want) --------
+//#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
+volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int engineRevVolumePercentage = 30; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the idle sound above this point
+#ifdef REV_SOUND
+//#include "sounds/ScaniaV8Rev.h" // Scania V8
+#include "sounds/ScaniaV8Rev2.h" // Scania V8
+#endif
+
+// Choose the Diesel ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want) --------
+volatile int dieselKnockVolumePercentage = 500; // Adjust the Diesel knock volume (usually = 200 - 500%)
+volatile int dieselKnockIdleVolumePercentage = 20; // Diesel knock volume while idling (usually = 20%)
+volatile int dieselKnockInterval = 2; // Idle sample length divided by this number (2 -4, depending on sound files)
+//#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
+//#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8
+//#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
+#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highwyway race against Volvo truck (,500%, 20%, Interval = 2 possible, for slow running V8 engines)
+//#include "sounds/ScaniaDieselKnock2.h" // Strong, short Scania V8 diesel knock while highwyway race against Volvo truck (Interval = 4 possible, for faster running engines)
+
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 70; // Adjust the turbo volume (usually = 70%)
+volatile int turboVolumePercentage = 30; // Adjust the turbo volume (usually = 70%)
 volatile int turboIdleVolumePercentage = 10; // the turbo volume will be throttle dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
-// Adjust the additional Wastegate sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
+// Adjust the additional turbo wastegate valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
 volatile int wastegateVolumePercentage = 50; // Adjust the wastegate volume (usually = 70%, up to 250%)
 volatile int wastegateIdleVolumePercentage = 1;
 #include "sounds/UnimogU1000TurboWastegate.h" // Wastegate sound is played, after rapid throttle drop with engaged clutch
@@ -111,7 +131,7 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
-//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn
+//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 #include "sounds/westinghouseHorn.h" // American truck horn
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
 //#include "sounds/CarHorn.h" // A boring car horn
@@ -134,7 +154,8 @@ volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 
 //#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
-#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
+//#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
+#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
@@ -202,7 +223,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 const boolean engineManualOnOff = false;
 
 // Engine RPM range (2 for big Diesels, 4 for fast running motors)
-const uint32_t TOP_SPEED_MULTIPLIER = 2; // TSM. RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
+const uint32_t TOP_SPEED_MULTIPLIER = 3; // TSM. RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck

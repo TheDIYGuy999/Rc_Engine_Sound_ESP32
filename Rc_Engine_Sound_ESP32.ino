@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.3; // Software revision.
+const float codeVersion = 3.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -117,6 +117,7 @@ volatile boolean engineOn = false;              // Signal for engine on / off
 volatile boolean engineStart = false;           // Active, if engine is starting up
 volatile boolean engineRunning = false;         // Active, if engine is running
 volatile boolean engineStop = false;            // Active, if engine is shutting down
+volatile boolean engineRevving = false;         // Active, if engine is revving
 volatile boolean hornOn = false;                // Signal for horn on / off
 volatile boolean sirenOn = false;               // Signal for siren  on / off
 volatile boolean sound1On = false;              // Signal for sound1  on / off
@@ -129,6 +130,7 @@ volatile boolean parkingBrakeTrigger = false;   // Trigger for air parking brake
 volatile boolean shiftingTrigger = false;       // Trigger for air shifting noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid throttle drop
+volatile boolean dieselKnockTrigger = false;    // Trigger Diesel ignition "knock"
 
 uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
 boolean gearUpShiftingInProgress;               // Active while shifting upwards
@@ -183,8 +185,11 @@ boolean right;
 const int32_t maxRpm = 500;                     // always 500
 const int32_t minRpm = 0;                       // always 0
 int32_t currentRpm = 0;                         // 0 - 500 (signed required!)
-volatile uint32_t currentRpmScaled = 0;
+volatile uint32_t currentRpmScaled = 0;         // Idle
+volatile uint32_t currentRevRpmScaled = 0;      // Rev
 volatile uint8_t throttleDependentVolume = 0;   // engine volume according to throttle position
+volatile uint8_t throttleDependentRevVolume = 0;   // engine rev volume according to throttle position
+volatile uint8_t throttleDependentKnockVolume = 0;   // engine Diesel knock volume according to throttle position
 volatile uint8_t throttleDependentTurboVolume = 0;   // turbo volume according to rpm
 volatile uint8_t throttleDependentWastegateVolume = 0;   // wastegate volume according to rpm
 
@@ -206,6 +211,9 @@ unsigned long timelastloop;
 // Sampling intervals for interrupt timer (adjusted according to your sound file sampling rate)
 uint32_t maxSampleInterval = 4000000 / sampleRate;
 uint32_t minSampleInterval = 4000000 / sampleRate / TOP_SPEED_MULTIPLIER;
+#ifdef REV_SOUND
+uint32_t minRevSampleInterval = 4000000 / revSampleRate / TOP_SPEED_MULTIPLIER;
+#endif
 
 // Interrupt timer for variable sample rate playback (engine sound)
 hw_timer_t * variableTimer = NULL;
@@ -219,7 +227,7 @@ volatile uint32_t fixedTimerTicks = maxSampleInterval;
 
 //
 // =======================================================================================================
-// INTERRUPT FOR VARIABLE SPEED PLAYBACK (Engine sound, brake sound)
+// INTERRUPT FOR VARIABLE SPEED PLAYBACK (Engine sound, turbo sound)
 // =======================================================================================================
 //
 
@@ -227,8 +235,10 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   static uint32_t attenuatorMillis;
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
+  static uint32_t curRevSample;                 // Index of currently loaded engine rev sample
   static uint32_t curTurboSample;               // Index of currently loaded turbo sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
+  static uint32_t lastDieselKnockSample;        // Index of last Diesel knock sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
   static int32_t a, b, c;                       // Input signals for mixer: a = engine, b = additional sound, c = turbo sound
@@ -266,16 +276,45 @@ void IRAM_ATTR variablePlaybackTimer() {
       break;
 
     case 2: // Engine running ----
-      variableTimerTicks = currentRpmScaled;  // our variable sampling rate!
-      timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
-      // Engine sound
-      if (curEngineSample < sampleCount) {
-        a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100);
-        curEngineSample ++;
+      if (!engineRevving) {
+        // Engine idle sound
+        variableTimerTicks = currentRpmScaled;  // our variable idle sampling rate!
+        timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+        
+        if (curEngineSample < sampleCount) {
+          a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100);
+          curEngineSample ++;
+
+          // Trigger Diesel ignition "knock" sound (played in the fixed sample rate interrupt)
+          if (curEngineSample - lastDieselKnockSample > (sampleCount / dieselKnockInterval)) {
+            dieselKnockTrigger = true;
+            lastDieselKnockSample = curEngineSample;
+          }        
+        }
+        else {
+          curEngineSample = 0;
+          lastDieselKnockSample = 0;
+        }
       }
       else {
-        curEngineSample = 0;
+        // Engine rev sound (experimental)
+#ifdef REV_SOUND
+        static uint8_t i;
+        variableTimerTicks = currentRevRpmScaled;  // our variable rev sampling rate!
+        timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+        if (curRevSample < revSampleCount) {
+          a = (revSamples[curRevSample] * throttleDependentRevVolume / 100 * revVolumePercentage / 100);
+          i ++;
+          if (i >= 2) { // slow it down, play every sample 2 times!
+            curRevSample ++;
+            i = 0;
+          }
+        }
+        else {
+          curRevSample = 0;
+        }
+#endif
       }
 
       // Turbo sound
@@ -348,16 +387,17 @@ void IRAM_ATTR variablePlaybackTimer() {
 
 void IRAM_ATTR fixedPlaybackTimer() {
 
-  static uint32_t curHornSample;                // Index of currently loaded horn sample
-  static uint32_t curSirenSample;               // Index of currently loaded siren sample
-  static uint32_t curSound1Sample;              // Index of currently loaded sound1 sample
-  static uint32_t curReversingSample;           // Index of currently loaded reversing beep sample
-  static uint32_t curIndicatorSample;           // Index of currently loaded indicator tick sample
-  static uint32_t curWastegateSample;           // Index of currently loaded wastegate sample
-  static uint32_t curBrakeSample;               // Index of currently loaded brake sound sample
-  static uint32_t curParkingBrakeSample;        // Index of currently loaded brake sound sample
-  static uint32_t curShiftingSample;            // Index of currently loaded shifting sample
-  static int32_t a, b, b1, b2, b3, b4, b5, b6;  // Two input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting
+  static uint32_t curHornSample;                    // Index of currently loaded horn sample
+  static uint32_t curSirenSample;                   // Index of currently loaded siren sample
+  static uint32_t curSound1Sample;                  // Index of currently loaded sound1 sample
+  static uint32_t curReversingSample;               // Index of currently loaded reversing beep sample
+  static uint32_t curIndicatorSample;               // Index of currently loaded indicator tick sample
+  static uint32_t curWastegateSample;               // Index of currently loaded wastegate sample
+  static uint32_t curBrakeSample;                   // Index of currently loaded brake sound sample
+  static uint32_t curParkingBrakeSample;            // Index of currently loaded brake sound sample
+  static uint32_t curShiftingSample;                // Index of currently loaded shifting sample
+  static uint32_t curDieselKnockSample;             // Index of currently loaded Diesel knock sample
+  static int32_t a, b, b1, b2, b3, b4, b5, b6, b7;  // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -510,7 +550,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 
   // Pneumatic gear shifting sound, triggered while shifting the TAMIYA 3 speed transmission
-  if (shiftingTrigger) {
+  if (shiftingTrigger && engineRunning) {
     if (curShiftingSample < shiftingSampleCount) {
       b6 = (shiftingSamples[curShiftingSample] * shiftingVolumePercentage / 100);
       curShiftingSample ++;
@@ -524,8 +564,23 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curShiftingSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" together ----
-  b = b1 + b2 / 2 + b3 + b4 + b5 + b6;
+  // Diesel ignition "knock" payed in fixed sample rate section!
+  if (dieselKnockTrigger) {
+    if (curDieselKnockSample < knockSampleCount) {
+      b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
+      curDieselKnockSample ++;
+    }
+    else {
+      dieselKnockTrigger = false;
+    }
+  }
+  else {
+    b7 = 0;
+    curDieselKnockSample = 0; // ensure, next sound will start @ first sample
+  }
+
+  // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" + "b7" together ----
+  b = b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7;
 
   // DAC output (groups a + b mixed together) ----------------------------------------------------
 
@@ -1030,16 +1085,23 @@ void mapThrottle() {
     currentThrottle = constrain (currentThrottle, 0, 500);
   }
 
-  // Calculate throttle dependent engine volume
+  // Calculate throttle dependent engine idle volume
   if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
   else throttleDependentVolume = engineIdleVolumePercentage;
+
+  // Calculate throttle dependent engine rev volume
+  if (!escIsBraking && engineRunning) throttleDependentRevVolume = map(currentThrottle, 0, 500, engineRevVolumePercentage, 100);
+  else throttleDependentRevVolume = engineRevVolumePercentage;
+
+  // Calculate throttle dependent Diesel knock volume
+  if (!escIsBraking && engineRunning) throttleDependentKnockVolume = map(currentThrottle, 0, 500, dieselKnockIdleVolumePercentage, 100);
+  else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
 
   // Calculate engine rpm dependent turbo volume
   if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
-
-  // Calculate engine rpm dependentwastegate volume
+  // Calculate engine rpm dependent wastegate volume
   if (engineRunning) throttleDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);
   else throttleDependentWastegateVolume = wastegateIdleVolumePercentage;
 
@@ -1090,7 +1152,10 @@ void engineMassSimulation() {
     }
 
     // Speed (sample rate) output
-    currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval);
+    currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval); // Idle
+#ifdef REV_SOUND
+    currentRevRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minRevSampleInterval); // Rev
+#endif    
   }
 
   // Trigger Wastegate, if throttle rapidly dropped
@@ -1100,6 +1165,12 @@ void engineMassSimulation() {
     wastegateTrigger = true;
   }
   lastThrottle = currentThrottle;
+
+  // switch between idle and rev sound, depending on rpm
+#ifdef REV_SOUND  
+  if (currentRpm > revSwitchPoint) engineRevving =true;
+  else engineRevving = false;
+#endif
 
   // Print debug infos
 #ifdef DEBUG // can slow down the playback loop!
@@ -1128,9 +1199,9 @@ void engineMassSimulation() {
     Serial.println(mappedThrottle);
     Serial.println("Wastegate");
     Serial.println(wastegateTrigger);
-    /*Serial.println(currentRpm);
-      Serial.println(currentRpmScaled);
-      Serial.println(engineState);
+    Serial.println(currentRpm);
+    Serial.println(currentRpmScaled);
+      /*Serial.println(engineState);
       Serial.println(" ");
       Serial.println(loopTime);
       Serial.println(" ");
