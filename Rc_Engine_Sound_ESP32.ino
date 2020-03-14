@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.4; // Software revision.
+const float codeVersion = 3.5; // Software revision.
 
 //
 // =======================================================================================================
@@ -127,7 +127,7 @@ volatile boolean lightsOn = false;              // Lights on
 
 volatile boolean airBrakeTrigger = false;       // Trigger for air brake noise
 volatile boolean parkingBrakeTrigger = false;   // Trigger for air parking brake noise
-volatile boolean shiftingTrigger = false;       // Trigger for air shifting noise
+volatile boolean shiftingTrigger = false;       // Trigger for shifting noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid throttle drop
 volatile boolean dieselKnockTrigger = false;    // Trigger Diesel ignition "knock"
@@ -295,6 +295,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         else {
           curEngineSample = 0;
           lastDieselKnockSample = 0;
+          dieselKnockTrigger = true;
         }
       }
       else {
@@ -1094,7 +1095,7 @@ void mapThrottle() {
   else throttleDependentRevVolume = engineRevVolumePercentage;
 
   // Calculate throttle dependent Diesel knock volume
-  if (!escIsBraking && engineRunning) throttleDependentKnockVolume = map(currentThrottle, 0, 500, dieselKnockIdleVolumePercentage, 100);
+  if (!escIsBraking && engineRunning && (currentThrottle > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottle, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
   else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
 
   // Calculate engine rpm dependent turbo volume
@@ -1369,6 +1370,7 @@ void shaker() {
 void gearboxDetection() {
 
   static uint8_t previousGear;
+  static boolean previousReverse;
   static unsigned long upShiftingMillis;
   static unsigned long downShiftingMillis;
 
@@ -1400,6 +1402,13 @@ void gearboxDetection() {
   // Gear downshifting duration
   if (!gearDownShiftingInProgress) downShiftingMillis = millis();
   if (millis() - downShiftingMillis > 300) gearDownShiftingInProgress = false;
+
+
+  // Reverse gear engaging / disengaging detection
+  if (escInReverse != previousReverse) {
+    previousReverse = escInReverse;
+    shiftingTrigger = true; // Play shifting sound
+  }
 }
 
 //

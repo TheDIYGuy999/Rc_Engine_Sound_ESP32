@@ -214,9 +214,15 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## New in V 3.4:
 - Experimental support for separate engine revving sound. See "REV_SOUND" in Adjustments.h (don't use it)
 - New Diesel ignition "knock" sound (fixed sample rate), played in synch with the engine sound (variable sample rate). This results in a way more realistic Diesel sound, because the ignition "knock" does not vary in pitch.
-- engine sound is now mixed together from up to 4 sounds: idle, turbo, wastegate, Diesel knock. All of them are variable in volume, depending on throttle position or engine RPM. You can adjust everything, using a lot of variables in "Adjustments,h". The result is a very realistic engine sound. allows to use an engine RPM range of 3 instead of 2 without sounding strange
+- engine sound is now mixed together from up to 4 sounds: idle, turbo, wastegate, Diesel knock. All of them are variable in volume, depending on throttle position or engine RPM. You can adjust everything, using a lot of variables in "Adjustments,h". The result is a very realistic engine sound. Allows to use an engine RPM range of 3 instead of 2 without sounding strange
 - New squeaky brake sound
 - Up to 11 sounds are now played in parallel!
+
+## New in V 3.5:
+- "dieselKnockStartPoint" variable allows to adjust the point where the volume of the knock sound is starting to increase
+- Diesel knock sound triggering bug fixed
+- Mercedes Actros & Harley Davidson sounds added
+- Example files for vehicle specific settings added
 
 
 ## On the todo list:
