@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.5; // Software revision.
+const float codeVersion = 3.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -182,15 +182,16 @@ boolean hazard;
 boolean left;
 boolean right;
 
-const int32_t maxRpm = 500;                     // always 500
-const int32_t minRpm = 0;                       // always 0
-int32_t currentRpm = 0;                         // 0 - 500 (signed required!)
-volatile uint32_t currentRpmScaled = 0;         // Idle
-volatile uint32_t currentRevRpmScaled = 0;      // Rev
-volatile uint8_t throttleDependentVolume = 0;   // engine volume according to throttle position
-volatile uint8_t throttleDependentRevVolume = 0;   // engine rev volume according to throttle position
-volatile uint8_t throttleDependentKnockVolume = 0;   // engine Diesel knock volume according to throttle position
-volatile uint8_t throttleDependentTurboVolume = 0;   // turbo volume according to rpm
+const int32_t maxRpm = 500;                         // always 500
+const int32_t minRpm = 0;                           // always 0
+int32_t currentRpm = 0;                             // 0 - 500 (signed required!)
+volatile uint32_t currentRpmScaled = 0;             // Idle
+volatile uint32_t currentRevRpmScaled = 0;          // Rev
+volatile uint8_t throttleDependentVolume = 0;       // engine volume according to throttle position
+volatile uint8_t throttleDependentRevVolume = 0;    // engine rev volume according to throttle position
+volatile uint8_t throttleDependentKnockVolume = 0;  // engine Diesel knock volume according to throttle position
+volatile uint8_t throttleDependentTurboVolume = 0;  // turbo volume according to rpm
+volatile uint8_t throttleDependentFanVolume = 0;    // cooling fan volume according to rpm
 volatile uint8_t throttleDependentWastegateVolume = 0;   // wastegate volume according to rpm
 
 // Our main tasks
@@ -237,11 +238,12 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t curEngineSample;              // Index of currently loaded engine sample
   static uint32_t curRevSample;                 // Index of currently loaded engine rev sample
   static uint32_t curTurboSample;               // Index of currently loaded turbo sample
+  static uint32_t curFanSample;                 // Index of currently loaded fan sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint32_t lastDieselKnockSample;        // Index of last Diesel knock sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static int32_t a, b, c;                       // Input signals for mixer: a = engine, b = additional sound, c = turbo sound
+  static int32_t a, b, c, d;                    // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -327,6 +329,15 @@ void IRAM_ATTR variablePlaybackTimer() {
         curTurboSample = 0;
       }
 
+      // Fan sound
+      if (curFanSample < fanSampleCount) {
+        d = (fanSamples[curFanSample] * throttleDependentFanVolume / 100 * fanVolumePercentage / 100);
+        curFanSample ++;
+      }
+      else {
+        curFanSample = 0;
+      }
+
       if (!engineOn) {
         speedPercentage = 100;
         attenuator = 1;
@@ -375,7 +386,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ----------------------------------------------------
 
-  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + 128, 0, 255))); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + 128, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -1101,6 +1112,10 @@ void mapThrottle() {
   // Calculate engine rpm dependent turbo volume
   if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
+
+  // Calculate engine rpm dependent cooling fan volume
+  if (engineRunning && (currentRpm > fanStartPoint)) throttleDependentFanVolume = map(currentRpm, fanStartPoint, 500, fanIdleVolumePercentage, 100);
+  else throttleDependentFanVolume = fanIdleVolumePercentage;
 
   // Calculate engine rpm dependent wastegate volume
   if (engineRunning) throttleDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);

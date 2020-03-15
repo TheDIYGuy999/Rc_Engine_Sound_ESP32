@@ -224,6 +224,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Mercedes Actros & Harley Davidson sounds added
 - Example files for vehicle specific settings added
 
+## New in V 3.6:
+- engine cooling fan sound added
+- Scania 50 ton truck added
+- Air cooled Tatra 813 V12 8x8 truck added
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
