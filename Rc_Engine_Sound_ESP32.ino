@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.6; // Software revision.
+const float codeVersion = 3.61; // Software revision.
 
 //
 // =======================================================================================================

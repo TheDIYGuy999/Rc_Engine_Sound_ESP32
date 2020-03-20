@@ -229,6 +229,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Scania 50 ton truck added
 - Air cooled Tatra 813 V12 8x8 truck added
 
+## New in V 3.61:
+- Tatra 813 V12 8x8 sound optimised
+- New cooling fan & knock sounds
+
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode

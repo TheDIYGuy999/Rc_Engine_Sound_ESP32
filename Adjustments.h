@@ -56,8 +56,8 @@ volatile int startVolumePercentage = 90; // Adjust the start volume (usually = 1
 //#include "sounds/HarleyDavidsonFXSBStart.h" // Harley Davidson FXSB start
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 70; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int idleVolumePercentage = 80; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)
 //#include "sounds/ScaniaR500V8Idle.h" // Scania R500 V8
@@ -87,7 +87,7 @@ volatile int engineIdleVolumePercentage = 40; // the engine volume will be throt
 //#include "sounds/KenworthW900Idle.h" // Kenworth W900 Truck Idle (Volume 80%, 30%, Turbo 60%, 10%, Wastegate 50%, 1%, CEP 100, TSM 2)
 //#include "sounds/MackIdle.h" // Mack Truck Idle (very thin)
 //#include "sounds/ActrosLoggingTruckIdling.h" // Actros logging truck (Volume 80%, 40%, Turbo 60%, 10, Wastegate 100%, 1%, CEP 100, TSM 2, Knock volume 200, 10%, interval 4, 50)
-#include "sounds/Tatra813Idle.h" // Tatra 813 8x8 air cooled V12 Diesel (Volume 70%, 40%, Turbo 0%, 10, No Wastegate, CEP 100, TSM 2, Knock volume 300, 0%, interval 2, 50)
+#include "sounds/Tatra813Idle.h" // Tatra 813 8x8 air cooled V12 Diesel (Volume 80%, 50%, Turbo 0%, 0, Fan 250, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50)
 //#include "sounds/DefenderV8Idle.h" // Land Rover Defender V8
 //#include "sounds/Mustang68Idle.h" // Ford Mustang 1968
 //#include "sounds/DodgeChallenger70Idle.h" // 1970 Dodge Challenger
@@ -114,7 +114,7 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 300; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 500; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 2; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
@@ -127,8 +127,10 @@ volatile int dieselKnockStartPoint = 50; // Volume will raise above this point (
 //#include "sounds/ScanıaR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))
 //#include "sounds/SCANIAV850TonKnock.h" // 50 ton SCANIA knock
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck
-#include "sounds/Tatra813Knock.h" // Tatra 813 8x8 air cooled V12 Diesel
-//#include "sounds/HarleyDavidsonFXSBKnock2.h" // Harley Davidson FXSB knock
+//#include "sounds/Tatra813Knock.h" // Tatra 813 8x8 air cooled V12 Diesel
+#include "sounds/Tatra813Roar.h" // Tatra 813 8x8 air cooled V12 Diesel (use this for 813)
+//#include "sounds/Tatra813RoarShort.h" // Tatra 813 8x8 air cooled V12 Diesel
+//#include "sounds/HarleyDavidsonFXSBKnock.h" // Harley Davidson FXSB knock
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)
@@ -145,8 +147,10 @@ volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, af
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------
 volatile int fanVolumePercentage = 250; // Adjust the fan volume (250% for Tatra 813, else 0%)
 volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm dependent (usually = 10%)
-volatile int fanStartPoint = 400; // Volume will raise above this point (400 for Tatra 813)
-#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
+volatile int fanStartPoint = 250; // Volume will raise above this point (250 for Tatra 813)
+//#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
+#include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)
+//#include "sounds/Tatra813FanNewSlow.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
@@ -154,9 +158,9 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
-//#include "sounds/westinghouseHorn.h" // American truck horn (the best)
+#include "sounds/westinghouseHorn.h" // American truck horn (the best)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
-#include "sounds/CarHorn.h" // A boring car horn
+//#include "sounds/CarHorn.h" // A boring car horn
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
