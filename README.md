@@ -205,9 +205,9 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - International DT-466 sounds added
 - New SCANIA V8 added
 - Brake sound moved to the fixed sample rate playback interrupt
-- Cleaned up placback interrupt functions
+- Cleaned up playback interrupt functions
 - DAC offset 128 moved to dacWrite()
-- Brake sounds don't have to start & end @ -128
+- Brake sounds don't have to start & end @ -128 anymore
 - Parking brake sound added
 - Pneumatic shifting sound added
 
@@ -232,6 +232,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## New in V 3.61:
 - Tatra 813 V12 8x8 sound optimised
 - New cooling fan & knock sounds
+
+## New in V 3.7:
+- "PROTOTYPE_36-PIN" allows switching headlights pin between D0 & TX0 pin. Required for the change to a 30 pin ESP32 board, which will be used on the final PCB.
+- On the final PCB, the ESP32 will be powered from the ESC, the amplifier, the shaker and the LED from the on board 5V regulator. This requires to remove the popping noise, which is generated, when the DAC offset of 128 is activated. So I added a fader for the DAC offset.
+
 
 
 ## On the todo list:

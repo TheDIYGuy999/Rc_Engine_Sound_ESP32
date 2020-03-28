@@ -25,6 +25,9 @@ ESC: HOBBYWING QUICRUN WP Crawler Brushed with the following settings:
 Motor: 540 size, 35 turns, stock pinion
 
 // ********************************************************************************************************************* */
+// Choose the board version
+//#define PROTOTYPE_36-PIN // 36 or 30 pin board (comment it out for included PCB)
+
 // Choose the receiver communication mode (never uncomment both! If both commented out, classic PWM RC signal communication)--
 // Serial communication --------
 #define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)

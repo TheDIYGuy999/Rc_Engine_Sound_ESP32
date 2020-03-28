@@ -7,7 +7,7 @@
 
 */
 
-const float codeVersion = 3.61; // Software revision.
+const float codeVersion = 3.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -17,6 +17,8 @@ const float codeVersion = 3.61; // Software revision.
 
 // All the required vehicle specific settings are done in Adjustments.h!
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
+
+// Make sure to remove -master from your sketch folder name
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
 //#define DEBUG // uncomment it for general debugging informations
@@ -64,7 +66,12 @@ const float codeVersion = 3.61; // Software revision.
 
 #define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk!)
 
-#define HEADLIGHT_PIN 0 // White headllights
+#ifdef PROTOTYPE_36-PIN // switching headlight pin depending on the board variant
+#define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board
+#else
+#define HEADLIGHT_PIN 3 // (3 = RX0 pin, TX0 is not usable) white headllights
+#endif
+
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
 #define INDICATOR_LEFT_PIN 2 // Orange left indicator (turn signal) light
 #define INDICATOR_RIGHT_PIN 4 // Orange right indicator (turn signal) light
@@ -108,6 +115,8 @@ boolean serialInit = false;
 
 volatile boolean failSafe = false;              // Triggered in emergency situations like: serial signal lost etc.
 volatile int8_t ppmFailsafeCounter = 0;
+
+volatile uint8_t dacOffset = 0;  // 128, but needs to ba ramped up slowly to prevent popping noise, if switched on
 
 volatile uint8_t engineState = 0; // 0 = off, 1 = starting, 2 = running, 3 = stopping
 
@@ -283,7 +292,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         // Engine idle sound
         variableTimerTicks = currentRpmScaled;  // our variable idle sampling rate!
         timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
-        
+
         if (curEngineSample < sampleCount) {
           a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100);
           curEngineSample ++;
@@ -292,7 +301,7 @@ void IRAM_ATTR variablePlaybackTimer() {
           if (curEngineSample - lastDieselKnockSample > (sampleCount / dieselKnockInterval)) {
             dieselKnockTrigger = true;
             lastDieselKnockSample = curEngineSample;
-          }        
+          }
         }
         else {
           curEngineSample = 0;
@@ -386,7 +395,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ----------------------------------------------------
 
-  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + 128, 0, 255))); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + dacOffset, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -596,7 +605,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   // DAC output (groups a + b mixed together) ----------------------------------------------------
 
-  dacWrite(DAC2, (constrain((a * 8 / 10) + (b * 2 / 10) + 128, 0, 255))); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC2, (constrain((a * 8 / 10) + (b * 2 / 10) + dacOffset, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
   portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -688,10 +697,6 @@ void setup() {
   timelast = micros();
   timelastloop = timelast;
 
-  // DAC
-  dacWrite(DAC1, 128); // 128 = center / neutral position = 1.65V
-  dacWrite(DAC2, 128);
-
   // Task 1 setup (running on core 0)
   TaskHandle_t Task1;
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
@@ -760,6 +765,25 @@ void setup() {
   // ESC output
   escPulseMax = pulseZero[2] + escPulseSpan;
   escPulseMin = pulseZero[2] - escPulseSpan;
+}
+
+//
+// =======================================================================================================
+// DAC OFFSET FADER
+// =======================================================================================================
+//
+
+static unsigned long dacOffsetMicros;
+boolean dacInit;
+
+void dacOffsetFade() {
+  if (!dacInit) {
+    if (micros() - dacOffsetMicros > 100) { // Every 0.1ms
+      dacOffsetMicros = micros();
+      dacOffset ++; // fade DAC offset slowly to prevent it from popping, if ESP32 powered up after amplifier
+      if (dacOffset == 128) dacInit = true;
+    }
+  }
 }
 
 //
@@ -1171,7 +1195,7 @@ void engineMassSimulation() {
     currentRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval); // Idle
 #ifdef REV_SOUND
     currentRevRpmScaled = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minRevSampleInterval); // Rev
-#endif    
+#endif
   }
 
   // Trigger Wastegate, if throttle rapidly dropped
@@ -1183,8 +1207,8 @@ void engineMassSimulation() {
   lastThrottle = currentThrottle;
 
   // switch between idle and rev sound, depending on rpm
-#ifdef REV_SOUND  
-  if (currentRpm > revSwitchPoint) engineRevving =true;
+#ifdef REV_SOUND
+  if (currentRpm > revSwitchPoint) engineRevving = true;
   else engineRevving = false;
 #endif
 
@@ -1217,7 +1241,7 @@ void engineMassSimulation() {
     Serial.println(wastegateTrigger);
     Serial.println(currentRpm);
     Serial.println(currentRpmScaled);
-      /*Serial.println(engineState);
+    /*Serial.println(engineState);
       Serial.println(" ");
       Serial.println(loopTime);
       Serial.println(" ");
@@ -1653,6 +1677,9 @@ void loop() {
 
 void Task1code(void *pvParameters) {
   for (;;) {
+
+    // DAC offset fader
+    dacOffsetFade();
 
     // Map pulsewidth to throttle
     mapThrottle();
