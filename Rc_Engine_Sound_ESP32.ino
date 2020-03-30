@@ -1,4 +1,5 @@
-/* RC engine sound simulator for Arduino ESP32. Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
+/* RC engine sound & LED controller for Arduino ESP32.
+    Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
 
@@ -7,7 +8,7 @@
 
 */
 
-const float codeVersion = 3.7; // Software revision.
+const float codeVersion = 3.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -75,7 +76,7 @@ const float codeVersion = 3.7; // Software revision.
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
 #define INDICATOR_LEFT_PIN 2 // Orange left indicator (turn signal) light
 #define INDICATOR_RIGHT_PIN 4 // Orange right indicator (turn signal) light
-#define FOGLIGHT_PIN 16 // (RX2) Fog lights
+#define FOGLIGHT_PIN 16 // (16 = RX2) Fog lights
 #define REVERSING_LIGHT_PIN 17 // (TX2) White reversing light
 #define ROOFLIGHT_PIN 5 // Roof lights
 #define SIDELIGHT_PIN 18 // Side lights
@@ -586,18 +587,29 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 
   // Diesel ignition "knock" payed in fixed sample rate section!
-  if (dieselKnockTrigger) {
-    if (curDieselKnockSample < knockSampleCount) {
-      b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
-      curDieselKnockSample ++;
+  /* if (dieselKnockTrigger) {
+     if (curDieselKnockSample < knockSampleCount) {
+       b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
+       curDieselKnockSample ++;
+     }
+     else {
+       dieselKnockTrigger = false;
+     }
     }
     else {
-      dieselKnockTrigger = false;
-    }
+     b7 = 0;
+     curDieselKnockSample = 0; // ensure, next sound will start @ first sample
+    }*/
+
+  // Diesel ignition "knock" payed in fixed sample rate section!
+  if (dieselKnockTrigger) {
+    dieselKnockTrigger = false;
+    curDieselKnockSample = 0;
   }
-  else {
-    b7 = 0;
-    curDieselKnockSample = 0; // ensure, next sound will start @ first sample
+
+  if (curDieselKnockSample < knockSampleCount) {
+    b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
+    curDieselKnockSample ++;
   }
 
   // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" + "b7" together ----
@@ -1165,12 +1177,12 @@ void engineMassSimulation() {
 
     // compute rpm curves
     if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
-      if (shifted) mappedThrottle = reMap(curveShifting, currentThrottle);
+      if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentThrottle);
       else mappedThrottle = reMap(curveLinear, currentThrottle);
       if (escIsBraking) mappedThrottle = 0;
     }
     else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
-      if (shifted) mappedThrottle = reMap(curveShifting, currentSpeed);
+      if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentSpeed);
       else mappedThrottle = reMap(curveLinear, currentSpeed);
     }
 

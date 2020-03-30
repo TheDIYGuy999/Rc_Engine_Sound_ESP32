@@ -237,14 +237,17 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - "PROTOTYPE_36-PIN" allows switching headlights pin between D0 & TX0 pin. Required for the change to a 30 pin ESP32 board, which will be used on the final PCB.
 - On the final PCB, the ESP32 will be powered from the ESC, the amplifier, the shaker and the LED from the on board 5V regulator. This requires to remove the popping noise, which is generated, when the DAC offset of 128 is activated. So I added a fader for the DAC offset.
 
+## New in V 3.8:
+- Experimental support for automatic transmission simulation. Use "automatic = true" to activate it
+- Eagle schematic now including .brd PCB file -> upload it on www.oshpark.com do order your boards easily
+
 
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
 - adding SBUS protocol
-- adding schematic for LED wiring (for now pinout see code)
-- designing a proper PCB
+- designing a compact PCB for the 30pin ESP32 board
 
 ## How to create new sound file arrays:
 
@@ -274,11 +277,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - the new engine should now run...
 
 ## Schematic:
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/wiring.jpg)
-
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/shakerDriver.jpg)
-
-For now, do the wiring according to the pin names in the sketch.
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/schematic.png)
 
 ## Pictures:
 First prototype

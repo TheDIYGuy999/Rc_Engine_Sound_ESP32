@@ -6,16 +6,18 @@
 
 // In order to optimize the motor RPM behaviour for your vehicle, just change the array below
 
-float curveShifting[][2] = { 
+// Simulating a 3 speed automatic transmission, using a sawtooth array
+float curveAutomatic[][2] = { 
   {0, 0} // {input value, output value}
-  , {83, 200}
-  , {166, 500}
-  , {250, 200} // Simulated shifting point
-  , {333, 500}
-  , {416, 200} // Simulated shifting point
+  , {83, 166}
+  , {222, 500}
+  , {223, 166} // Simulated shifting point
+  , {361, 500}
+  , {362, 166} // Simulated shifting point
   , {500, 500}
 };
 
+// Use it in combination with a real 3 speed shifting transmission like the one from TAMIYA
 float curveLinear[][2] = { 
   {0, 0} // {input value, output value}
   , {83, 200}
