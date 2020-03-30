@@ -42,12 +42,12 @@ Motor: 540 size, 35 turns, stock pinion
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 90; // Adjust the start volume (usually = 100%)
 //#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
-#include "sounds/ScaniaV8Start.h" // Scania V8 Start
+//#include "sounds/ScaniaV8Start.h" // Scania V8 Start
 //#include "sounds/ScaniaR500V8Start.h" // Scania R500 V8 Start
 //#include "sounds/ScaniaV8StartNew.h" // Scania V8 Start
 //#include "sounds/UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available) use it for King Hauler
 //#include "sounds/HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
-//#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
+#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
 //#include "sounds/JaguarXjsHeStart.h" // Jaguar XJS HE Starts
 //#include "sounds/KenworthW900Start.h" // Kenworth W900 Truck Start
 //#include "sounds/MackStart.h" // Mack Truck Start
@@ -59,8 +59,8 @@ volatile int startVolumePercentage = 90; // Adjust the start volume (usually = 1
 //#include "sounds/HarleyDavidsonFXSBStart.h" // Harley Davidson FXSB start
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 80; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)
 //#include "sounds/ScaniaR500V8Idle.h" // Scania R500 V8
@@ -76,7 +76,7 @@ volatile int engineIdleVolumePercentage = 50; // the engine volume will be throt
 //#include "sounds/DetroitDieselIdle.h" // Detroit Diesel generic Truck (Volume 80%, 30%, Turbo 60%, 10%, Wastegate 50%, 1%, CEP 100, TSM 3)
 //#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1)
 //#include "sounds/DetroitDieselBassBoost15db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 15dB
-//#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 55%, 40%, Turbo 60%, 10, %Wastegate 100%, 1%, CEP 100, TSM 2, Knock volume 400, 10%, interval 1, 50)
+//#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 55%, 40%, Turbo 60%, 10, Wastegate 100%, 1%, CEP 100, TSM 2, Knock volume 400, 10%, interval 1, 50)
 //#include "sounds/DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck
 //#include "sounds/DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)
 //#include "sounds/DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor
@@ -90,8 +90,8 @@ volatile int engineIdleVolumePercentage = 50; // the engine volume will be throt
 //#include "sounds/KenworthW900Idle.h" // Kenworth W900 Truck Idle (Volume 80%, 30%, Turbo 60%, 10%, Wastegate 50%, 1%, CEP 100, TSM 2)
 //#include "sounds/MackIdle.h" // Mack Truck Idle (very thin)
 //#include "sounds/ActrosLoggingTruckIdling.h" // Actros logging truck (Volume 80%, 40%, Turbo 60%, 10, Wastegate 100%, 1%, CEP 100, TSM 2, Knock volume 200, 10%, interval 4, 50)
-#include "sounds/Tatra813Idle.h" // Tatra 813 8x8 air cooled V12 Diesel (Volume 80%, 50%, Turbo 0%, 0, Fan 250, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50)
-//#include "sounds/DefenderV8Idle.h" // Land Rover Defender V8
+//#include "sounds/Tatra813Idle.h" // Tatra 813 8x8 air cooled V12 Diesel (Volume 80%, 50%, Turbo 0%, 0, Fan 250, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50)
+#include "sounds/DefenderV8Idle.h" // Land Rover Defender V8 (Volume 100%, 40%, Turbo 0%, 0, Fan 0, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50, automatic = true)
 //#include "sounds/Mustang68Idle.h" // Ford Mustang 1968
 //#include "sounds/DodgeChallenger70Idle.h" // 1970 Dodge Challenger
 //#include "sounds/MgBGtV8Idle.h" // MG B GT V8
@@ -121,7 +121,7 @@ volatile int dieselKnockVolumePercentage = 500; // Adjust the Diesel knock volum
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 2; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
-//#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
+#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
 //#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highwyway race against Volvo truck (500%, 10%, Interval = 2 possible, for slow running V8 engines)
@@ -131,9 +131,13 @@ volatile int dieselKnockStartPoint = 50; // Volume will raise above this point (
 //#include "sounds/SCANIAV850TonKnock.h" // 50 ton SCANIA knock
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck
 //#include "sounds/Tatra813Knock.h" // Tatra 813 8x8 air cooled V12 Diesel
-#include "sounds/Tatra813Roar.h" // Tatra 813 8x8 air cooled V12 Diesel (use this for 813)
+//#include "sounds/Tatra813Roar.h" // Tatra 813 8x8 air cooled V12 Diesel (use this for 813)
 //#include "sounds/Tatra813RoarShort.h" // Tatra 813 8x8 air cooled V12 Diesel
 //#include "sounds/HarleyDavidsonFXSBKnock.h" // Harley Davidson FXSB knock
+//#include "sounds/DefenderV8Knock.h" // Land Rover Defender V8 knock (experimental, don't use it)
+//#include "sounds/DefenderV8Knock2.h" // Land Rover Defender V8 knock (experimental, don't use it)
+//#include "sounds/DefenderV8Knock3.h" // Land Rover Defender V8 knock (experimental, don't use it)
+//#include "sounds/DefenderV8Knock4.h" // Land Rover Defender V8 knock (experimental, don't use it)
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)
@@ -148,7 +152,7 @@ volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, af
 //#include "sounds/ScanıaR730V8TurboWastegate.h"
 
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------
-volatile int fanVolumePercentage = 250; // Adjust the fan volume (250% for Tatra 813, else 0%)
+volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%)
 volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm dependent (usually = 10%)
 volatile int fanStartPoint = 250; // Volume will raise above this point (250 for Tatra 813)
 //#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
@@ -161,9 +165,9 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
-#include "sounds/westinghouseHorn.h" // American truck horn (the best)
+//#include "sounds/westinghouseHorn.h" // American truck horn (the best)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
-//#include "sounds/CarHorn.h" // A boring car horn
+#include "sounds/CarHorn.h" // A boring car horn
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
@@ -180,16 +184,16 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
-//#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
+#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
 //#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
-#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
+//#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
-//#include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
-#include "sounds/ParkingBrake.h" // Parking brake sound
+#include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
+//#include "sounds/ParkingBrake.h" // Parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
 volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usually = 200%)
@@ -206,7 +210,7 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-volatile int reversingVolumePercentage = 50; // Adjust the reversing sound volume (usually = 70%)
+volatile int reversingVolumePercentage = 0; // Adjust the reversing sound volume (usually = 70%)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
@@ -216,7 +220,7 @@ const uint16_t indicatorOn = 300; // The indicator will be switched on above +/-
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
-// Choose the blue light opions -----------------------------------------------------------------------------------------
+// Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
 // PWM input signal range calibration ------------------------------------------------------------------------------------
@@ -236,7 +240,7 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
-const boolean shifted = false; // false = linear rpm curve, true = shifting points (experimental old stuff, do not use it)
+const boolean automatic = true; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (experimental)
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------

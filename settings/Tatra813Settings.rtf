@@ -32,6 +32,9 @@ ESC: HOBBYWING QUICRUN WP Crawler Brushed with the following settings:\
 Motor: 540 size, 35 turns, stock pinion\
 \
 // ********************************************************************************************************************* */\
+// Choose the board version\
+//#define PROTOTYPE_36-PIN // 36 or 30 pin board (comment it out for included PCB)\
+\
 // Choose the receiver communication mode (never uncomment both! If both commented out, classic PWM RC signal communication)--\
 // Serial communication --------\
 #define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)\
@@ -95,7 +98,7 @@ volatile int engineIdleVolumePercentage = 50; // the engine volume will be throt
 //#include "sounds/MackIdle.h" // Mack Truck Idle (very thin)\
 //#include "sounds/ActrosLoggingTruckIdling.h" // Actros logging truck (Volume 80%, 40%, Turbo 60%, 10, Wastegate 100%, 1%, CEP 100, TSM 2, Knock volume 200, 10%, interval 4, 50)\
 #include "sounds/Tatra813Idle.h" // Tatra 813 8x8 air cooled V12 Diesel (Volume 80%, 50%, Turbo 0%, 0, Fan 250, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50)\
-//#include "sounds/DefenderV8Idle.h" // Land Rover Defender V8\
+//#include "sounds/DefenderV8Idle.h" // Land Rover Defender V8 (Volume 100%, 40%, Turbo 0%, 0, Fan 0, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50, automatic = true)\
 //#include "sounds/Mustang68Idle.h" // Ford Mustang 1968\
 //#include "sounds/DodgeChallenger70Idle.h" // 1970 Dodge Challenger\
 //#include "sounds/MgBGtV8Idle.h" // MG B GT V8\
@@ -138,6 +141,10 @@ volatile int dieselKnockStartPoint = 50; // Volume will raise above this point (
 #include "sounds/Tatra813Roar.h" // Tatra 813 8x8 air cooled V12 Diesel (use this for 813)\
 //#include "sounds/Tatra813RoarShort.h" // Tatra 813 8x8 air cooled V12 Diesel\
 //#include "sounds/HarleyDavidsonFXSBKnock.h" // Harley Davidson FXSB knock\
+//#include "sounds/DefenderV8Knock.h" // Land Rover Defender V8 knock (experimental, don't use it)\
+//#include "sounds/DefenderV8Knock2.h" // Land Rover Defender V8 knock (experimental, don't use it)\
+//#include "sounds/DefenderV8Knock3.h" // Land Rover Defender V8 knock (experimental, don't use it)\
+//#include "sounds/DefenderV8Knock4.h" // Land Rover Defender V8 knock (experimental, don't use it)\
 \
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------\
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)\
@@ -220,7 +227,7 @@ const uint16_t indicatorOn = 300; // The indicator will be switched on above +/-
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false\
 #include "sounds/Indicator.h" // "Tick-Tack" sound\
 \
-// Choose the blue light opions -----------------------------------------------------------------------------------------\
+// Choose the blue light options -----------------------------------------------------------------------------------------\
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"\
 \
 // PWM input signal range calibration ------------------------------------------------------------------------------------\
@@ -240,7 +247,7 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays\
 \
 // Gearbox parameters ---------------------------------------------------------------------------------------------------\
-const boolean shifted = false; // false = linear rpm curve, true = shifting points (experimental old stuff, do not use it)\
+const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (experimental)\
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"\
 \
 // Clutch parameters ---------------------------------------------------------------------------------------------------\

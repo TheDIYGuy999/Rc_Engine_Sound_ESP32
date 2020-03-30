@@ -132,6 +132,10 @@ volatile int dieselKnockStartPoint = 0; // Volume will raise above this point ( 
 //#include "sounds/Scan\uc0\u305 aR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))\
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck\
 #include "sounds/HarleyDavidsonFXSBKnock.h" // Harley Davidson FXSB knock\
+//#include "sounds/DefenderV8Knock.h" // Land Rover Defender V8 knock (experimental, don't use it)\
+//#include "sounds/DefenderV8Knock2.h" // Land Rover Defender V8 knock (experimental, don't use it)\
+//#include "sounds/DefenderV8Knock3.h" // Land Rover Defender V8 knock (experimental, don't use it)\
+//#include "sounds/DefenderV8Knock4.h" // Land Rover Defender V8 knock (experimental, don't use it)\
 \
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------\
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)\
@@ -226,7 +230,7 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays\
 \
 // Gearbox parameters ---------------------------------------------------------------------------------------------------\
-const boolean shifted = false; // false = linear rpm curve, true = shifting points (experimental old stuff, do not use it)\
+const boolean automatic = true; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (experimental)\
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"\
 \
 // Clutch parameters ---------------------------------------------------------------------------------------------------\
