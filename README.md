@@ -20,6 +20,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Light effects: headlights, tail lights, brake lights, fog lights, roof lights, cab lights, reversing light, indicators (turn signals), hazard lights, blue light etc. (max. 12 outputs)
 - Engine vibration simulation, using a shaker motor with excentric weight: Strong vibration while cranking, medium wlile idling, slight while revving
 - Use an ESP32, CPU frequency must be set to 240MHz
+- Eagle schematic & board file included. Pre made Gerber files allow you to order your board easily.
 
 ## New in V 0.1:
 - Runs on an ESP32 (240MHz)
@@ -239,7 +240,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## New in V 3.8:
 - Experimental support for automatic transmission simulation. Use "automatic = true" to activate it
-- Eagle schematic now including .brd PCB file -> upload it on www.oshpark.com do order your boards easily
+- Eagle schematic now including .brd PCB file -> upload it on www.oshpark.com to order your boards easily
 
 
 
@@ -278,6 +279,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 ## Schematic:
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/schematic.png)
+
+## PCB:
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbTop.jpg)
+
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbBottom.jpg)
 
 ## Pictures:
 First prototype
