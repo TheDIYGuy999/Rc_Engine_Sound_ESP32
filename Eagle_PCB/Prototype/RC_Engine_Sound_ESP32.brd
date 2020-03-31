@@ -38,7 +38,7 @@
 <layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
 <layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
 <layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
-<layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
@@ -194,16 +194,16 @@ lights</text>
 <text x="38.1" y="57.785" size="0.8128" layer="25" rot="R180" align="center">32</text>
 <text x="40.64" y="57.785" size="0.8128" layer="25" rot="R180" align="center">35</text>
 <text x="45.72" y="57.785" size="0.8128" layer="25" rot="R180" align="center">39</text>
-<circle x="3.175" y="56.515" radius="1.4986" width="0.0254" layer="20"/>
-<circle x="3.175" y="1.905" radius="1.4986" width="0.0254" layer="20"/>
-<circle x="78.105" y="56.515" radius="1.4986" width="0.0254" layer="20"/>
-<circle x="78.105" y="1.905" radius="1.4986" width="0.0254" layer="20"/>
 <text x="12.7" y="0.635" size="0.8128" layer="25" rot="R180" align="center">5V</text>
 <text x="65.0875" y="55.245" size="0.8128" layer="25" rot="R180" align="center">ESP32 RC Sound &amp;
 Light Controller
 </text>
 <text x="79.6925" y="29.845" size="0.8128" layer="25" rot="R90" align="center">https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32
 </text>
+<hole x="3.175" y="56.515" drill="2.9972"/>
+<hole x="3.175" y="1.905" drill="2.9972"/>
+<hole x="78.105" y="1.905" drill="2.9972"/>
+<hole x="78.105" y="56.515" drill="2.9972"/>
 </plain>
 <libraries>
 <library name="diode">
