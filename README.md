@@ -286,15 +286,18 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## PCB:
 
 30 pin (recommended)
+
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcb30pinTop.jpg)
 
 36 pin (not recommended)
+
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbTop.jpg)
 
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbBottom.jpg)
 
 ## Recommended PCB manufacturors:
 https://jlcpcb.com (upload Gerbers.zip)
+
 https://oshpark.com (upload Gerbers.zip or .brd file)
 
 ## Pictures:
