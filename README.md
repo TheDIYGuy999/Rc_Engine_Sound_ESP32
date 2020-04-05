@@ -243,7 +243,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Eagle schematic now including .brd PCB file -> upload it on www.oshpark.com to order your boards easily
 
 ## PCB files available:
-- for 26 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
+- for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
 
 
