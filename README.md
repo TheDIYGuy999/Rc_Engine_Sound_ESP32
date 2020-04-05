@@ -242,13 +242,16 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Experimental support for automatic transmission simulation. Use "automatic = true" to activate it
 - Eagle schematic now including .brd PCB file -> upload it on www.oshpark.com to order your boards easily
 
+## PCB files available:
+- for 26 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
+- for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
+
 
 
 ## On the todo list:
 - solving ticking noise issue in serial communication mode
 - adding more sounds
 - adding SBUS protocol
-- designing a compact PCB for the 30pin ESP32 board
 
 ## How to create new sound file arrays:
 
@@ -281,9 +284,18 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/schematic.png)
 
 ## PCB:
+
+30 pin (recommended)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcb30pinTop.jpg)
+
+36 pin (not recommended)
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbTop.jpg)
 
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbBottom.jpg)
+
+## Recommended PCB manufacturors:
+https://jlcpcb.com (upload Gerbers.zip)
+https://oshpark.com (upload Gerbers.zip or .brd file)
 
 ## Pictures:
 First prototype
