@@ -17931,9 +17931,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R20" library="rcl" deviceset="R-EU_" device="0207/2V" value="200R"/>
 <part name="R19" library="rcl" deviceset="R-EU_" device="0207/2V" value="47R"/>
 <part name="JP16" library="00_custom_pinhead" deviceset="PINHD-2X3" device=""/>
-<part name="JP20" library="00_custom_pinhead" deviceset="PINHD-1X2" device=""/>
-<part name="GND24" library="supply1" deviceset="GND" device=""/>
-<part name="R27" library="rcl" deviceset="R-EU_" device="0207/2V" value="330R"/>
 <part name="JP21" library="00_custom_pinhead" deviceset="PINHD-1X2" device=""/>
 <part name="GND25" library="supply1" deviceset="GND" device=""/>
 <part name="R28" library="rcl" deviceset="R-EU_" device="0207/2V" value="330R"/>
@@ -17997,7 +17994,7 @@ Potentiometer</text>
 <text x="43.18" y="238.76" size="1.778" layer="91">5V power supply for amplifier</text>
 <text x="15.24" y="233.68" size="1.778" layer="91">Battery input
 7.0 - 12.6V</text>
-<text x="292.1" y="27.94" size="3.048" layer="91">Prototype board for 36 pin ESP32</text>
+<text x="289.56" y="27.94" size="3.048" layer="91">Prototype board for 36 pin ESP32 V1.1</text>
 <text x="347.98" y="88.9" size="1.778" layer="91">Shaker motor</text>
 <text x="38.1" y="147.32" size="1.778" layer="91" rot="R90">Headlights</text>
 <text x="68.58" y="147.32" size="1.778" layer="91" rot="R90">Foglights</text>
@@ -18017,6 +18014,10 @@ https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32</text>
 <text x="101.6" y="7.62" size="1.778" layer="91">Headers for direct pin access via 330 Ohm protection resistors
 LED can be wired directly, but don't have the full brightness!</text>
 <text x="10.16" y="68.58" size="1.778" layer="91">LED driver transistors. Never connect LED directly, always use a matching series resistor!</text>
+<text x="185.42" y="71.12" size="1.778" layer="91">V1.1:
+- R3 faulty track repaired
+- Headlights moved from D0 to D3, caused boot issues
+- 5V plane removed below screw head areas</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0"/>
@@ -18163,9 +18164,6 @@ LED can be wired directly, but don't have the full brightness!</text>
 <attribute name="VALUE" x="198.882" y="125.73" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="JP16" gate="A" x="152.4" y="124.46" rot="R90"/>
-<instance part="JP20" gate="G$1" x="25.4" y="27.94"/>
-<instance part="GND24" gate="1" x="15.24" y="20.32"/>
-<instance part="R27" gate="G$1" x="15.24" y="40.64" rot="R270"/>
 <instance part="JP21" gate="G$1" x="45.72" y="27.94"/>
 <instance part="GND25" gate="1" x="35.56" y="20.32"/>
 <instance part="R28" gate="G$1" x="35.56" y="40.64" rot="R270"/>
@@ -18450,12 +18448,6 @@ LED can be wired directly, but don't have the full brightness!</text>
 <wire x1="119.38" y1="78.74" x2="119.38" y2="81.28" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="GND24" gate="1" pin="GND"/>
-<wire x1="15.24" y1="22.86" x2="15.24" y2="27.94" width="0.1524" layer="91"/>
-<pinref part="JP20" gate="G$1" pin="2"/>
-<wire x1="15.24" y1="27.94" x2="22.86" y2="27.94" width="0.1524" layer="91"/>
-</segment>
-<segment>
 <pinref part="GND25" gate="1" pin="GND"/>
 <wire x1="35.56" y1="22.86" x2="35.56" y2="27.94" width="0.1524" layer="91"/>
 <pinref part="JP21" gate="G$1" pin="2"/>
@@ -18706,6 +18698,11 @@ LED can be wired directly, but don't have the full brightness!</text>
 <pinref part="R37" gate="G$1" pin="1"/>
 <wire x1="218.44" y1="45.72" x2="218.44" y2="48.26" width="0.1524" layer="91"/>
 <label x="218.44" y="48.26" size="1.778" layer="95" rot="R90" xref="yes"/>
+</segment>
+<segment>
+<pinref part="R13" gate="G$1" pin="1"/>
+<wire x1="20.32" y1="167.64" x2="20.32" y2="172.72" width="0.1524" layer="91"/>
+<label x="20.32" y="172.72" size="1.778" layer="95" rot="R90" xref="yes"/>
 </segment>
 </net>
 <net name="D19" class="0">
@@ -19054,23 +19051,6 @@ LED can be wired directly, but don't have the full brightness!</text>
 <wire x1="27.94" y1="167.64" x2="35.56" y2="167.64" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="D0" class="0">
-<segment>
-<pinref part="U1" gate="G$1" pin="IO0"/>
-<wire x1="236.22" y1="127" x2="236.22" y2="121.92" width="0.1524" layer="91"/>
-<label x="236.22" y="121.92" size="1.778" layer="95" rot="R270" xref="yes"/>
-</segment>
-<segment>
-<pinref part="R13" gate="G$1" pin="1"/>
-<wire x1="20.32" y1="167.64" x2="20.32" y2="172.72" width="0.1524" layer="91"/>
-<label x="20.32" y="172.72" size="1.778" layer="95" rot="R90" xref="yes"/>
-</segment>
-<segment>
-<pinref part="R27" gate="G$1" pin="1"/>
-<wire x1="15.24" y1="45.72" x2="15.24" y2="48.26" width="0.1524" layer="91"/>
-<label x="15.24" y="48.26" size="1.778" layer="95" rot="R90" xref="yes"/>
-</segment>
-</net>
 <net name="N$17" class="0">
 <segment>
 <pinref part="R14" gate="G$1" pin="2"/>
@@ -19243,14 +19223,6 @@ LED can be wired directly, but don't have the full brightness!</text>
 <pinref part="JP15" gate="A" pin="2"/>
 <pinref part="R18" gate="G$1" pin="2"/>
 <wire x1="185.42" y1="144.78" x2="185.42" y2="134.62" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$31" class="0">
-<segment>
-<pinref part="JP20" gate="G$1" pin="1"/>
-<wire x1="22.86" y1="30.48" x2="15.24" y2="30.48" width="0.1524" layer="91"/>
-<pinref part="R27" gate="G$1" pin="2"/>
-<wire x1="15.24" y1="30.48" x2="15.24" y2="35.56" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$32" class="0">

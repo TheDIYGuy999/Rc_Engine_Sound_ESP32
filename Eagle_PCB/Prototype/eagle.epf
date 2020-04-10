@@ -357,6 +357,7 @@ UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/00_transist
 UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/00_triac.lbr"
 UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/DRV8833PWP.lbr"
 UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/ESP32-DEVKITV1.lbr"
+UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/ESP32-DEVKITV1_30pin.lbr"
 UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/ESP32-DEVKITV1_36pin.lbr"
 UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/GeekAmmo.lbr"
 UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/LilyPad-Wearables.lbr"
@@ -392,7 +393,7 @@ UsedLibrary="/Volumes/MacData/Users/martinsommer/Documents/eagle/lbr/volks73-mol
 
 [Win_1]
 Type="Control Panel"
-Loc="1439 241 2480 997"
+Loc="1356 503 2397 1259"
 State=2
 Number=0
 
