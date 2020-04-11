@@ -1,4 +1,4 @@
-/* RC engine sound & LED controller for Arduino ESP32.
+/* RC engine sound & LED controller for Arduino ESP32. Written by TheDIYGuy999
     Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
@@ -8,7 +8,7 @@
 
 */
 
-const float codeVersion = 3.8; // Software revision.
+const float codeVersion = 3.9; // Software revision.
 
 //
 // =======================================================================================================
@@ -22,8 +22,9 @@ const float codeVersion = 3.8; // Software revision.
 // Make sure to remove -master from your sketch folder name
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
-//#define DEBUG // uncomment it for general debugging informations
+#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
+//#define SBUS_DEBUG // uncomment it to debug the SBUS command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 
 // TODO = Things to clean up!
@@ -34,8 +35,12 @@ const float codeVersion = 3.8; // Software revision.
 // =======================================================================================================
 //
 
-#include "curves.h" // load nonlinear throttle curve arrays
+// Header files in sketch folder
+#include "curves.h" // Nonlinear throttle curve arrays
+
+// Libraries (you have to install all of them)
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- Install the newest version!
+#include "SBUS.h" // https://github.com/TheDIYGuy999/SBUS you need to install my fork of this library!
 
 //
 // =======================================================================================================
@@ -49,7 +54,7 @@ const float codeVersion = 3.8; // Software revision.
 // provides short circuit protection. Also works on the serial Rx pin "VP" (36)
 // ------------------------------------------------------------------------------------
 
-// Serial command pins (active, if "SERIAL_COMMUNICATION" in Adjustments.h is not commented out)
+// Serial command pins (active, if "SERIAL_COMMUNICATION" or "SBUS_COMMUNICATION" in Adjustments.h is not commented out)
 // see "sendSerialCommands()" in Micro RC Receiver code: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 // This is still experimental! It works, but the sound quality is not perfect.
 #define COMMAND_RX 36 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
@@ -67,10 +72,10 @@ const float codeVersion = 3.8; // Software revision.
 
 #define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk!)
 
-#ifdef PROTOTYPE_36-PIN // switching headlight pin depending on the board variant
-#define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board
+#ifdef PROTOTYPE_36-PIN // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
+#define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
 #else
-#define HEADLIGHT_PIN 3 // (3 = RX0 pin, TX0 is not usable) white headllights
+#define HEADLIGHT_PIN 3 // 3 = RX0 pin, (1 = TX0 is not usable) white headllights
 #endif
 
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
@@ -80,10 +85,10 @@ const float codeVersion = 3.8; // Software revision.
 #define REVERSING_LIGHT_PIN 17 // (TX2) White reversing light
 #define ROOFLIGHT_PIN 5 // Roof lights
 #define SIDELIGHT_PIN 18 // Side lights
-
 #define BEACON_LIGHT2_PIN 19 // Blue beacons light
 #define BEACON_LIGHT1_PIN 21 // Blue beacons light
 #define CABLIGHT_PIN 22 // Cabin lights
+
 #define BRAKELIGHT_PIN 32 // Upper brake lights
 
 #define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling and engine start / stop)
@@ -218,6 +223,14 @@ volatile byte average  = NUM_OF_AVG;
 volatile boolean ready = false;
 volatile unsigned long timelast;
 unsigned long timelastloop;
+
+// SBUS signal processing variables
+SBUS x8r(Serial2); // SBUS object on Serial 2 port
+// channel, fail safe, and lost frames data
+uint16_t SBUSchannels[16];
+bool SBUSfailSafe;
+bool SBUSlostFrame;
+bool sbusInit;
 
 // Sampling intervals for interrupt timer (adjusted according to your sound file sampling rate)
 uint32_t maxSampleInterval = 4000000 / sampleRate;
@@ -586,22 +599,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curShiftingSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Diesel ignition "knock" payed in fixed sample rate section!
-  /* if (dieselKnockTrigger) {
-     if (curDieselKnockSample < knockSampleCount) {
-       b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
-       curDieselKnockSample ++;
-     }
-     else {
-       dieselKnockTrigger = false;
-     }
-    }
-    else {
-     b7 = 0;
-     curDieselKnockSample = 0; // ensure, next sound will start @ first sample
-    }*/
-
-  // Diesel ignition "knock" payed in fixed sample rate section!
+  // Diesel ignition "knock" played in fixed sample rate section!
   if (dieselKnockTrigger) {
     dieselKnockTrigger = false;
     curDieselKnockSample = 0;
@@ -678,6 +676,8 @@ void setup() {
 
   pinMode(PPM_PIN, INPUT_PULLDOWN);
 
+  pinMode(COMMAND_RX, INPUT_PULLDOWN);
+
   // LED & shaker motor setup (note, that we only have timers from 0 - 15)
   headLight.begin(HEADLIGHT_PIN, 1, 500); // Timer 1, 500Hz
   tailLight.begin(TAILLIGHT_PIN, 2, 500); // Timer 2, 500Hz
@@ -700,12 +700,18 @@ void setup() {
   // Serial setup
   Serial.begin(115200); // USB serial
 
+#ifdef SBUS_COMMUNICATION
+  x8r.begin(COMMAND_RX, COMMAND_TX, sbusInverted); // begin SBUS communication with compatible receivers
+#endif
+
 #ifdef SERIAL_COMMUNICATION
-  Serial2.begin(115200, SERIAL_8N1, COMMAND_RX, COMMAND_TX);
+  Serial2.begin(115200, SERIAL_8N1, COMMAND_RX, COMMAND_TX); // begin Serial communication with "Micro RC" receiver
 #endif
 
   // PPM Setup
-  attachInterrupt(digitalPinToInterrupt(PPM_PIN), readPpm, RISING);
+#ifdef PPM_COMMUNICATION
+  attachInterrupt(digitalPinToInterrupt(PPM_PIN), readPpm, RISING); // begin PPM communication with compatible receivers
+#endif
   timelast = micros();
   timelastloop = timelast;
 
@@ -740,6 +746,10 @@ void setup() {
 #if defined SERIAL_COMMUNICATION
   while (!serialInit) { // We need to read the entire buffer, so we do it until the end mark was detected!
     readSerialCommands(); // serial communication (pin 36)
+  }
+#elif defined SBUS_COMMUNICATION
+  while (!sbusInit) {
+    readSbusCommands();
   }
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
@@ -985,6 +995,75 @@ void readRcSignals() {
 
 //
 // =======================================================================================================
+// READ SBUS SIGNALS (you may want to change this to match your SBUS channel order)
+// =======================================================================================================
+//
+
+void readSbusCommands() {
+  // Signals are coming in via SBUS protocol
+
+  static unsigned long lastSbusRcv;
+  static unsigned long lastSbusFailsafe;
+
+  // look for a good SBUS packet from the receiver
+  if (x8r.read(&SBUSchannels[0], &SBUSfailSafe, &SBUSlostFrame)) {
+    sbusInit = true;
+    lastSbusFailsafe = millis();
+  }
+
+  // Proportional channels
+  pulseWidth[0] = map(SBUSchannels[0], 172, 1811, 1000, 2000) ; // CH1 Steering
+  pulseWidth[1] = map(SBUSchannels[1], 172, 1811, 1000, 2000) ; // CH2 Gearbox
+  pulseWidth[2] = map(SBUSchannels[2], 172, 1811, 1000, 2000) ; // CH3 Throttle
+  //pulseWidth[4] = map(SBUSchannels[3], 172, 1811, 1000, 2000) ; // CH4
+  pulseWidth[3] = map(SBUSchannels[4], 172, 1811, 1000, 2000) ; // Pot1 Horn
+
+  // Switches etc.
+  if (SBUSchannels[5] < 272) mode1 = false; if (SBUSchannels[5] > 1711) mode1 = true; // Mode 1 state
+  if (SBUSchannels[6] < 272) mode2 = false; if (SBUSchannels[6] > 1711) mode2 = true; // Mode 2 state
+  if (SBUSchannels[7] < 272) momentary1 = false; if (SBUSchannels[7] > 1711) momentary1 = true; // Momentary button
+  if (SBUSchannels[8] < 272) hazard = false; if (SBUSchannels[8] > 1711) hazard = true; // Hazard lights
+  if (SBUSchannels[9] < 272) left = false; if (SBUSchannels[9] > 1711) left = true; // Left indicator
+  if (SBUSchannels[10] < 272) right = false; if (SBUSchannels[10] > 1711) right = true; // Right indicator
+
+  // Failsafe
+  if (millis() - lastSbusFailsafe > 300) failSafe = true; // if timeout (signal loss)
+  else failSafe = false;
+
+
+  // Print debug infos
+  static unsigned long printSbusMillis;
+#ifdef SBUS_DEBUG // can slow down the playback loop!
+  if (millis() - printSbusMillis > 1000) { // Every 1000ms
+    printSbusMillis = millis();
+
+    Serial.println("CH1");
+    Serial.println(pulseWidth[0]);
+    Serial.println(pulseWidth[1]);
+    Serial.println(pulseWidth[2]);
+    Serial.println(pulseWidth[3]);
+    Serial.println(pulseWidth[4]);
+    Serial.println(mode1);
+    Serial.println(mode2);
+    Serial.println(momentary1);
+    Serial.println(hazard);
+    Serial.println(left);
+    Serial.println(right);
+
+    Serial.println(SBUSfailSafe);
+    Serial.println(SBUSlostFrame);
+  }
+#endif
+
+  // Invert RC signals
+  invertRcSignals();
+
+  // Falisafe for RC signals
+  failsafeRcSignals();
+}
+
+//
+// =======================================================================================================
 // INVERT RC SIGNALS (if your signals are inverted)
 // =======================================================================================================
 //
@@ -1175,6 +1254,8 @@ void engineMassSimulation() {
   if (millis() - throtMillis > 2) { // Every 2ms
     throtMillis = millis();
 
+    if (currentThrottle > 500) currentThrottle = 500;
+
     // compute rpm curves
     if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
       if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentThrottle);
@@ -1188,7 +1269,6 @@ void engineMassSimulation() {
 
 
     // Accelerate engine
-    //if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && !escIsBraking && engineRunning) {
     if (mappedThrottle > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && engineRunning) {
       if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
         currentRpm += acc;
@@ -1197,7 +1277,6 @@ void engineMassSimulation() {
     }
 
     // Decelerate engine
-    //if (mappedThrottle < currentRpm || escIsBraking) { // TODO
     if (mappedThrottle < currentRpm) {
       currentRpm -= dec;
       if (currentRpm < minRpm) currentRpm = minRpm;
@@ -1229,32 +1308,36 @@ void engineMassSimulation() {
   if (millis() - printMillis > 1000) { // Every 1000ms
     printMillis = millis();
 
-    Serial.println("CH1");
-    Serial.println(pulseWidth[0]);
-    Serial.println(pulseMinNeutral[0]);
-    Serial.println(pulseMaxNeutral[0]);
-    Serial.println("CH2");
-    Serial.println(pulseWidth[1]);
-    Serial.println(pulseMinNeutral[1]);
-    Serial.println(pulseMaxNeutral[1]);
+    /*Serial.println("CH1");
+      Serial.println(pulseWidth[0]);
+      Serial.println(pulseMinNeutral[0]);
+      Serial.println(pulseMaxNeutral[0]);
+      Serial.println("CH2");
+      Serial.println(pulseWidth[1]);
+      Serial.println(pulseMinNeutral[1]);
+      Serial.println(pulseMaxNeutral[1]);*/
     Serial.println("CH3");
-    Serial.println(pulseWidth[2]);
+    Serial.println(pulseMinLimit[2]);
+    Serial.println(pulseMin[2]);
     Serial.println(pulseMinNeutral[2]);
+    Serial.println(pulseWidth[2]);
     Serial.println(pulseMaxNeutral[2]);
-    Serial.println("CH4");
-    Serial.println(pulseWidth[3]);
-    Serial.println(pulseMinNeutral[3]);
-    Serial.println(pulseMaxNeutral[3]);
-    Serial.println("Gear");
-    Serial.println(selectedGear);
-    Serial.println(currentThrottle);
-    Serial.println(mappedThrottle);
-    Serial.println("Wastegate");
-    Serial.println(wastegateTrigger);
-    Serial.println(currentRpm);
-    Serial.println(currentRpmScaled);
-    /*Serial.println(engineState);
+    Serial.println(pulseMax[2]);
+    Serial.println(pulseMaxLimit[2]);
+    /*Serial.println("CH4");
+      Serial.println(pulseWidth[3]);
+      Serial.println(pulseMinNeutral[3]);
+      Serial.println(pulseMaxNeutral[3]);
+      Serial.println("Gear");
+      Serial.println(selectedGear);
+      Serial.println(currentThrottle);
+      Serial.println(mappedThrottle);
+      Serial.println("Wastegate");
+      Serial.println(wastegateTrigger);
+      Serial.println(currentRpm);
+      Serial.println(currentRpmScaled);
       Serial.println(" ");
+      /*Serial.println(engineState);
       Serial.println(loopTime);
       Serial.println(" ");
       Serial.println(airBrakeTrigger);
@@ -1266,6 +1349,10 @@ void engineMassSimulation() {
       Serial.println(ppmFailsafeCounter);
       Serial.print("failSafe ");
       Serial.println(failSafe);*/
+      Serial.println(" ");
+      Serial.println(currentThrottle);
+      Serial.println(" ");
+      Serial.println(mappedThrottle);
 
   }
 #endif
@@ -1667,6 +1754,8 @@ void loop() {
 #if defined  SERIAL_COMMUNICATION
   readSerialCommands(); // Serial communication (pin 36)
   showParsedData();
+#elif defined SBUS_COMMUNICATION
+  readSbusCommands(); // SBUS communication (pin 36)
 #elif defined PPM_COMMUNICATION
   readPpmCommands(); // PPM communication (pin 34)
 #else

@@ -15,6 +15,7 @@ float curveAutomatic[][2] = {
   , {361, 500}
   , {362, 166} // Simulated shifting point
   , {500, 500}
+  , {600, 500} // overload range > 500 will limit output to 500
 };
 
 // Use it in combination with a real 3 speed shifting transmission like the one from TAMIYA
@@ -26,6 +27,7 @@ float curveLinear[][2] = {
   , {333, 380}
   , {416, 440}
   , {500, 500}
+  , {600, 500} // overload range > 500 will limit output to 500
 };
 
 //
@@ -40,7 +42,7 @@ uint32_t reMap(float pts[][2], uint32_t input) {
   uint32_t rr;
   float bb, mm;
 
-  for (uint8_t nn = 0; nn < 7; nn++) {
+  for (uint8_t nn = 0; nn < 8; nn++) {
     if (input >= pts[nn][0] && input <= pts[nn + 1][0]) {
       mm = ( pts[nn][1] - pts[nn + 1][1] ) / ( pts[nn][0] - pts[nn + 1][0] );
       mm = mm * (input - pts[nn][0]);

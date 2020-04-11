@@ -242,16 +242,20 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Experimental support for automatic transmission simulation. Use "automatic = true" to activate it
 - Eagle schematic now including .brd PCB file -> upload it on www.oshpark.com to order your boards easily
 
+## New in V 3.9:
+- Initial SBUS support on pin 36 "VP". Tested in combination with my "Micro RC" receiver (SW v3.4). Only one single signal wire required!
+- It's working fine, but failsafe is not yet ready. Use it at your own risk!
+- Use variables "SBUS_COMMUNICATION" & "sbusInverted" (changing signal polarity without an additional transistor) in "Adjustments.h" for configuration
+- if you want to change the channel assignment, do it in readSbusCommands()
+- Throttle overflow bug solved
+- New, optimized Detroit Diesel mix for the KingHauler see "KingHaulerSettings2"
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
 
-
-
 ## On the todo list:
-- solving ticking noise issue in serial communication mode
 - adding more sounds
-- adding SBUS protocol
 
 ## How to create new sound file arrays:
 

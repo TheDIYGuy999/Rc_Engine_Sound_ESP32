@@ -71,7 +71,7 @@ volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 
 //#include "sounds/HarleyDavidsonFXSBStart.h" // Harley Davidson FXSB start\
 \
 // Choose the motor idle sound (uncomment the one you want) --------\
-volatile int idleVolumePercentage = 55; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)\
+volatile int idleVolumePercentage = 60; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)\
 volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)\
 //#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)\
 //#include "sounds/ScaniaV8Idle.h" // Scania V8 (bad quality)\
@@ -88,7 +88,7 @@ volatile int engineIdleVolumePercentage = 40; // the engine volume will be throt
 //#include "sounds/DetroitDieselIdle.h" // Detroit Diesel generic Truck (Volume 80%, 30%, Turbo 60%, 10%, Wastegate 50%, 1%, CEP 100, TSM 3)\
 //#include "sounds/DetroitDieselStraightPipeIdle.h" // Detroit Diesel Truck with straight pipes (use multiplier = 2, acc = 2, dec = 1)\
 //#include "sounds/DetroitDieselBassBoost15db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 15dB\
-#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 55%, 40%, Turbo 60%, 10, Wastegate 100%, 1%, CEP 100, TSM 2, Knock volume 400, 10%, interval 1, 50)\
+#include "sounds/DetroitDieselBassBoost7db.h" // Detroit Diesel Truck with straight pipes. Bass 100-200Hz + 7dB (use it for King Hauler, Volume 60%, 40%, Turbo 60%, 10, Wastegate 100%, 1%, CEP 100, TSM 3, Knock volume 400, 10%, interval 2, 50)\
 //#include "sounds/DetroitDieselPeterbiltCabover.h" // Detroit Diesel Peterbilt cabover truck\
 //#include "sounds/DetroitDieselKenworth.h" // Detroit Diesel Kenworth truck (use Ural V8 Start & 100% turbo)\
 //#include "sounds/DetroitDieselJohnDeereTractor.h" // Detroit Diesel John Deere tractor\
@@ -129,9 +129,9 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 \
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,\
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------\
-volatile int dieselKnockVolumePercentage = 300; // Adjust the Diesel knock volume (usually = 200 - 600%)\
-volatile int dieselKnockIdleVolumePercentage = 10; // Diesel knock volume while idling (usually = 20%)\
-volatile int dieselKnockInterval = 1; // Idle sample length divided by this number (1 - 20, depending on sound files)\
+volatile int dieselKnockVolumePercentage = 400; // Adjust the Diesel knock volume (usually = 200 - 600%)\
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)\
+volatile int dieselKnockInterval = 2; // Idle sample length divided by this number (1 - 20, depending on sound files)\
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)\
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound\
 #include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)\
@@ -269,7 +269,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 const boolean engineManualOnOff = false;\
 \
 // Engine RPM range (2 for big Diesels, 4 for fast running motors)\
-const uint32_t TOP_SPEED_MULTIPLIER = 2; // TSM. RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!\
+const uint32_t TOP_SPEED_MULTIPLIER = 3; // TSM. RPM multiplier: the bigger the number, the larger the rev range, 2 - 4 is a good place to start. ESP32 will crash, if > 5 @ 22'050Hz!\
 \
 // Engine mass simulation\
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck\
