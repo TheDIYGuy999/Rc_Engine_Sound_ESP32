@@ -39,7 +39,7 @@ Motor: 540 size, 35 turns, stock pinion\
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--\
 // SBUS communication --------\
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)\
-boolean sbusInverted = false; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" transmitter)\
+boolean sbusInverted = false; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)\
 \
 // Serial communication --------\
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)\
@@ -195,7 +195,7 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn\
 \
 // Choose the air brake release sound (uncomment the one you want) --------\
-volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)\
+volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)\
 //#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound\
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound\
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound\
@@ -203,7 +203,7 @@ volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 
 #include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound\
 \
 // Choose the parking brake engaging sound (uncomment the one you want) --------\
-volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)\
+volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)\
 //#include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound\
 #include "sounds/ParkingBrake.h" // Parking brake sound\
 \
@@ -237,7 +237,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 \
 // PWM input signal range calibration ------------------------------------------------------------------------------------\
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range\
-const uint16_t pulseSpan = 500; // pulseZero +/- this value (always 500)\
+const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range)\
 \
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------\
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)\

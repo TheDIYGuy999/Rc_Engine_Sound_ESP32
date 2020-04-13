@@ -250,6 +250,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Throttle overflow bug solved
 - New, optimized Detroit Diesel mix for the KingHauler see "KingHaulerSettings2"
 
+## New in V 4.0:
+- Failsafe for SBUS now implemented and tested in the King Hauler build. The vehicle will do a controlled stop, if the SBUS wire is disconnected
+- The SBUS failsafe flag from the receiver should in theory do the same, but I was not yet able to test it
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables

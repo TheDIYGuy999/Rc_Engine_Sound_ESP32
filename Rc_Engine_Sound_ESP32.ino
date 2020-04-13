@@ -8,7 +8,7 @@
 
 */
 
-const float codeVersion = 3.9; // Software revision.
+const float codeVersion = 4.0; // Software revision.
 
 //
 // =======================================================================================================
@@ -22,7 +22,7 @@ const float codeVersion = 3.9; // Software revision.
 // Make sure to remove -master from your sketch folder name
 
 // DEBUG options can slow down the playback loop! Only comment them out for debugging
-#define DEBUG // uncomment it for general debugging informations
+//#define DEBUG // uncomment it for general debugging informations
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 //#define SBUS_DEBUG // uncomment it to debug the SBUS command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
@@ -698,7 +698,7 @@ void setup() {
   escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit (experimental)
 
   // Serial setup
-  Serial.begin(115200); // USB serial
+  Serial.begin(115200); // USB serial (for DEBUG)
 
 #ifdef SBUS_COMMUNICATION
   x8r.begin(COMMAND_RX, COMMAND_TX, sbusInverted); // begin SBUS communication with compatible receivers
@@ -859,7 +859,7 @@ void readSerialCommands() {
 
 }
 
-// Parsing sub function ----
+// Parsing sub function -------------------------------------------------
 void parseSerialCommands() {
 
   char * strtokIindex;
@@ -890,11 +890,14 @@ void parseSerialCommands() {
   strtokIindex = strtok(NULL, delimiter);
   right = atoi(strtokIindex);
 
-  // Convert signals to servo pulses in ms
-  pulseWidth[0] = map(axis1, 0, 100, 1000, 2000); // CH1 Steering
-  pulseWidth[1] = map(axis2, 0, 100, 1000, 2000); // CH2 Gearbox
-  pulseWidth[2] = map(axis3, 0, 100, 1000, 2000); // CH3 Throttle
-  pulseWidth[3] = map(pot1, 0, 100, 1000, 2000); // Pot1 Horn
+  if (!failSafe) { // Only transfer data to the pulseWidth[] variables, if no failsafe error!
+
+    // Convert signals to servo pulses in ms
+    pulseWidth[0] = map(axis1, 0, 100, 1000, 2000); // CH1 Steering
+    pulseWidth[1] = map(axis2, 0, 100, 1000, 2000); // CH2 Gearbox
+    pulseWidth[2] = map(axis3, 0, 100, 1000, 2000); // CH3 Throttle
+    pulseWidth[3] = map(pot1, 0, 100, 1000, 2000); // Pot1 Horn
+  }
 
   // Invert RC signals
   invertRcSignals();
@@ -909,10 +912,14 @@ void parseSerialCommands() {
 //
 
 void readPpmCommands() {
-  pulseWidth[0] = valuesBuf[0]; // CH1 Steering
-  pulseWidth[1] = 1500;         // CH2 Gearbox
-  pulseWidth[2] = valuesBuf[1]; // CH3 Throttle
-  pulseWidth[3] = valuesBuf[2]; // Pot1 Horn
+
+  if (!failSafe) { // Only transfer data to the pulseWidth[] variables, if no failsafe error!
+
+    pulseWidth[0] = valuesBuf[0]; // CH1 Steering
+    pulseWidth[1] = 1500;         // CH2 Gearbox
+    pulseWidth[2] = valuesBuf[1]; // CH3 Throttle
+    pulseWidth[3] = valuesBuf[2]; // Pot1 Horn
+  }
 
   // Invert RC signals
   invertRcSignals();
@@ -974,7 +981,7 @@ void readRcSignals() {
   if (indicators) pulseWidth[0] = pulseIn(SERVO1_PIN, HIGH, 50000);
   else pulseWidth[0] = 1500;
 
-  // CH2 (not used, gearbox servo)
+  // CH2 Gearbox servo
   pulseWidth[1] = pulseIn(SERVO2_PIN, HIGH, 50000);
 
   // CH3 Throttle
@@ -1002,7 +1009,6 @@ void readRcSignals() {
 void readSbusCommands() {
   // Signals are coming in via SBUS protocol
 
-  static unsigned long lastSbusRcv;
   static unsigned long lastSbusFailsafe;
 
   // look for a good SBUS packet from the receiver
@@ -1011,23 +1017,28 @@ void readSbusCommands() {
     lastSbusFailsafe = millis();
   }
 
-  // Proportional channels
-  pulseWidth[0] = map(SBUSchannels[0], 172, 1811, 1000, 2000) ; // CH1 Steering
-  pulseWidth[1] = map(SBUSchannels[1], 172, 1811, 1000, 2000) ; // CH2 Gearbox
-  pulseWidth[2] = map(SBUSchannels[2], 172, 1811, 1000, 2000) ; // CH3 Throttle
-  //pulseWidth[4] = map(SBUSchannels[3], 172, 1811, 1000, 2000) ; // CH4
-  pulseWidth[3] = map(SBUSchannels[4], 172, 1811, 1000, 2000) ; // Pot1 Horn
+  if (!failSafe) { // Only transfer data to the pulseWidth[] variables, if no SBUS failsafe error!
 
-  // Switches etc.
-  if (SBUSchannels[5] < 272) mode1 = false; if (SBUSchannels[5] > 1711) mode1 = true; // Mode 1 state
-  if (SBUSchannels[6] < 272) mode2 = false; if (SBUSchannels[6] > 1711) mode2 = true; // Mode 2 state
-  if (SBUSchannels[7] < 272) momentary1 = false; if (SBUSchannels[7] > 1711) momentary1 = true; // Momentary button
-  if (SBUSchannels[8] < 272) hazard = false; if (SBUSchannels[8] > 1711) hazard = true; // Hazard lights
-  if (SBUSchannels[9] < 272) left = false; if (SBUSchannels[9] > 1711) left = true; // Left indicator
-  if (SBUSchannels[10] < 272) right = false; if (SBUSchannels[10] > 1711) right = true; // Right indicator
+    // Note: if you want to change the channel map, change the index [X] of "SBUSchannels" to fit your needs
 
-  // Failsafe
-  if (millis() - lastSbusFailsafe > 300) failSafe = true; // if timeout (signal loss)
+    // Proportional channels
+    pulseWidth[0] = map(SBUSchannels[0], 172, 1811, 1000, 2000) ; // CH1 Steering
+    pulseWidth[1] = map(SBUSchannels[1], 172, 1811, 1000, 2000) ; // CH2 Gearbox
+    pulseWidth[2] = map(SBUSchannels[2], 172, 1811, 1000, 2000) ; // CH3 Throttle
+    //pulseWidth[4] = map(SBUSchannels[3], 172, 1811, 1000, 2000) ; // CH4
+    pulseWidth[3] = map(SBUSchannels[4], 172, 1811, 1000, 2000) ; // Pot1 Horn
+
+    // Switches etc.
+    if (SBUSchannels[5] < 272) mode1 = false; if (SBUSchannels[5] > 1711) mode1 = true; // Mode 1 state
+    if (SBUSchannels[6] < 272) mode2 = false; if (SBUSchannels[6] > 1711) mode2 = true; // Mode 2 state
+    if (SBUSchannels[7] < 272) momentary1 = false; if (SBUSchannels[7] > 1711) momentary1 = true; // Momentary button
+    if (SBUSchannels[8] < 272) hazard = false; if (SBUSchannels[8] > 1711) hazard = true; // Hazard lights
+    if (SBUSchannels[9] < 272) left = false; if (SBUSchannels[9] > 1711) left = true; // Left indicator
+    if (SBUSchannels[10] < 272) right = false; if (SBUSchannels[10] > 1711) right = true; // Right indicator
+  }
+
+  // Failsafe triggering (works, if SBUS wire is unplugged, but SBUSfailSafe signal from the receiver is untested!)
+  if (millis() - lastSbusFailsafe > 50 && !SBUSfailSafe) failSafe = true; // if timeout (signal loss)
   else failSafe = false;
 
 
@@ -1037,7 +1048,7 @@ void readSbusCommands() {
   if (millis() - printSbusMillis > 1000) { // Every 1000ms
     printSbusMillis = millis();
 
-    Serial.println("CH1");
+    Serial.println("SBUS DEBUG:");
     Serial.println(pulseWidth[0]);
     Serial.println(pulseWidth[1]);
     Serial.println(pulseWidth[2]);
@@ -1052,6 +1063,8 @@ void readSbusCommands() {
 
     Serial.println(SBUSfailSafe);
     Serial.println(SBUSlostFrame);
+
+    Serial.println(failSafe);
   }
 #endif
 
@@ -1112,6 +1125,7 @@ void triggerHorn() {
       soundNo = 0;  // 0 = horn
     }
     else hornSwitch = false;
+    
 
     // detect siren trigger ( impulse length < 1300us) ----------
     if (pulseWidth[3] < (pulseMinNeutral[3] - 180) && pulseWidth[3] > pulseMinLimit[3]) {
@@ -1289,7 +1303,7 @@ void engineMassSimulation() {
 #endif
   }
 
-  // Trigger Wastegate, if throttle rapidly dropped
+  // Trigger Wastegate, if throttle rapidly dropped TODO
   if (lastThrottle - currentThrottle > 200) {
     //if (lastThrottle > 400 && (lastThrottle - currentThrottle) > 200) {
     //if (lastThrottle > 400 && currentThrottle < 200) {
@@ -1349,10 +1363,10 @@ void engineMassSimulation() {
       Serial.println(ppmFailsafeCounter);
       Serial.print("failSafe ");
       Serial.println(failSafe);*/
-      Serial.println(" ");
-      Serial.println(currentThrottle);
-      Serial.println(" ");
-      Serial.println(mappedThrottle);
+    Serial.println(" ");
+    Serial.println(currentThrottle);
+    Serial.println(" ");
+    Serial.println(mappedThrottle);
 
   }
 #endif
