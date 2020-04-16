@@ -288,7 +288,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - compile and upload the sketch in Arduino IDE
 - the new engine should now run...
 
-## Schematic:
+## Schematic (use PDF for current version!):
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/schematic.png)
 
 ## PCB:
