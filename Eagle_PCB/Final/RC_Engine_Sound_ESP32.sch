@@ -17934,7 +17934,7 @@ V1 30 Pin</text>
 <part name="Q13" library="transistor-npn" deviceset="BC337*" device="" technology="-25"/>
 <part name="R31" library="rcl" deviceset="R-EU_" device="0207/2V" value="1k"/>
 <part name="GND29" library="supply1" deviceset="GND" device=""/>
-<part name="R29" library="rcl" deviceset="R-EU_" device="0207/2V" value="10k"/>
+<part name="R29" library="rcl" deviceset="R-EU_" device="0207/2V" value="4k7"/>
 <part name="JP32" library="00_custom_pinhead" deviceset="PINHD-1X3" device=""/>
 <part name="GND25" library="supply1" deviceset="GND" device=""/>
 <part name="JP15" library="00_custom_pinhead" deviceset="PINHD-1X2" device=""/>
@@ -17969,7 +17969,7 @@ Potentiometer</text>
 for amplifier</text>
 <text x="7.62" y="238.76" size="1.778" layer="91">Battery input
 7.0 - 12.6V</text>
-<text x="292.1" y="27.94" size="3.048" layer="91">Board for 30 pin ESP32</text>
+<text x="292.1" y="27.94" size="3.048" layer="91">Board for 30 pin ESP32 V1.1</text>
 <text x="347.98" y="88.9" size="1.778" layer="91">Shaker motor</text>
 <text x="170.18" y="91.44" size="1.778" layer="91" rot="R90">Headlights</text>
 <text x="139.7" y="144.78" size="1.778" layer="91" rot="R90">Foglights</text>
