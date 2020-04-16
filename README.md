@@ -309,10 +309,12 @@ https://jlcpcb.com (upload Gerbers.zip)
 https://oshpark.com (upload Gerbers.zip or .brd file)
 
 ## Pictures:
-First prototype
+Fully assembled, tested and working 30 pin version
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/30PinAssembled.jpg)
+
+Prototypes
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/top.jpg)
 
-Micro RC receiver wiring (with RC signal and serial connections)
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/receiver_wiring.jpg)
 
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Bestueckt_oben.jpg)
