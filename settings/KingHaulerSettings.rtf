@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf1504\cocoasubrtf840
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf610
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
@@ -39,7 +39,7 @@ Motor: 540 size, 35 turns, stock pinion\
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--\
 // SBUS communication --------\
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)\
-boolean sbusInverted = false; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" transmitter)\
+boolean sbusInverted = true; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)\
 \
 // Serial communication --------\
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)\
@@ -252,11 +252,11 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays\
 \
 // Gearbox parameters ---------------------------------------------------------------------------------------------------\
-const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (experimental)\
+const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)\
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"\
 \
 // Clutch parameters ---------------------------------------------------------------------------------------------------\
-const uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power\
+uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power\
 \
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------\
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)\
