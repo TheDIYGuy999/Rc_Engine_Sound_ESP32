@@ -8,7 +8,7 @@
 
 */
 
-const float codeVersion = 4.0; // Software revision.
+const float codeVersion = 4.1; // Software revision.
 
 //
 // =======================================================================================================
@@ -165,7 +165,8 @@ volatile boolean sound1Switch = false;          // Switch state for sound1 trigg
 boolean indicatorLon = false;                   // Left indicator
 boolean indicatorRon = false;                   // Right indicator
 
-int32_t currentThrottle = 0;                   // 0 - 500 (Throttle trigger input)
+int32_t currentThrottle = 0;                    // 0 - 500 (Throttle trigger input)
+int32_t engineLoad = 0;                         // 0 - 500
 uint32_t currentSpeed = 0;                      // 0 - 500 (current ESC power)
 boolean throttleReverse;                        // false = forward, true = reverse
 uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
@@ -1125,7 +1126,7 @@ void triggerHorn() {
       soundNo = 0;  // 0 = horn
     }
     else hornSwitch = false;
-    
+
 
     // detect siren trigger ( impulse length < 1300us) ----------
     if (pulseWidth[3] < (pulseMinNeutral[3] - 180) && pulseWidth[3] > pulseMinLimit[3]) {
@@ -1250,6 +1251,10 @@ void mapThrottle() {
   if (engineRunning) throttleDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);
   else throttleDependentWastegateVolume = wastegateIdleVolumePercentage;
 
+
+  // Calculate engine load (used for torque converter slip simulation)
+  engineLoad = currentThrottle - currentRpm;
+  if (engineLoad < 0 || escIsBraking) engineLoad = 0;
 }
 
 //
@@ -1270,16 +1275,19 @@ void engineMassSimulation() {
 
     if (currentThrottle > 500) currentThrottle = 500;
 
+    if (automatic) clutchEngagingPoint = 0; // disable clutch in automatic transmission mode!
+
     // compute rpm curves
     if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
-      if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentThrottle);
-      else mappedThrottle = reMap(curveLinear, currentThrottle);
+      mappedThrottle = reMap(curveLinear, currentThrottle);
       if (escIsBraking) mappedThrottle = 0;
     }
     else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
-      if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentSpeed);
+      if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentSpeed) + (engineLoad  * 2 / 3); // + (currentThrottle / 3) is for torque converter slip simulation
       else mappedThrottle = reMap(curveLinear, currentSpeed);
     }
+
+    if (mappedThrottle > 500) mappedThrottle = 500;
 
 
     // Accelerate engine
@@ -1525,6 +1533,9 @@ void gearboxDetection() {
   static boolean previousReverse;
   static unsigned long upShiftingMillis;
   static unsigned long downShiftingMillis;
+
+  // if automatic transmission, always 2nd gear
+  if (automatic) pulseWidth[1] = 1500;
 
   // Gear detection
   if (pulseWidth[1] > 1700) selectedGear = 3;
