@@ -259,6 +259,9 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Inspired by Wombii's fork of this repo: optimised simulated automatic transmission: load dependent "torque converter slip" added, optimised "3 speed sawtooth array", which is simulating the shifting points. Now we have 4 gears instead of 3, but you still can uncomment the 3 speed version array. I recommend to use "automatic = true" in "Adjustments.h", if your RC vehicle does not have a real shifting transmission. My solution is way more simplistic than Wombii's, but still sounding good.Example settings see Land Rover and fire truck
 - Harley Davidson optimised
 
+## New in V 4.11:
+- Automatic transmission optimised in 1/14 scale Actros truck with Hobbywing 1080 ESC
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables

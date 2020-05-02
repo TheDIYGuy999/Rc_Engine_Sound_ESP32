@@ -8,7 +8,7 @@
 
 */
 
-const float codeVersion = 4.1; // Software revision.
+const float codeVersion = 4.11; // Software revision.
 
 //
 // =======================================================================================================
@@ -1275,18 +1275,22 @@ void engineMassSimulation() {
 
     if (currentThrottle > 500) currentThrottle = 500;
 
-    if (automatic) clutchEngagingPoint = 0; // disable clutch in automatic transmission mode!
+    // compute engine rpm curves
 
-    // compute rpm curves
-    if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
-      mappedThrottle = reMap(curveLinear, currentThrottle);
-      if (escIsBraking) mappedThrottle = 0;
-    }
-    else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
-      if (automatic && !escInReverse) mappedThrottle = reMap(curveAutomatic, currentSpeed) + (engineLoad  * 2 / 3); // + (currentThrottle / 3) is for torque converter slip simulation
-      else mappedThrottle = reMap(curveLinear, currentSpeed);
+    // automatic transmission
+    if (automatic) mappedThrottle = reMap(curveAutomatic, currentSpeed) + (engineLoad  * 2 / 3); // + (engineLoad  * 2 / 3) is for torque converter slip simulation
+    else {
+      // Manual transmission
+      if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
+        mappedThrottle = reMap(curveLinear, currentThrottle);
+        //if (escIsBraking) mappedThrottle = 0;
+      }
+      else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
+        mappedThrottle = reMap(curveLinear, currentSpeed);
+      }
     }
 
+    if (escIsBraking && currentSpeed < clutchEngagingPoint) mappedThrottle = 0; // keep engine @idle rpm, if braking at very low speed
     if (mappedThrottle > 500) mappedThrottle = 500;
 
 
@@ -1732,7 +1736,10 @@ void esc() {
 
 
     // Gain for drive ramp rate, depending on clutchEngagingPoint
-    if (currentSpeed < clutchEngagingPoint) driveRampGain = 2; // prevent clutch from slipping too much
+    if (currentSpeed < clutchEngagingPoint) {
+      if (!automatic) driveRampGain = 2; // prevent clutch from slipping too much
+      else driveRampGain = 4; // Automatic transmission needs to catch immediately
+    }
     else driveRampGain = 1;
 
 
