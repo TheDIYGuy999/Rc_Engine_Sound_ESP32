@@ -11,11 +11,11 @@ float curveAutomatic[][2] = {
   {0, 0} // {input value, output value}
   , {83, 350} // Initial torque converter slip
   , {187, 500}
-  , {188, 250} // Simulated shifting point to 2nd gear
+  , {188, 350} // Simulated shifting point to 2nd gear
   , {291, 500}
-  , {292, 250} // Simulated shifting point to 3rd gear
+  , {292, 350} // Simulated shifting point to 3rd gear
   , {396, 500}
-  , {397, 250} // Simulated shifting point to 4rd gear
+  , {397, 350} // Simulated shifting point to 4rd gear
   , {500, 500}
   , {600, 500} // overload range > 500 will limit output to 500
 };

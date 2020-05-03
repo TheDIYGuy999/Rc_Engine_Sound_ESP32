@@ -8,7 +8,7 @@
 
 */
 
-const float codeVersion = 4.11; // Software revision.
+const float codeVersion = 4.12; // Software revision.
 
 //
 // =======================================================================================================
@@ -1277,13 +1277,12 @@ void engineMassSimulation() {
 
     // compute engine rpm curves
 
-    // automatic transmission
-    if (automatic) mappedThrottle = reMap(curveAutomatic, currentSpeed) + (engineLoad  * 2 / 3); // + (engineLoad  * 2 / 3) is for torque converter slip simulation
+    // automatic transmission ----
+    if (automatic) mappedThrottle = reMap(curveAutomatic, currentSpeed) + (engineLoad  / 3); // + (engineLoad  * 2 / 3) is for torque converter slip simulation
     else {
-      // Manual transmission
+      // Manual transmission ----
       if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
         mappedThrottle = reMap(curveLinear, currentThrottle);
-        //if (escIsBraking) mappedThrottle = 0;
       }
       else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
         mappedThrottle = reMap(curveLinear, currentSpeed);
@@ -1315,15 +1314,13 @@ void engineMassSimulation() {
 #endif
   }
 
-  // Trigger Wastegate, if throttle rapidly dropped TODO
+  // Trigger Wastegate, if throttle rapidly dropped
   if (lastThrottle - currentThrottle > 200) {
-    //if (lastThrottle > 400 && (lastThrottle - currentThrottle) > 200) {
-    //if (lastThrottle > 400 && currentThrottle < 200) {
     wastegateTrigger = true;
   }
   lastThrottle = currentThrottle;
 
-  // switch between idle and rev sound, depending on rpm
+  // switch between idle and rev sound, depending on rpm (experimental, I probably will remove it)
 #ifdef REV_SOUND
   if (currentRpm > revSwitchPoint) engineRevving = true;
   else engineRevving = false;
