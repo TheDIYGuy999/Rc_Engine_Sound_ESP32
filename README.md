@@ -272,7 +272,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Reverse detection, only one gear in this case
 - Gear ratios according to Allison datasheet (adjust reverse gear ratio according to your ESC reverse top speed)
 - PROTOTYPE_36-PIN renamed to PROTOTYPE_36 to prevent compiler warnings
-- Settings profile for Ferrari with 6 speed automatic transmission added
+- Settings profiles for Ferrari & trophy truck with 6 speed automatic transmission & Chevy Nova with 3 speed automatic transmission added
 
 
 ## PCB files available:
