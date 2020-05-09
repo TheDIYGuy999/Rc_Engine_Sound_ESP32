@@ -265,6 +265,16 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 ## New in V 4.12:
 - Further automatic transmission fine tuning after big test drive with the Actros
 
+## New in V 4.2:
+- Dynamic, adaptive shift points for automatic transmission, depending on engine load allows economic driving
+- Kick down detection will shift back, if instant full throttle is applied
+- Replaced "sawtooth" arrays for automatic gear ratios with three one dimensional arrays for 3, 4 or 6 gears
+- Reverse detection, only one gear in this case
+- Gear ratios according to Allison datasheet (adjust reverse gear ratio according to your ESC reverse top speed)
+- PROTOTYPE_36-PIN renamed to PROTOTYPE_36 to prevent compiler warnings
+- Settings profile for Ferrari with 6 speed automatic transmission added
+
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables

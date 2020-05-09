@@ -33,7 +33,7 @@ Motor: 540 size, 35 turns, stock pinion\
 \
 // ********************************************************************************************************************* */\
 // Choose the board version\
-//#define PROTOTYPE_36-PIN // 36 or 30 pin board (do not uncomment it or it will cause boot issues!)\
+//#define PROTOTYPE_36 // 36 or 30 pin board (do not uncomment it or it will cause boot issues!)\
 \
 // ---------------------------------------------------------------------------------------------------------------------\
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--\
@@ -246,7 +246,7 @@ const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less de
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------\
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)\
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)\
-const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler\
+const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)\
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler\
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)\
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)\
@@ -255,7 +255,7 @@ const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able 
 const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"\
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays\
 \
-// Gearbox parameters ---------------------------------------------------------------------------------------------------\
+// Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------\
 const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)\
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"\
 \

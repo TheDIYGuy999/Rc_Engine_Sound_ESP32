@@ -6,9 +6,11 @@
    Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
    converter code by bitluni (send him a high five, if you like the code)
 
+   Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
+
 */
 
-const float codeVersion = 4.12; // Software revision.
+const float codeVersion = 4.2; // Software revision.
 
 //
 // =======================================================================================================
@@ -26,6 +28,7 @@ const float codeVersion = 4.12; // Software revision.
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 //#define SBUS_DEBUG // uncomment it to debug the SBUS command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
+#define DRIVE_AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 
 // TODO = Things to clean up!
 
@@ -72,7 +75,7 @@ const float codeVersion = 4.12; // Software revision.
 
 #define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk!)
 
-#ifdef PROTOTYPE_36-PIN // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
+#ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
 #define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
 #else
 #define HEADLIGHT_PIN 3 // 3 = RX0 pin, (1 = TX0 is not usable) white headllights
@@ -148,6 +151,7 @@ volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid
 volatile boolean dieselKnockTrigger = false;    // Trigger Diesel ignition "knock"
 
 uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
+uint8_t selectedAutomaticGear = 1;              // The currently used gear of our automatic gearbox
 boolean gearUpShiftingInProgress;               // Active while shifting upwards
 boolean gearDownShiftingInProgress;             // Active while shifting downwards
 boolean gearUpShiftingPulse;                    // Active, if shifting upwards begins
@@ -1254,7 +1258,8 @@ void mapThrottle() {
 
   // Calculate engine load (used for torque converter slip simulation)
   engineLoad = currentThrottle - currentRpm;
-  if (engineLoad < 0 || escIsBraking) engineLoad = 0;
+  if (engineLoad < 0 || escIsBraking) engineLoad = 0; // Range is 0 - 500
+  if (engineLoad > 180) engineLoad = 180; // TODO
 }
 
 //
@@ -1267,6 +1272,7 @@ void engineMassSimulation() {
 
   static int32_t  mappedThrottle = 0;
   static int32_t  lastThrottle;
+  uint16_t converterSlip;
   static unsigned long throtMillis;
   static unsigned long printMillis;
 
@@ -1275,10 +1281,19 @@ void engineMassSimulation() {
 
     if (currentThrottle > 500) currentThrottle = 500;
 
+    
     // compute engine rpm curves
 
     // automatic transmission ----
-    if (automatic) mappedThrottle = reMap(curveAutomatic, currentSpeed) + (engineLoad  / 3); // + (engineLoad  * 2 / 3) is for torque converter slip simulation
+    if (automatic) {
+
+    // Torque converter slip calculation
+      if (selectedAutomaticGear < 2) converterSlip = engineLoad * 2; // more slip in first and reverse gear
+      // else if (selectedAutomaticGear == NumberOfAutomaticGears) converterSlip = engineLoad / 2; // less slip in top gear TODO
+      else converterSlip = engineLoad;
+      
+      mappedThrottle = currentSpeed * gearRatio[selectedAutomaticGear] / 10 + converterSlip; // Compute engine RPM
+    }
     else {
       // Manual transmission ----
       if (currentSpeed < clutchEngagingPoint || gearUpShiftingInProgress || gearDownShiftingInProgress) { // Clutch disengaged: Engine revving allowed during low speed
@@ -1524,7 +1539,7 @@ void shaker() {
 
 //
 // =======================================================================================================
-// GEARBOX DETECTION
+// MANUAL TAMIYA 3 SPEED GEARBOX DETECTION
 // =======================================================================================================
 //
 
@@ -1572,6 +1587,48 @@ void gearboxDetection() {
   if (escInReverse != previousReverse) {
     previousReverse = escInReverse;
     shiftingTrigger = true; // Play shifting sound
+  }
+}
+
+//
+// =======================================================================================================
+// SIMULATED AUTOMATIC TRANSMISSION GEAR SELECTOR
+// =======================================================================================================
+//
+
+void automaticGearSelector() {
+
+  static unsigned long gearSelectorMillis;
+  uint16_t downShiftPoint = 200;
+  uint16_t upShiftPoint = 490;
+
+  if (millis() - gearSelectorMillis > 100) { // Waiting for 100ms is very important. Otherwise gears are skipped!
+    gearSelectorMillis = millis();
+
+    // compute load dependent shift points (less throttle = less rpm before shifting up, kick down will shift back!)
+    upShiftPoint = map(engineLoad, 0, 180, 390, 490); // 390, 490
+    downShiftPoint = map(engineLoad, 0, 180, 150, 250); // 150, 250
+
+    if (escInReverse) { // Reverse (only one gear)
+      selectedAutomaticGear = 0;
+    }
+    else { // Forward
+      // Adaptive shift points
+      if (currentRpm >= upShiftPoint && engineLoad < 5) selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
+      if (currentRpm <= downShiftPoint || engineLoad > 100) selectedAutomaticGear --; // Downshifting incl. kickdown
+
+      selectedAutomaticGear = constrain(selectedAutomaticGear, 1, NumberOfAutomaticGears);
+    }
+
+#ifdef DRIVE_AUTO_TRANS_DEBUG
+    Serial.println(currentThrottle);
+    Serial.println(selectedAutomaticGear);
+    Serial.println(engineLoad);
+    Serial.println(upShiftPoint);
+    Serial.println(currentRpm);
+    Serial.println(downShiftPoint);
+    Serial.println("");
+#endif
   }
 }
 
@@ -1816,6 +1873,9 @@ void Task1code(void *pvParameters) {
 
     // Simulate engine mass, generate RPM signal
     engineMassSimulation();
+
+    // Call gear selector
+    if (automatic) automaticGearSelector();
 
     // Switch engine on or off
     engineOnOff();

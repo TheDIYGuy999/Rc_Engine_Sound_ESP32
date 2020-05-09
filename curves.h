@@ -1,38 +1,24 @@
 //
 // =======================================================================================================
-// ARRAYS FOR THROTTLE
+// ARRAYS FOR ENGINE RPM
 // =======================================================================================================
 //
 
-// In order to optimize the motor RPM behaviour for your vehicle, just change the array below
+// Automatic transmission gear ratios (times 10!, for example 15 means 1.5)
+// see: https://www.allisontransmission.com/docs/default-source/marketing-materials/sa7943en_-2017-vocational-model-guide_-vmg-lr9af07359281567eeb272ff0000a566aa.pdf?sfvrsn=13
 
-// Simulating a 4 speed automatic transmission, using a sawtooth array
-float curveAutomatic[][2] = { 
-  {0, 0} // {input value, output value}
-  , {83, 350} // Initial torque converter slip
-  , {187, 500}
-  , {188, 350} // Simulated shifting point to 2nd gear
-  , {291, 500}
-  , {292, 350} // Simulated shifting point to 3rd gear
-  , {396, 500}
-  , {397, 350} // Simulated shifting point to 4rd gear
-  , {500, 500}
-  , {600, 500} // overload range > 500 will limit output to 500
-};
+#define NumberOfAutomaticGears 3 // <<------- Select 3, 4 or 6 gears!
 
-/*
-// Simulating a 3 speed automatic transmission, using a sawtooth array
-float curveAutomatic[][2] = { 
-  {0, 0} // {input value, output value}
-  , {83, 350} // Initial torque converter slip
-  , {222, 500}
-  , {223, 250} // Simulated shifting point to 2nd gear
-  , {361, 500}
-  , {362, 250} // Simulated shifting point to 3rd gear
-  , {500, 500}
-  , {600, 500} // overload range > 500 will limit output to 500
-};*/
+//Reverse, 1st, 2nd, 3rd, 4th gear etc. (adjust reverse to match your ESC reverse speed)
+#if NumberOfAutomaticGears == 6
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 54, 32, 22, 15, 12, 10}; // Allison 3200 EVS (10, 54, 26, 22, 15, 12, 10)
+#elif NumberOfAutomaticGears == 4
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 44, 23, 14, 10}; // GM Turbo HydraMatic 700-R4
+#elif NumberOfAutomaticGears == 3
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo HydraMatic 400
+#endif
 
+// Manual transmission
 // Use it in combination with a real 3 speed shifting transmission like the one from TAMIYA
 float curveLinear[][2] = { 
   {0, 0} // {input value, output value}
