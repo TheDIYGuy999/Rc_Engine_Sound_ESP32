@@ -32,7 +32,7 @@ Motor: 540 size, 35 turns, stock pinion
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
 // SBUS communication --------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
-boolean sbusInverted = true; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
 
 // Serial communication --------
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
@@ -235,7 +235,7 @@ const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutra
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
+const int16_t escPulseSpan = 500; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
@@ -248,6 +248,7 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
 const boolean automatic = true; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
+const boolean doubleClutch = false; // do not activate it at the same time as automatic!
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------

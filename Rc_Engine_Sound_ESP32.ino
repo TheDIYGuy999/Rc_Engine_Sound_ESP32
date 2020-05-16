@@ -10,16 +10,19 @@
 
 */
 
-const float codeVersion = 4.2; // Software revision.
+const float codeVersion = 4.3; // Software revision.
 
 //
 // =======================================================================================================
-// SETTINGS (ADJUST THEM BEFORE CODE UPLOAD)
+// ! ! I M P O R T A N T ! !   SETTINGS (ADJUST THEM BEFORE CODE UPLOAD), REQUIRED ESP32 BOARD DEFINITION
 // =======================================================================================================
 //
 
 // All the required vehicle specific settings are done in Adjustments.h!
 #include "Adjustments.h" // <<------- ADJUSTMENTS TAB
+
+// Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+// Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
 
 // Make sure to remove -master from your sketch folder name
 
@@ -34,7 +37,7 @@ const float codeVersion = 4.2; // Software revision.
 
 //
 // =======================================================================================================
-// LIRBARIES & HEADER FILES (TABS ABOVE)
+// LIRBARIES & HEADER FILES
 // =======================================================================================================
 //
 
@@ -1281,18 +1284,24 @@ void engineMassSimulation() {
 
     if (currentThrottle > 500) currentThrottle = 500;
 
-    
+
     // compute engine rpm curves
 
     // automatic transmission ----
     if (automatic) {
-
-    // Torque converter slip calculation
+      // Torque converter slip calculation
       if (selectedAutomaticGear < 2) converterSlip = engineLoad * 2; // more slip in first and reverse gear
-      // else if (selectedAutomaticGear == NumberOfAutomaticGears) converterSlip = engineLoad / 2; // less slip in top gear TODO
       else converterSlip = engineLoad;
-      
+
       mappedThrottle = currentSpeed * gearRatio[selectedAutomaticGear] / 10 + converterSlip; // Compute engine RPM
+    }
+    else if (doubleClutch) {
+      // double clutch transmission
+      //if (currentSpeed >= 100) mappedThrottle = currentSpeed * gearRatio[selectedAutomaticGear] / 10; // Compute engine RPM
+      //else mappedThrottle = 0;
+      mappedThrottle = currentSpeed * gearRatio[selectedAutomaticGear] / 10; // Compute engine RPM
+
+
     }
     else {
       // Manual transmission ----
@@ -1551,7 +1560,7 @@ void gearboxDetection() {
   static unsigned long downShiftingMillis;
 
   // if automatic transmission, always 2nd gear
-  if (automatic) pulseWidth[1] = 1500;
+  if (automatic || doubleClutch) pulseWidth[1] = 1500;
 
   // Gear detection
   if (pulseWidth[1] > 1700) selectedGear = 3;
@@ -1599,6 +1608,8 @@ void gearboxDetection() {
 void automaticGearSelector() {
 
   static unsigned long gearSelectorMillis;
+  static unsigned long lastUpShiftingMillis;
+  static unsigned long lastDownShiftingMillis;
   uint16_t downShiftPoint = 200;
   uint16_t upShiftPoint = 490;
 
@@ -1613,9 +1624,16 @@ void automaticGearSelector() {
       selectedAutomaticGear = 0;
     }
     else { // Forward
-      // Adaptive shift points
-      if (currentRpm >= upShiftPoint && engineLoad < 5) selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
-      if (currentRpm <= downShiftPoint || engineLoad > 100) selectedAutomaticGear --; // Downshifting incl. kickdown
+      
+        // Adaptive shift points
+        if (millis() - lastDownShiftingMillis > 500 && currentRpm >= upShiftPoint && engineLoad < 5) { // 500ms locking timer!
+          selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
+          lastUpShiftingMillis = millis();
+        }
+        if (millis() - lastUpShiftingMillis > 1000 && selectedAutomaticGear > 1 && (currentRpm <= downShiftPoint || engineLoad > 100)) { // 1000ms locking timer!
+          selectedAutomaticGear --; // Downshifting incl. kickdown
+          lastDownShiftingMillis = millis(); 
+      }
 
       selectedAutomaticGear = constrain(selectedAutomaticGear, 1, NumberOfAutomaticGears);
     }
@@ -1791,7 +1809,7 @@ void esc() {
 
     // Gain for drive ramp rate, depending on clutchEngagingPoint
     if (currentSpeed < clutchEngagingPoint) {
-      if (!automatic) driveRampGain = 2; // prevent clutch from slipping too much
+      if (!automatic  && !doubleClutch) driveRampGain = 2; // prevent clutch from slipping too much
       else driveRampGain = 4; // Automatic transmission needs to catch immediately
     }
     else driveRampGain = 1;
@@ -1875,7 +1893,7 @@ void Task1code(void *pvParameters) {
     engineMassSimulation();
 
     // Call gear selector
-    if (automatic) automaticGearSelector();
+    if (automatic || doubleClutch) automaticGearSelector();
 
     // Switch engine on or off
     engineOnOff();

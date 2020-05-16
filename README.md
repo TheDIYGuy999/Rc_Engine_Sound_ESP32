@@ -14,7 +14,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Engine RPM range and inertia adjustable, volume of all sounds adjustable, engine sounds separatly for load and idling.
 - Many other paramerets can be adjusted. All adjustments are easily accessible in "Adjustments.h"
 - Sound files up to 22'050Hz, 8bit, mono can be used
-- Compatible input signals: PWM, PPM, Serial (Micro RC Receiver only)
+- Compatible input signals: PWM, PPM, Serial (Micro RC Receiver only), SBUS (inverted & non inverted signals)
 - Works best with a PAM8403 amplifier module, connected to pin 25 & 26, via 10kOhm resistors & a 10kOhm potentiometer (see schematic below)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max. on all pins! *** 330 Ohm resistors on all I/O pins recommended!
 - Non linear throttle curves can be generated in "curves.h"
@@ -273,6 +273,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Gear ratios according to Allison datasheet (adjust reverse gear ratio according to your ESC reverse top speed)
 - PROTOTYPE_36-PIN renamed to PROTOTYPE_36 to prevent compiler warnings
 - Settings profiles for Ferrari & trophy truck with 6 speed automatic transmission & Chevy Nova with 3 speed automatic transmission added
+
+## New in V 4.3:
+- Simulated sequential double clutch transmission added. Variable "doubleClutch" in "Adjustments.h". See Ferrari setting (use 6 gears in "curves.h")
+- Automatic transmission shifting strategy is now more robust, no oscillation anymore. See Chevy Nova V8 setting (use 3 gears in "curves.h")
+- Knock sound for Chevy Nova V8 added. Sounds just great in combination with the 3 speed automatic transmission!
 
 
 ## PCB files available:
