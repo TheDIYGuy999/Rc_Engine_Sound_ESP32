@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.3; // Software revision.
+const float codeVersion = 4.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -31,7 +31,7 @@ const float codeVersion = 4.3; // Software revision.
 //#define SERIAL_DEBUG // uncomment it to debug the serial command interface on pin 36
 //#define SBUS_DEBUG // uncomment it to debug the SBUS command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
-#define DRIVE_AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
+//#define DRIVE_AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 
 // TODO = Things to clean up!
 
@@ -152,6 +152,8 @@ volatile boolean shiftingTrigger = false;       // Trigger for shifting noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid throttle drop
 volatile boolean dieselKnockTrigger = false;    // Trigger Diesel ignition "knock"
+volatile boolean dieselKnockTriggerFirst = false;    // Trigger First Diesel ignition "knock"
+
 
 uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
 uint8_t selectedAutomaticGear = 1;              // The currently used gear of our automatic gearbox
@@ -322,6 +324,7 @@ void IRAM_ATTR variablePlaybackTimer() {
           // Trigger Diesel ignition "knock" sound (played in the fixed sample rate interrupt)
           if (curEngineSample - lastDieselKnockSample > (sampleCount / dieselKnockInterval)) {
             dieselKnockTrigger = true;
+            dieselKnockTriggerFirst = false;
             lastDieselKnockSample = curEngineSample;
           }
         }
@@ -329,6 +332,7 @@ void IRAM_ATTR variablePlaybackTimer() {
           curEngineSample = 0;
           lastDieselKnockSample = 0;
           dieselKnockTrigger = true;
+          dieselKnockTriggerFirst = true;
         }
       }
       else {
@@ -616,6 +620,9 @@ void IRAM_ATTR fixedPlaybackTimer() {
   if (curDieselKnockSample < knockSampleCount) {
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
     curDieselKnockSample ++;
+#ifdef ADAPTIVE_KNOCK_VOLUME
+    if (!dieselKnockTriggerFirst) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: only the first knock has full volume!
+#endif
   }
 
   // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" + "b7" together ----

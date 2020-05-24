@@ -279,13 +279,19 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Automatic transmission shifting strategy is now more robust, no oscillation anymore. See Chevy Nova V8 setting (use 3 gears in "curves.h")
 - Knock sound for Chevy Nova V8 added. Sounds just great in combination with the 3 speed automatic transmission!
 
+## New in V 4.4:
+- Jeep Grand Cherokee Trackhawk added. Speaker with good bass reproduction needed!
+- DAF XF truck added
+- Adaptive knock volume added (the first knock per engine cycle will be louder, if defined "ADAPTIVE_KNOCK_VOLUME", adjust volume for others with "dieselKnockAdaptiveVolumePercentage" (see DAF XF settings)
+- "Settings" files cleaned up
+
 
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
 
 ## On the todo list:
-- adding more sounds
+- your suggestions?
 
 ## How to create new sound file arrays:
 
