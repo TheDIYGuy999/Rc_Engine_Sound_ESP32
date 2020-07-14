@@ -1,12 +1,12 @@
 {\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf610
-{\fonttbl\f0\fnil\fcharset0 Calibri;}
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
-\paperw11900\paperh16840\vieww27280\viewh19000\viewkind0
+\paperw11900\paperh16840\vieww38940\viewh19000\viewkind0
 \deftab720
-\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+\pard\pardeftab720\partightenfactor0
 
-\f0\fs22 \cf0 /* ******* RECOMMENDED Audacity Settings: 22'050 Hz, 8 bit PCM **********\
+\f0\fs24 \cf0 /* ******* RECOMMENDED Audacity Settings: 22'050 Hz, 8 bit PCM **********\
 \
 // Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html\
 // converter code by bitluni (send him a high five, if you like the code)\
@@ -202,13 +202,14 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 \
 // Choose the siren / additional horn sound (uncomment the one you want) --------\
 volatile int sirenVolumePercentage = 120; // Adjust the siren volume (usually = 100%)\
-#include "sounds/sirenDummy.h" // If you don't want siren sound\
+//#include "sounds/sirenDummy.h" // If you don't want siren sound\
 //#include "sounds/UsPoliceSiren.h" // US Police siren\
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)\
 //#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn\
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn\
 //#include "sounds/siren01norskere22.h" // Norwegian siren\
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn\
+#include "sounds/75mm.h" // 75mm salve\
 \
 // Choose the air brake release sound (uncomment the one you want) --------\
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)\
