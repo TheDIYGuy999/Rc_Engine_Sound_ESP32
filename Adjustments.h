@@ -45,7 +45,7 @@ boolean sbusInverted = true; // false = wired to NPN transistor signal inverter 
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
-volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 100%)
+volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 100%)
 //#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "sounds/ScaniaV8Start.h" // Scania V8 Start
 //#include "sounds/ScaniaR500V8Start.h" // Scania R500 V8 Start
@@ -57,18 +57,18 @@ volatile int startVolumePercentage = 100; // Adjust the start volume (usually = 
 //#include "sounds/KenworthW900Start.h" // Kenworth W900 Truck Start
 //#include "sounds/MackStart.h" // Mack Truck Start
 //#include "sounds/DetroitDieselStart.h" // Detroit Diesel generic Truck Start
-#include "sounds/InternationalDT-466Start.h" // International DT-466 Start
+//#include "sounds/InternationalDT-466Start.h" // International DT-466 Start
 //#include "sounds/Cat3406BStart.h" // Caterpillar 3406B start
 //#include "sounds/ActrosV8Start.h" // MB Actros V8 Truck Start
 //#include "sounds/VWBeetleStart.h" // VW Beetle or Bug
 //#include "sounds/HarleyDavidsonFXSBStart.h" // Harley Davidson FXSB start
-//#include "sounds/v8soundteststart.h" // Wombii's Scania V8 Fire Truck start
+#include "sounds/v8soundteststart.h" // Wombii's Scania V8 Fire Truck start
 //#include "sounds/JeepGrandCherokeeTrackhawkStart.h" // Jeep Grand Cherokee Trackhawk start
 //#include "sounds/carCranking.h" // Generic car cranking
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 80; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 100; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int engineIdleVolumePercentage = 40; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 //#include "sounds/20Hz.h" // 20Hz test tone
 //#include "sounds/100Hz.h" // 100Hz test tone
 //#include "sounds/1000Hz.h" // 1000Hz test tone
@@ -112,10 +112,9 @@ volatile int engineIdleVolumePercentage = 100; // the engine volume will be thro
 //#include "sounds/JaguarXjsHeIdle.h" // Jaguar XJS HE (bad quality)
 //#include "sounds/VWBeetleIdle.h" // VW Beetle or Bug
 //#include "sounds/HarleyDavidsonFXSBIdle.h" // Harley Davidson FXSB (Volume 60%, 40%, Turbo 0%, 10,  no Wastegate 100%, CEP 300, TSM 4, Knock volume 300, 10%, interval 2, 50)
-//#include "sounds/v8soundtestidle.h" // Wombii's Scania V8 Fire Truck (Volume 90%, 50%, Turbo 20%, 10, Wastegate 90%, 1%, CEP 100, TSM 3, Knock volume 350, 15%, interval 4, 10, ScaniaDieselKnock.h)
+#include "sounds/v8soundtestidle.h" // Wombii's Scania V8 Fire Truck (Volume 90%, 50%, Turbo 20%, 10, Wastegate 90%, 1%, CEP 100, TSM 3, Knock volume 350, 15%, interval 4, 10, ScaniaDieselKnock.h)
 //#include "sounds/JeepGrandCherokeeTrackhawkIdle.h" // Jeep Grand Cherokee Trackhawk idle (speaker with good bass required)
-#include "sounds/DAFXFIdle.h" // DAF XF truck (use International DT 466 start, ADAPTIVE_KNOCK_VOLUME, dieselKnockInterval = 3, dieselKnockAdaptiveVolumePercentage = 60)
-
+//#include "sounds/DAFXFIdle.h" // DAF XF truck
 
 // Choose the motor revving sound (experimental, uncomment the one you want) --------
 //#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
@@ -129,16 +128,16 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 500; // Adjust the Diesel knock volume (usually = 200 - 600%)
-volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
-volatile int dieselKnockInterval = 3; // Idle sample length divided by this number (1 - 20, depending on sound files)
-volatile int dieselKnockStartPoint = 20; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
-#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!
-volatile int dieselKnockAdaptiveVolumePercentage = 60; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+volatile int dieselKnockVolumePercentage = 700; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockIdleVolumePercentage = 15; // Diesel knock volume while idling (usually = 20%)
+volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)
+volatile int dieselKnockStartPoint = 10; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
+//#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!
+volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
-//#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highway race against Volvo truck (500%, 10%, Interval = 2 possible, for slow running V8 engines)
+#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highway race against Volvo truck (500%, 10%, Interval = 2 possible, for slow running V8 engines)
 //#include "sounds/ScaniaDieselKnock2.h" // Strong, short Scania V8 diesel knock while highway race against Volvo truck (Interval = 4 possible, for faster running engines)
 //#include "sounds/ScanıaR730V8DieselKnockShort.h" // Hard knock (400%, 0%, Interval = up to 8 possible, for small engines)
 //#include "sounds/ScanıaR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))
@@ -154,12 +153,13 @@ volatile int dieselKnockAdaptiveVolumePercentage = 60; // Adjust the Diesel knoc
 //#include "sounds/DefenderV8Knock2.h" // Land Rover Defender V8 knock (experimental, don't use it)
 //#include "sounds/DefenderV8Knock3.h" // Land Rover Defender V8 knock (experimental, don't use it)
 //#include "sounds/DefenderV8Knock4.h" // Land Rover Defender V8 knock (experimental, don't use it)
+//#include "sounds/V8TrophyTruckKnock.h" // V8 Trophy Truck
 //#include "sounds/chevyNovaV8Knock.h" // Chevy Nova Coupe 1975
 //#include "sounds/JeepGrandCherokeeTrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock
-#include "sounds/DAFXFKnock.h" // DAF XF truck
+//#include "sounds/DAFXFKnock.h" // DAF XF truck
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 40; // Adjust the turbo volume (usually = 70%)
+volatile int turboVolumePercentage = 20; // Adjust the turbo volume (usually = 70%)
 volatile int turboIdleVolumePercentage = 10; // the turbo volume will be engine rpm dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
@@ -192,11 +192,11 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 120; // Adjust the siren volume (usually = 100%)
-#include "sounds/sirenDummy.h" // If you don't want siren sound
+volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
+//#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
-//#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
@@ -215,7 +215,7 @@ volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usu
 #include "sounds/ParkingBrake.h" // Parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
-volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usually = 200%)
+volatile int shiftingVolumePercentage = 0; // Adjust the shifting volume (usually = 200%)
 //#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 //#include "sounds/AirShifting.h" // Pneumatic shifting sound
 #include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
@@ -247,7 +247,7 @@ const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutra
 const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range)
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const int16_t escPulseSpan = 1200; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler, 1400 = 100km/h with 35T motor)
+const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
@@ -261,16 +261,16 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
 const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
 const boolean doubleClutch = false; // do not activate it at the same time as automatic!
-const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed transmission, throttle is altered for synchronizing, if "true"
+const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 90; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power (about 100)
+uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
-const uint8_t shakerStart = 50; // Shaker power while engine start (max. 255, about 100, 50 with PETG weight)
-const uint8_t shakerIdle = 50; // Shaker power while idling (max. 255, about 49, 50 with PETG weight)
-const uint8_t shakerFullThrottle = 35; // Shaker power while full throttle (max. 255, about 42, 35 with PETG weight)
-const uint8_t shakerStop = 40; // Shaker power while engine stop (max. 255, about 60, 40 with PETG weight)
+const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
+const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
+const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
+const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 //Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
@@ -282,3 +282,6 @@ const uint32_t TOP_SPEED_MULTIPLIER = 3; // TSM. RPM multiplier: the bigger the 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
 const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
+
+// Vehicle type ----------------------------------------------------------------------------------------------------
+// #define CATERPILLAR_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3

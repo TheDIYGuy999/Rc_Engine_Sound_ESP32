@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.4; // Software revision.
+const float codeVersion = 4.5; // Software revision.
 
 //
 // =======================================================================================================
@@ -32,6 +32,7 @@ const float codeVersion = 4.4; // Software revision.
 //#define SBUS_DEBUG // uncomment it to debug the SBUS command interface on pin 36
 //#define DRIVE_STATE_DEBUG // uncomment it to debug the drive state statemachine
 //#define DRIVE_AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
+//#define CATERPILLAR_DEBUG // debugging caterpillar mode
 
 // TODO = Things to clean up!
 
@@ -72,11 +73,11 @@ const float codeVersion = 4.4; // Software revision.
 // RC signal pins (active, if "SERIAL_COMMUNICATION" is commented out)
 // Channel numbers may be different on your recveiver!
 #define SERVO1_PIN 13 // connect to RC receiver servo output channel 1 (aileron, steering)
-#define SERVO2_PIN 12 // connect to RC receiver servo output channel 2 (elevator, 3 pos. switch for shifting)
-#define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle)
+#define SERVO2_PIN 12 // connect to RC receiver servo output channel 2 (elevator, 3 pos. switch for shifting) (left throttle in CATERPILLAR_MODE)
+#define SERVO3_PIN 14 // connect to RC receiver servo output channel 3 (throttle) (right throttle in CATERPILLAR_MODE)
 #define SERVO4_PIN 27 // connect to RC receiver servo output channel 4 (rudder, pot)
 
-#define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk!)
+#define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk! Not supported in CATERPILLAR_MODE)
 
 #ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
 #define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
@@ -177,7 +178,7 @@ boolean indicatorRon = false;                   // Right indicator
 int32_t currentThrottle = 0;                    // 0 - 500 (Throttle trigger input)
 int32_t engineLoad = 0;                         // 0 - 500
 uint32_t currentSpeed = 0;                      // 0 - 500 (current ESC power)
-boolean throttleReverse;                        // false = forward, true = reverse
+boolean throttleReverse;                        // false = forward, true = reverse TODO
 uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
 
 uint16_t pulseMaxNeutral[4];                    // PWM input signal configuration storage variables
@@ -445,6 +446,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curShiftingSample;                // Index of currently loaded shifting sample
   static uint32_t curDieselKnockSample;             // Index of currently loaded Diesel knock sample
   static int32_t a, b, b1, b2, b3, b4, b5, b6, b7;  // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting
+  static boolean knockSilent;
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -614,6 +616,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   // Diesel ignition "knock" played in fixed sample rate section!
   if (dieselKnockTrigger) {
     dieselKnockTrigger = false;
+    knockSilent = !knockSilent; // change knock volume
     curDieselKnockSample = 0;
   }
 
@@ -621,7 +624,8 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
     curDieselKnockSample ++;
 #ifdef ADAPTIVE_KNOCK_VOLUME
-    if (!dieselKnockTriggerFirst) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: only the first knock has full volume!
+    if (knockSilent) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: alternating knock volume!
+    //if (!dieselKnockTriggerFirst) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: only the first knock has full volume!
 #endif
   }
 
@@ -780,7 +784,11 @@ void setup() {
   else pulseZero[0] = 1500;
 
   // CH2
+#if defined CATERPILLAR_MODE
+  pulseZero[1] = pulseWidth[1];
+#else
   pulseZero[1] = 1500; // This channel is controlled by a 3 position switch, so we don't want auto calibration!
+#endif
 
   // CH3
   if (!engineManualOnOff) pulseZero[2] = pulseWidth[2]; // store throttle offset (only, if "engineManualOnOff" inactive)
@@ -996,13 +1004,11 @@ void readRcSignals() {
   if (indicators) pulseWidth[0] = pulseIn(SERVO1_PIN, HIGH, 50000);
   else pulseWidth[0] = 1500;
 
-  // CH2 Gearbox servo
+  // CH2 Gearbox servo (left throttle in CATERPILLAR_MODE)
   pulseWidth[1] = pulseIn(SERVO2_PIN, HIGH, 50000);
 
-  // CH3 Throttle
+  // CH3 Throttle (right throttle in CATERPILLAR_MODE)
   pulseWidth[2] = pulseIn(SERVO3_PIN, HIGH, 50000);
-  if (pulseWidth[2] == 0) failSafe = true; // 0, if timeout (signal loss)
-  else failSafe = false;
 
   // CH4 Additional sound trigger (RC signal with 3 positions)
   if (pwmSoundTrigger) pulseWidth[3] = pulseIn(SERVO4_PIN, HIGH, 50000);
@@ -1012,6 +1018,14 @@ void readRcSignals() {
   invertRcSignals();
 
   // Falisafe for RC signals
+#if defined CATERPILLAR_MODE
+  if (pulseWidth[2] == 0 || pulseWidth[1] == 0) failSafe = true; // 0, if timeout (signal loss)
+  if (pulseWidth[2] != 0 && pulseWidth[1] != 0) failSafe = false;
+#else
+  if (pulseWidth[2] == 0) failSafe = true; // 0, if timeout (signal loss)
+  else failSafe = false;
+#endif
+
   failsafeRcSignals();
 }
 
@@ -1038,8 +1052,8 @@ void readSbusCommands() {
 
     // Proportional channels
     pulseWidth[0] = map(SBUSchannels[0], 172, 1811, 1000, 2000) ; // CH1 Steering
-    pulseWidth[1] = map(SBUSchannels[1], 172, 1811, 1000, 2000) ; // CH2 Gearbox
-    pulseWidth[2] = map(SBUSchannels[2], 172, 1811, 1000, 2000) ; // CH3 Throttle
+    pulseWidth[1] = map(SBUSchannels[1], 172, 1811, 1000, 2000) ; // CH2 Gearbox (left throttle in CATERPILLAR_MODE)
+    pulseWidth[2] = map(SBUSchannels[2], 172, 1811, 1000, 2000) ; // CH3 Throttle (right throttle in CATERPILLAR_MODE)
     //pulseWidth[4] = map(SBUSchannels[3], 172, 1811, 1000, 2000) ; // CH4
     pulseWidth[3] = map(SBUSchannels[4], 172, 1811, 1000, 2000) ; // Pot1 Horn
 
@@ -1215,6 +1229,45 @@ void mapThrottle() {
 
   // Input is around 1000 - 2000us, output 0-500 for forward and backwards
 
+#if defined CATERPILLAR_MODE // Dual throttle input for caterpillar vehicles ------------------
+  int32_t currentThrottleLR[3];
+
+  // check if the pulsewidth looks like a servo pulse
+  for (int i = 1; i <= 3; i++) {
+    if (pulseWidth[i] > pulseMinLimit[i] && pulseWidth[i] < pulseMaxLimit[i]) {
+      if (pulseWidth[i] < pulseMin[i]) pulseWidth[i] = pulseMin[i]; // Constrain the value
+      if (pulseWidth[i] > pulseMax[i]) pulseWidth[i] = pulseMax[i];
+
+      // calculate a throttle value from the pulsewidth signal
+      if (pulseWidth[i] > pulseMaxNeutral[i]) {
+        currentThrottleLR[i] = map(pulseWidth[i], pulseMaxNeutral[i], pulseMax[i], 0, 500);
+      }
+      else if (pulseWidth[i] < pulseMinNeutral[i]) {
+        currentThrottleLR[i] = map(pulseWidth[i], pulseMinNeutral[i], pulseMin[i], 0, 500);
+      }
+      else {
+        currentThrottleLR[i] = 0;
+      }
+    }
+  }
+
+  // Mixing both sides together
+  currentThrottle = max(currentThrottleLR[1], currentThrottleLR[2]);
+
+  // Print debug infos
+  static unsigned long printCaterpillarMillis;
+#ifdef CATERPILLAR_DEBUG // can slow down the playback loop!
+  if (millis() - printCaterpillarMillis > 1000) { // Every 1000ms
+    printCaterpillarMillis = millis();
+
+    Serial.println("CATERPILLAR DEBUG:");
+    Serial.println(currentThrottleLR[1]);
+    Serial.println(currentThrottleLR[2]);
+    Serial.println(currentThrottle);
+  }
+#endif
+
+#else // Normal mode --------------------------------------------------------------------------- 
   // check if the pulsewidth looks like a servo pulse
   if (pulseWidth[2] > pulseMinLimit[2] && pulseWidth[2] < pulseMaxLimit[2]) {
     if (pulseWidth[2] < pulseMin[2]) pulseWidth[2] = pulseMin[2]; // Constrain the value
@@ -1223,16 +1276,17 @@ void mapThrottle() {
     // calculate a throttle value from the pulsewidth signal
     if (pulseWidth[2] > pulseMaxNeutral[2]) {
       currentThrottle = map(pulseWidth[2], pulseMaxNeutral[2], pulseMax[2], 0, 500);
-      throttleReverse = false;
+      // throttleReverse = false; TODO
     }
     else if (pulseWidth[2] < pulseMinNeutral[2]) {
       currentThrottle = map(pulseWidth[2], pulseMinNeutral[2], pulseMin[2], 0, 500);
-      throttleReverse = true;
+      // throttleReverse = true; TODO
     }
     else {
       currentThrottle = 0;
     }
   }
+#endif
 
   // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
   if (!escIsBraking && escIsDriving && shiftingAutoThrottle) {
@@ -1304,8 +1358,6 @@ void engineMassSimulation() {
     }
     else if (doubleClutch) {
       // double clutch transmission
-      //if (currentSpeed >= 100) mappedThrottle = currentSpeed * gearRatio[selectedAutomaticGear] / 10; // Compute engine RPM
-      //else mappedThrottle = 0;
       mappedThrottle = currentSpeed * gearRatio[selectedAutomaticGear] / 10; // Compute engine RPM
 
 
@@ -1566,6 +1618,10 @@ void gearboxDetection() {
   static unsigned long upShiftingMillis;
   static unsigned long downShiftingMillis;
 
+#if defined CATERPILLAR_MODE // CH2 is used for left throttle in CATERPILLAR_MODE
+  selectedGear = 2;
+
+#else // only active, if not in CATERPILLAR_MODE
   // if automatic transmission, always 2nd gear
   if (automatic || doubleClutch) pulseWidth[1] = 1500;
 
@@ -1604,6 +1660,7 @@ void gearboxDetection() {
     previousReverse = escInReverse;
     shiftingTrigger = true; // Play shifting sound
   }
+#endif
 }
 
 //
@@ -1631,15 +1688,15 @@ void automaticGearSelector() {
       selectedAutomaticGear = 0;
     }
     else { // Forward
-      
-        // Adaptive shift points
-        if (millis() - lastDownShiftingMillis > 500 && currentRpm >= upShiftPoint && engineLoad < 5) { // 500ms locking timer!
-          selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
-          lastUpShiftingMillis = millis();
-        }
-        if (millis() - lastUpShiftingMillis > 1000 && selectedAutomaticGear > 1 && (currentRpm <= downShiftPoint || engineLoad > 100)) { // 1000ms locking timer!
-          selectedAutomaticGear --; // Downshifting incl. kickdown
-          lastDownShiftingMillis = millis(); 
+
+      // Adaptive shift points
+      if (millis() - lastDownShiftingMillis > 500 && currentRpm >= upShiftPoint && engineLoad < 5) { // 500ms locking timer!
+        selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
+        lastUpShiftingMillis = millis();
+      }
+      if (millis() - lastUpShiftingMillis > 1000 && selectedAutomaticGear > 1 && (currentRpm <= downShiftPoint || engineLoad > 100)) { // 1000ms locking timer!
+        selectedAutomaticGear --; // Downshifting incl. kickdown
+        lastDownShiftingMillis = millis();
       }
 
       selectedAutomaticGear = constrain(selectedAutomaticGear, 1, NumberOfAutomaticGears);
@@ -1668,6 +1725,9 @@ void automaticGearSelector() {
 // receiver is lost, but if the ESP32 crashes, the vehicle could get out of control!! ***
 
 void esc() {
+
+#if not defined CATERPILLAR_MODE // No ESC control in CATERPILLAR_MODE
+  
   static int32_t escPulseWidth = 1500;
   static uint32_t escSignal;
   static unsigned long escMillis;
@@ -1837,6 +1897,7 @@ void esc() {
     else currentSpeed = 0;
 
   }
+#endif
 }
 
 //

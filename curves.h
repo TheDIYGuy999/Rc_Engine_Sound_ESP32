@@ -7,7 +7,7 @@
 // Automatic transmission gear ratios (times 10!, for example 15 means 1.5)
 // see: https://www.allisontransmission.com/docs/default-source/marketing-materials/sa7943en_-2017-vocational-model-guide_-vmg-lr9af07359281567eeb272ff0000a566aa.pdf?sfvrsn=13
 
-#define NumberOfAutomaticGears 3 // <<------- Select 3, 4 or 6 gears!
+#define NumberOfAutomaticGears 6 // <<------- Select 3, 4 or 6 gears!
 
 //Reverse, 1st, 2nd, 3rd, 4th gear etc. (adjust reverse to match your ESC reverse speed)
 #if NumberOfAutomaticGears == 6

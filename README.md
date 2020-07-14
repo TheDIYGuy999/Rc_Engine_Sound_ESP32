@@ -6,6 +6,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for ech gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
 - Simulated automatic transmission with torque converter (if your vehicle does not have a real shifting transmission)
+- Caterpillar mode (dual throttle input on CH2 & CH3, for tanks, diggers etc. No ESC control support in this mode. New in v4.5)
 - Many selectable sounds: engine cranking, engine idling, engine revving, turbo whining, diesel ignition "knock", wastegate valve, horns, sirens, reversing beep, air brake, parking brake, gear shifting etc.
 - Realistic engine sound is mixed together on the fly from up to 4 sounds: engine idling, turbo, wastegate (all with variable sampling rate), Diesel ignition knock (fixed sampling rate, so it does not vary in pitch)
 - Load (throttle position) dependent volume sounds: idle, rev, Diesel knock
@@ -285,6 +286,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Adaptive knock volume added (the first knock per engine cycle will be louder, if defined "ADAPTIVE_KNOCK_VOLUME", adjust volume for others with "dieselKnockAdaptiveVolumePercentage" (see DAF XF settings)
 - "Settings" files cleaned up
 
+## New in V 4.5:
+- CATERPILLAR_MODE (dual throttle input on CH2 & CH3 for tanks, diggers, bulldozers etc.
+- No ESC control support in this mode! Wire two crawler type ESC (with direct brake) in partallel with CH2 & CH3 inputs, use dual headers)
+- Example settings: CATERPILLAR_MODE_Settings (copy and paste it in "Adjustments.h")
+- Also working in SBUS mode (allows to use additional sounds)
+- New V12 tank sound from JPS952
 
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
