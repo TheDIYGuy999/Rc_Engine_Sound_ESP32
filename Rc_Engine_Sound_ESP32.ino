@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.5; // Software revision.
+const float codeVersion = 4.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -174,6 +174,8 @@ volatile boolean sound1Switch = false;          // Switch state for sound1 trigg
 
 boolean indicatorLon = false;                   // Left indicator
 boolean indicatorRon = false;                   // Right indicator
+
+boolean cannonFlash = false;                    // Flashing cannon fire
 
 int32_t currentThrottle = 0;                    // 0 - 500 (Throttle trigger input)
 int32_t engineLoad = 0;                         // 0 - 500
@@ -473,7 +475,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
       }
       break;
 
-    case 1: // Siren "a" ----
+    case 1: // Siren (or tank cannon) "a" ----
       fixedTimerTicks = 4000000 / sirenSampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
       curHornSample = 0;
@@ -490,6 +492,8 @@ void IRAM_ATTR fixedPlaybackTimer() {
           if (!sirenSwitch) sirenOn = false; // Latch required to prevent it from popping
         }
       }
+      if (curSirenSample > 10 && curSirenSample < 500) cannonFlash = true; // Tank cannon flash triggering in CATERPILLAR_MODE
+      else cannonFlash = false;
       break;
 
     case 2: // Sound 1 "a" ----
@@ -714,7 +718,7 @@ void setup() {
 
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 500); // Timer 13, 500Hz
 
-  escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit (experimental)
+  escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit
 
   // Serial setup
   Serial.begin(115200); // USB serial (for DEBUG)
@@ -1001,8 +1005,12 @@ void readRcSignals() {
   // measure RC signal pulsewidth:
 
   // CH1 Steering
+#if not defined CATERPILLAR_MODE  
   if (indicators) pulseWidth[0] = pulseIn(SERVO1_PIN, HIGH, 50000);
   else pulseWidth[0] = 1500;
+#else
+  pulseWidth[0] = 1500;
+#endif    
 
   // CH2 Gearbox servo (left throttle in CATERPILLAR_MODE)
   pulseWidth[1] = pulseIn(SERVO2_PIN, HIGH, 50000);
@@ -1164,7 +1172,7 @@ void triggerHorn() {
     }
     else sirenSwitch = false;
 
-    // Sound 1 triggered via momentary1 button (Micro RC in serial mode only) ---------
+    // Sound 1 triggered via momentary1 button (Micro RC in serial mode or SBUS mode only) ---------
     if (momentary1  && !hornSwitch  && !sirenSwitch) {
       sound1Switch = true;
       soundNo = 2; // 2 = sound1
@@ -1517,6 +1525,7 @@ void led() {
   else reversingLight.off();
 
   // Beacons (blue light) ----
+#if not defined CATERPILLAR_MODE  // Normal beacons mode 
   if (sirenOn) {
     if (doubleFlashBlueLight) {
       beaconLight1.flash(30, 80, 400, 2); // Simulate double flash lights
@@ -1531,6 +1540,10 @@ void led() {
     beaconLight2.off();
     beaconLight1.off();
   }
+#else // Beacons used for tank cannon fire simulation in CATERPILLAR_MODE
+  if (cannonFlash) beaconLight1.on();
+  else beaconLight1.off();
+#endif  
 
   // Headlights, tail lights ----
   if (lightsOn) {

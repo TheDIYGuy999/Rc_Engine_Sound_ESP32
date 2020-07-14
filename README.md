@@ -7,6 +7,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
 - Simulated automatic transmission with torque converter (if your vehicle does not have a real shifting transmission)
 - Caterpillar mode (dual throttle input on CH2 & CH3, for tanks, diggers etc. No ESC control support in this mode. New in v4.5)
+- Tank cannon sound & flash
 - Many selectable sounds: engine cranking, engine idling, engine revving, turbo whining, diesel ignition "knock", wastegate valve, horns, sirens, reversing beep, air brake, parking brake, gear shifting etc.
 - Realistic engine sound is mixed together on the fly from up to 4 sounds: engine idling, turbo, wastegate (all with variable sampling rate), Diesel ignition knock (fixed sampling rate, so it does not vary in pitch)
 - Load (throttle position) dependent volume sounds: idle, rev, Diesel knock
@@ -292,6 +293,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Example settings: CATERPILLAR_MODE_Settings (copy and paste it in "Adjustments.h")
 - Also working in SBUS mode (allows to use additional sounds)
 - New V12 tank sound from JPS952
+
+## New in V 4.6:
+- 75mm tank cannon fire sound and flash added
+- Triggered via CH4
+- Flash is using "Beacon 1" output
+- Example settings: CATERPILLAR_MODE
 
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
