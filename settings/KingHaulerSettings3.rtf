@@ -135,7 +135,7 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 \
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,\
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------\
-volatile int dieselKnockVolumePercentage = 450; // Adjust the Diesel knock volume (usually = 200 - 600%)\
+volatile int dieselKnockVolumePercentage = 400; // Adjust the Diesel knock volume (usually = 200 - 600%)\
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)\
 volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)\
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)\
@@ -286,4 +286,7 @@ const uint32_t TOP_SPEED_MULTIPLIER = 3; // TSM. RPM multiplier: the bigger the 
 \
 // Engine mass simulation\
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck\
-const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck}
+const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck\
+\
+// Vehicle type ----------------------------------------------------------------------------------------------------\
+// #define CATERPILLAR_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3}
