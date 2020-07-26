@@ -6,8 +6,9 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for ech gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
 - Simulated automatic transmission with torque converter (if your vehicle does not have a real shifting transmission)
-- Caterpillar mode (dual throttle input on CH2 & CH3, for tanks, diggers etc. No ESC control support in this mode. New in v4.5)
-- Tank cannon sound & flash
+- Caterpillar mode (dual throttle input on CH2 & CH3, for tanks, diggers etc. No ESC control support in this mode. (New in v4.5)
+- Tank cannon sound & flash (New in v4.6)
+- Triggering multiple latching and non latching actions (sounds, lights) per analog channel, using the rcTrigger library (New in v4.7, still experimental)
 - Many selectable sounds: engine cranking, engine idling, engine revving, turbo whining, diesel ignition "knock", wastegate valve, horns, sirens, reversing beep, air brake, parking brake, gear shifting etc.
 - Realistic engine sound is mixed together on the fly from up to 4 sounds: engine idling, turbo, wastegate (all with variable sampling rate), Diesel ignition knock (fixed sampling rate, so it does not vary in pitch)
 - Load (throttle position) dependent volume sounds: idle, rev, Diesel knock
@@ -299,6 +300,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Triggered via CH4
 - Flash is using "Beacon 1" output
 - Example settings: CATERPILLAR_MODE
+
+## New in V 4.7:
+- Experimental support for my new rcTrigger library added
+- Allows to trigger multiple latching and non latching actions per analog channel
+- Note, that you have to install this library: https://github.com/TheDIYGuy999/rcTrigger
 
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)

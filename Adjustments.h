@@ -3,7 +3,7 @@
 // Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
 // converter code by bitluni (send him a high five, if you like the code)
 
-Recommended parts & settings for Tank  IS-1 on 36 pin prototype board!!!!
+******* Recommended parts & settings for TAMIYA trucks **********
 
 ESC: HOBBYWING QUICRUN WP Crawler Brushed with the following settings:
 1: 3
@@ -31,7 +31,7 @@ Motor: 540 size, 35 turns, stock pinion
 // ---------------------------------------------------------------------------------------------------------------------
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
 // SBUS communication --------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
 boolean sbusInverted = true; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
 
 // Serial communication --------
@@ -180,11 +180,11 @@ volatile int fanStartPoint = 250; // Volume will raise above this point (250 for
 //#include "sounds/Tatra813FanNewSlow.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
-//#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
-#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
+#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
+//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
 //#include "sounds/CarHorn.h" // A boring car horn
@@ -205,51 +205,51 @@ volatile int sirenVolumePercentage = 120; // Adjust the siren volume (usually = 
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
-#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
+//#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
-//#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
+#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
 //#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
-volatile int parkingBrakeVolumePercentage = 0; // Adjust the brake volume (usually = 200%)
+volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
 //#include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
-#include "sounds/ParkingBrakeDummy.h" // Parking brake sound
+#include "sounds/ParkingBrake.h" // Parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
 volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usually = 200%)
-//#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
+#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 //#include "sounds/AirShifting.h" // Pneumatic shifting sound
-#include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
+//#include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
 
 // Choose the additional "sound1" (uncomment the one you want) --------
 volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually = 100%)
 //#include "sounds/EMDLocomotiveBell.h" // American EMD locomotive bell
 //#include "sounds/007JamesBond.h" // James Bond melody
-#include "sounds/M2Fire.h" // M2 salve
+//#include "sounds/M2Fire.h" // M2 salve
 //#include "sounds/GlenCanyon.h" // Glen Canyon country song for truckers ;-)
-//#include "sounds/door.h" // opening and closing the door
+#include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-volatile int reversingVolumePercentage = 0; // Adjust the reversing sound volume (usually = 70%)
+volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%)
 #include "sounds/TruckReversingBeep.h" // 1000Hz beep sound
 
 // Choose the indicator / turn signal options --------
 const boolean indicators = false; // "true", if you want to trigger indicator lights (turn signals)
-volatile int indicatorVolumePercentage = 0; // Adjust the indicator sound volume (usually = 100%)
+volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
-// Choose the blue light options -----------------------------------------------------------------------------------------
+// Choose the blue light options (beacon 1 output used for cannon fire flash in CATERPILLAR_MODE)-------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
 // PWM input signal range calibration ------------------------------------------------------------------------------------
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
-const uint16_t pulseSpan = 300; // pulseZero +/- this value (max. 500 or less depending on remote signal range, about 300 in CATERPILLAR_MODE)
+const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range, about 300 in CATERPILLAR_MODE)
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33, not active in CATERPILLAR_MODE)------------
-const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler, 1400 = 100km/h with 35T motor)
+const int16_t escPulseSpan = 500; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler, 1400 = 100km/h with 35T motor)
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
@@ -261,12 +261,12 @@ const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead
 // Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
-const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
+const boolean automatic = true; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
 const boolean doubleClutch = false; // do not activate it at the same time as automatic!
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed transmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 500; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power (about 100, 500 for CATERPILLAR_MODE)
+uint16_t clutchEngagingPoint = 80; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power (about 100, 500 for CATERPILLAR_MODE)
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 50; // Shaker power while engine start (max. 255, about 100, 50 with PETG weight)
@@ -286,4 +286,4 @@ const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9
 const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
-#define CATERPILLAR_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
+//#define CATERPILLAR_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3

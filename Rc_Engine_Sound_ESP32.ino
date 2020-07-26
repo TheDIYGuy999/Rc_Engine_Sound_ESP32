@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.6; // Software revision.
+const float codeVersion = 4.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -47,7 +47,8 @@ const float codeVersion = 4.6; // Software revision.
 
 // Libraries (you have to install all of them)
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- Install the newest version!
-#include "SBUS.h" // https://github.com/TheDIYGuy999/SBUS you need to install my fork of this library!
+#include <SBUS.h> // https://github.com/TheDIYGuy999/SBUS you need to install my fork of this library!
+#include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- v4.7: This one is now required as well
 
 //
 // =======================================================================================================
@@ -122,6 +123,24 @@ statusLED brakeLight(false);
 statusLED shakerMotor(false);
 statusLED escOut(false);
 
+// objects (experimental)
+rcTrigger momentary_1(500);
+rcTrigger momentary_2(500);
+rcTrigger momentary_3(500);
+rcTrigger momentary_4(500);
+
+rcTrigger button1(500);
+rcTrigger button2(500);
+rcTrigger button3(500);
+
+rcTrigger button1toggle(500);
+rcTrigger button2toggle(500);
+rcTrigger button3toggle(500);
+
+rcTrigger button1toggleLong(500);
+rcTrigger button2toggleLong(500);
+rcTrigger button3toggleLong(500);
+
 // Define global variables
 
 boolean serialInit = false;
@@ -181,14 +200,14 @@ int32_t currentThrottle = 0;                    // 0 - 500 (Throttle trigger inp
 int32_t engineLoad = 0;                         // 0 - 500
 uint32_t currentSpeed = 0;                      // 0 - 500 (current ESC power)
 boolean throttleReverse;                        // false = forward, true = reverse TODO
-uint32_t pulseWidth[4];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [4] = pot
+uint32_t pulseWidth[5];                         // Current RC signal pulse width [0] = steering, [1] = 3p. switch, [2] = throttle, [3] = pot, [4] = buttons (SBUS only)
 
-uint16_t pulseMaxNeutral[4];                    // PWM input signal configuration storage variables
-uint16_t pulseMinNeutral[4];
-uint16_t pulseMax[4];
-uint16_t pulseMin[4];
-uint16_t pulseMaxLimit[4];
-uint16_t pulseMinLimit[4];
+uint16_t pulseMaxNeutral[5];                    // PWM input signal configuration storage variables
+uint16_t pulseMinNeutral[5];
+uint16_t pulseMax[5];
+uint16_t pulseMin[5];
+uint16_t pulseMaxLimit[5];
+uint16_t pulseMinLimit[5];
 
 int16_t escPulseMax;                           // ESC calibration variables
 int16_t escPulseMin;
@@ -801,8 +820,8 @@ void setup() {
   // CH4
   pulseZero[3] = 1500; // This channel is controlled by a potentiometer, so we don't want auto calibration!
 
-  // Calculate RC signal ranges for all channels (0, 1, 2, 3)
-  for (uint8_t i = 0; i <= 3; i++) {
+  // Calculate RC signal ranges for all channels (0, 1, 2, 3, 4)
+  for (uint8_t i = 0; i <= 4; i++) {
     // Input signals
     pulseMaxNeutral[i] = pulseZero[i] + pulseNeutral;
     pulseMinNeutral[i] = pulseZero[i] - pulseNeutral;
@@ -1062,7 +1081,7 @@ void readSbusCommands() {
     pulseWidth[0] = map(SBUSchannels[0], 172, 1811, 1000, 2000) ; // CH1 Steering
     pulseWidth[1] = map(SBUSchannels[1], 172, 1811, 1000, 2000) ; // CH2 Gearbox (left throttle in CATERPILLAR_MODE)
     pulseWidth[2] = map(SBUSchannels[2], 172, 1811, 1000, 2000) ; // CH3 Throttle (right throttle in CATERPILLAR_MODE)
-    //pulseWidth[4] = map(SBUSchannels[3], 172, 1811, 1000, 2000) ; // CH4
+    pulseWidth[4] = map(SBUSchannels[3], 172, 1811, 1000, 2000) ; // CH4 Buttons (SBUS only)
     pulseWidth[3] = map(SBUSchannels[4], 172, 1811, 1000, 2000) ; // Pot1 Horn
 
     // Switches etc.
@@ -1613,7 +1632,7 @@ void shaker() {
   if (engineStart) shakerRpm = shakerStart;
   if (engineStop) shakerRpm = shakerStop;
 
-  // Shaker on
+  // Shaker on / off
   if (engineRunning || engineStart || engineStop) shakerMotor.pwm(shakerRpm);
   else shakerMotor.off();
 }
@@ -1930,6 +1949,32 @@ unsigned long loopDuration() {
 
 //
 // =======================================================================================================
+// RC TRIGGER TEST SECTION (EXPERIMENTAL, rcTrigger LIBRARY REQUIRED)
+// =======================================================================================================
+//
+
+unsigned long rcTrigger() {
+  //Serial.println(pulseWidth[3]);
+  if (momentary_1.momentary(pulseWidth[3], 1000)) Serial.println("Pot momentary 1");
+  if (momentary_2.momentary(pulseWidth[3], 1250)) Serial.println("Pot momentary 2");
+  if (momentary_3.momentary(pulseWidth[3], 1750)) Serial.println("Pot momentary 3");
+  if (momentary_4.momentary(pulseWidth[3], 2000)) Serial.println("Pot momentary 4");
+
+  if (button1.momentary(pulseWidth[4], 1000)) Serial.println("Button momentary 1");
+  if (button2.momentary(pulseWidth[4], 1250)) Serial.println("Button momentary 2");
+  if (button3.momentary(pulseWidth[4], 2000)) Serial.println("Button momentary 3");
+
+  if (button1toggle.toggle(pulseWidth[4], 1000)) Serial.println("Button toggle 1");
+  if (button2toggle.toggle(pulseWidth[4], 1150)) Serial.println("Button toggle 2");
+  if (button3toggle.toggle(pulseWidth[4], 2000)) Serial.println("Button toggle 3");
+
+  if (button1toggleLong.toggleLong(pulseWidth[4], 1000)) Serial.println("Button toggle 1 long");
+  if (button2toggleLong.toggleLong(pulseWidth[4], 1150)) Serial.println("Button toggle 2 long");
+  if (button3toggleLong.toggleLong(pulseWidth[4], 2000)) Serial.println("Button toggle 3 long");
+}
+
+//
+// =======================================================================================================
 // MAIN LOOP, RUNNING ON CORE 1
 // =======================================================================================================
 //
@@ -1990,6 +2035,9 @@ void Task1code(void *pvParameters) {
 
     // ESC control (Crawler ESC with direct brake on pin 33)
     esc();
+
+    // rcTrigger (experimental)
+    rcTrigger();
 
     // measure loop time
     loopTime = loopDuration();
