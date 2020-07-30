@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.7; // Software revision.
+const float codeVersion = 4.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -229,17 +229,18 @@ boolean hazard;
 boolean left;
 boolean right;
 
-const int32_t maxRpm = 500;                         // always 500
-const int32_t minRpm = 0;                           // always 0
-int32_t currentRpm = 0;                             // 0 - 500 (signed required!)
-volatile uint32_t currentRpmScaled = 0;             // Idle
-volatile uint32_t currentRevRpmScaled = 0;          // Rev
-volatile uint8_t throttleDependentVolume = 0;       // engine volume according to throttle position
-volatile uint8_t throttleDependentRevVolume = 0;    // engine rev volume according to throttle position
-volatile uint8_t throttleDependentKnockVolume = 0;  // engine Diesel knock volume according to throttle position
-volatile uint8_t throttleDependentTurboVolume = 0;  // turbo volume according to rpm
-volatile uint8_t throttleDependentFanVolume = 0;    // cooling fan volume according to rpm
-volatile uint8_t throttleDependentWastegateVolume = 0;   // wastegate volume according to rpm
+const int32_t maxRpm = 500;                             // always 500
+const int32_t minRpm = 0;                               // always 0
+int32_t currentRpm = 0;                                 // 0 - 500 (signed required!)
+volatile uint32_t currentRpmScaled = 0;                 // Idle
+volatile uint32_t currentRevRpmScaled = 0;              // Rev
+volatile uint8_t throttleDependentVolume = 0;           // engine volume according to throttle position
+volatile uint8_t throttleDependentRevVolume = 0;        // engine rev volume according to throttle position
+volatile uint8_t throttleDependentKnockVolume = 0;      // engine Diesel knock volume according to throttle position
+volatile uint8_t throttleDependentTurboVolume = 0;      // turbo volume according to rpm
+volatile uint8_t throttleDependentFanVolume = 0;        // cooling fan volume according to rpm
+volatile uint8_t throttleDependentChargerVolume = 0;    // cooling fan volume according to rpm
+volatile uint8_t throttleDependentWastegateVolume = 0;  // wastegate volume according to rpm
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -294,11 +295,12 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t curRevSample;                 // Index of currently loaded engine rev sample
   static uint32_t curTurboSample;               // Index of currently loaded turbo sample
   static uint32_t curFanSample;                 // Index of currently loaded fan sample
+  static uint32_t curChargerSample;             // Index of currently loaded charger sample
   static uint32_t curStartSample;               // Index of currently loaded start sample
   static uint32_t lastDieselKnockSample;        // Index of last Diesel knock sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static int32_t a, b, c, d;                    // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound
+  static int32_t a, b, c, d, e;                 // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sounf
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -395,6 +397,15 @@ void IRAM_ATTR variablePlaybackTimer() {
         curFanSample = 0;
       }
 
+      // Supercharger sound
+      if (curChargerSample < chargerSampleCount) {
+        e = (chargerSamples[curChargerSample] * throttleDependentChargerVolume / 100 * chargerVolumePercentage / 100);
+        curChargerSample ++;
+      }
+      else {
+        curChargerSample = 0;
+      }
+
       if (!engineOn) {
         speedPercentage = 100;
         attenuator = 1;
@@ -443,7 +454,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ----------------------------------------------------
 
-  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + dacOffset, 0, 255))); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + dacOffset, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
   portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -1315,11 +1326,26 @@ void mapThrottle() {
   }
 #endif
 
+// Auto throttle --------------------------------------------------------------------------
+
   // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
   if (!escIsBraking && escIsDriving && shiftingAutoThrottle) {
     if (gearUpShiftingInProgress) currentThrottle = 0; // No throttle
     if (gearDownShiftingInProgress) currentThrottle = 500; // Full throttle
     currentThrottle = constrain (currentThrottle, 0, 500);
+  }
+
+  // Volume calculations --------------------------------------------------------------------------
+  
+  // As a base for some calculations below, fade the current throttle to make it more natural
+  static int32_t currentThrottleFaded = 0;
+  static unsigned long throttleFaderMicros;
+  if (micros() - throttleFaderMicros > 500) { // Every 0.5ms
+    throttleFaderMicros = micros();
+
+  if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 500) currentThrottleFaded ++;
+  if (currentThrottleFaded > currentThrottle) currentThrottleFaded = currentThrottle;
+  //Serial.println(currentThrottleFaded);
   }
 
   // Calculate throttle dependent engine idle volume
@@ -1331,7 +1357,7 @@ void mapThrottle() {
   else throttleDependentRevVolume = engineRevVolumePercentage;
 
   // Calculate throttle dependent Diesel knock volume
-  if (!escIsBraking && engineRunning && (currentThrottle > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottle, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
+  if (!escIsBraking && engineRunning && (currentThrottleFaded > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottleFaded, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
   else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
 
   // Calculate engine rpm dependent turbo volume
@@ -1341,6 +1367,10 @@ void mapThrottle() {
   // Calculate engine rpm dependent cooling fan volume
   if (engineRunning && (currentRpm > fanStartPoint)) throttleDependentFanVolume = map(currentRpm, fanStartPoint, 500, fanIdleVolumePercentage, 100);
   else throttleDependentFanVolume = fanIdleVolumePercentage;
+
+  // Calculate throttle dependent supercharger volume
+  if (!escIsBraking && engineRunning && (currentRpm > chargerStartPoint)) throttleDependentChargerVolume = map(currentThrottle, chargerStartPoint, 500, chargerIdleVolumePercentage, 100);
+  else throttleDependentChargerVolume = chargerIdleVolumePercentage;
 
   // Calculate engine rpm dependent wastegate volume
   if (engineRunning) throttleDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);
@@ -1559,7 +1589,7 @@ void led() {
     beaconLight2.off();
     beaconLight1.off();
   }
-#else // Beacons used for tank cannon fire simulation in CATERPILLAR_MODE
+#else // Beacons used for tank cannon fire simulation flash in CATERPILLAR_MODE
   if (cannonFlash) beaconLight1.on();
   else beaconLight1.off();
 #endif  
@@ -1595,16 +1625,16 @@ void led() {
     }
     else indicatorR.off();
   }
-  else { // Hazard lights on, if no connection to transmitter (serial control mode only)
+  else { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
     if (indicatorL.flash(375, 375, 0, 0)) indicatorSoundOn = true;
     indicatorR.flash(375, 375, 0, 0);
   }
 
-  // Foglights (serial control mode only) ----
+  // Foglights (serial & SBUS control mode only) ----
   if (lightsOn && engineRunning && !mode2) fogLight.on();
   else fogLight.off();
 
-  // Roof lights (serial control mode only) ----
+  // Roof lights (serial & SBUS control mode only) ----
   if (lightsOn && !mode1) roofLight.on();
   else roofLight.off();
 

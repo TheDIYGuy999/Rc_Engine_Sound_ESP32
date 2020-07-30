@@ -306,6 +306,12 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Allows to trigger multiple latching and non latching actions per analog channel
 - Note, that you have to install this library: https://github.com/TheDIYGuy999/rcTrigger
 
+## New in V 4.8:
+- Throttle fader for more natural knock behavior during take off
+- Improved wiring and adjustments instructions down below
+- New insanely loud supercharger sound option
+- Example see "JeepCherokeeTrackhawkSettings" (use 6 gears in "curves.h)
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
@@ -359,6 +365,143 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 https://jlcpcb.com (upload Gerbers.zip)
 
 https://oshpark.com (upload Gerbers.zip or .brd file)
+
+## Wiring:
+### Before you begin:
+- This device is not protected against wrong polarity!
+- Always use series resistors for LED ports (except TAMIYA trailer port)
+- Maximum input voltage on "Sig" pins = 3.3V (be careful with very old receivers, which may deliver 5V)
+- It is recommended to use a fuse between your battery and the sound controller / ESC
+
+### Supply for audio amplifier, shaker motor and LED:
+- Use an Y-cable between your battery, your ESC and The "X1" terminal. Battery voltage range is 7 - 12-6V
+
+### Supply for ESP32:
+- The ESP32 is not supplied through the "X1" terminal
+- It can be supplied through the Micro USB port
+- or through the +V and GND pin row on the top of the board (the voltage is usually coming from the BEC in your ESC, which needs to be connected to the "ESC"" port)
+
+### ESC wiring:
+- Connect a Hobbywing 1080 ESC to the ESC port (GND, V+ and Sig)
+- Adjust the ESC parameters, using the programming card as described on the top of "Adjustments.h"
+- I do not recommend any other ESC
+- The ESC is controlled by the cound controller, rather than directly by the receiver. This allows to use the unique "virtual inertia" feature.
+- "escPulseSpan" can be used to limit the top speed of your vehicle. 500 = not limited, anything above 500 will limit the top speed
+
+### Receiver wiring for PWM servo signals:
+- CH1 = steering
+- CH2 = 3 speed shifting transmission (3 position switch on transmitter)
+- CH3 = throttle
+- CH4 = additional functions: horn, siren/ bluelights (3 position switch on transmitter)
+- at least one CH needs to be connected, using a 3 pin wire, so that GND and V+ are connected as well (receiver supply)
+- All four ports are pairs, wired in parallel. This allows to feed servo signals through, eliminating the need for Y-cables
+- You should always connect all four channels, otherwise it may cause lags
+- If you don't want to connect all signals, comment out the unused "pulseIn" functions in the main tab by adding //
+
+### Receiver wiring for PPM signals:
+- Internal channel map as above
+- Connect a 3 pin wire fom your receiver PPM port to the PPM port on the sound controller (Sig, V+, GND)
+
+### Receiver wiring for SBUS signals (recommended):
+- Internal channel map as above
+- Connect a 3 pin wire fom your receiver SBUS port to the SBUS port on the sound controller (Sig, V+, GND)
+- The "Sig" pin on the SBUS port is 5V tolerant
+- additional signals for fog lights, roof lights etc. can be reveived in this mode (tested with my "Micro RC" receiver only)
+
+### Speakers
+- 4 or 8 ohms speakers are compatible
+- You can use one or two speakers
+- never use two speakers in parallel on a single port
+. never use tow ports in parallel to drive one speaker
+- never connect capacitors to the speaker ports
+
+## Adjustments:
+
+### Example files:
+- They can be found in the "settings" folder. Copy and paste their content to your "Adjustments.h" tab.
+- Try the examples to get a feel for different sounds and vehicles
+
+### Interface types selection in "Adjustments.h":
+#### PWM (classic RC signals on CH 1 - 4 ports, the most common interface)
+```
+// ---------------------------------------------------------------------------------------------------------------------
+// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
+// SBUS communication --------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
+boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+
+// Serial communication --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+
+// PPM communication --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
+#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
+```
+
+#### Serial communication (for my "Micro RC" receiver only, deprecated, wired to Rx port)
+```
+// ---------------------------------------------------------------------------------------------------------------------
+// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
+// SBUS communication --------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
+boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+
+// Serial communication --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+
+// PPM communication --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
+#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
+```
+
+#### PPM (multiple channels pulse pause modulation, wired to PPM port)
+```
+// ---------------------------------------------------------------------------------------------------------------------
+// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
+// SBUS communication --------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
+boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+
+// Serial communication --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+
+// PPM communication --------
+#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
+#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
+```
+
+#### SBUS (recommended, default setting, wired to SBUS port)
+```
+// ---------------------------------------------------------------------------------------------------------------------
+// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
+// SBUS communication --------
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
+boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+
+// Serial communication --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+
+// PPM communication --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
+#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
+```
+SBUS Invereted (if your receiver sends a non-standard SBUS signal):
+```
+boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+```
+
+SBUS not inverted (default, used in most cases)
+```
+boolean sbusInverted = false; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+```
 
 ## Pictures:
 Fully assembled, tested and working 30 pin version
