@@ -1,4 +1,4 @@
-const unsigned int sampleRate = 22050;
+const unsigned int sampleRate = 21000; // 22050
 const unsigned int sampleCount = 4084;
 const signed char samples[] = {
 1, 7, 11, 4, 4, 8, 12, 13, 11, 12, 14, 13, 12, 6, 5, 9, 
