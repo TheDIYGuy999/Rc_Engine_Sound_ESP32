@@ -374,12 +374,12 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - It is recommended to use a fuse between your battery and the sound controller / ESC
 
 ### Supply for audio amplifier, shaker motor and LED:
-- Use an Y-cable between your battery, your ESC and The "X1" terminal. Battery voltage range is 7 - 12-6V
+- Use an Y-cable between your battery, your ESC and The "X1" terminal. Battery voltage range is 7 - 12.6V
 
 ### Supply for ESP32:
 - The ESP32 is not supplied through the "X1" terminal
 - It can be supplied through the Micro USB port
-- or through the +V and GND pin row on the top of the board (the voltage is usually coming from the BEC in your ESC, which needs to be connected to the "ESC"" port)
+- or through the +V and GND pin row on the top of the board (the voltage is usually coming from the BEC in your ESC, which needs to be connected to the "ESC" port)
 
 ### ESC wiring:
 - Connect a Hobbywing 1080 ESC to the ESC port (GND, V+ and Sig)
