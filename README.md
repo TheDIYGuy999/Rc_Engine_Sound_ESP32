@@ -449,7 +449,7 @@ boolean sbusInverted = true; // true = wired to NPN transistor signal inverter o
 boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
 
 // Serial communication --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
 // PPM communication --------
