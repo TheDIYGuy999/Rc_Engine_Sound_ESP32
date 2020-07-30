@@ -159,12 +159,19 @@ volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knoc
 //#include "sounds/DefenderV8Knock4.h" // Land Rover Defender V8 knock (experimental, don't use it)\
 //#include "sounds/chevyNovaV8Knock.h" // Chevy Nova Coupe 1975\
 //#include "sounds/JeepGrandCherokeeTrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock\
+//#include "sounds/TrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock, the more aggressive one!\
 //#include "sounds/DAFXFKnock.h" // DAF XF truck\
 \
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------\
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)\
 volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)\
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!\
+\
+// Adjust the additional supercharger sound (set "chargerVolumePercentage" to "0", if you don't want it) --------\
+volatile int chargerVolumePercentage = 0; // Adjust the supercharger volume (usually = 70%)\
+volatile int chargerIdleVolumePercentage = 10; // the supercharger volume will be engine rpm dependent (usually = 10%)\
+volatile int chargerStartPoint = 10; // Volume will raise above this point ( usually 10)\
+#include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!\
 \
 // Adjust the additional turbo wastegate  / blowoff valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------\
 volatile int wastegateVolumePercentage = 10; // Adjust the wastegate volume (usually = 70%, up to 250%)\

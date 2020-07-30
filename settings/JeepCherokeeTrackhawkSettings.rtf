@@ -73,7 +73,7 @@ volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 
 #include "sounds/carCranking.h" // Generic car cranking\
 \
 // Choose the motor idle sound (uncomment the one you want) --------\
-volatile int idleVolumePercentage = 90; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)\
+volatile int idleVolumePercentage = 70; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)\
 volatile int engineIdleVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)\
 //#include "sounds/20Hz.h" // 20Hz test tone\
 //#include "sounds/100Hz.h" // 100Hz test tone\
@@ -135,10 +135,10 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------\
 volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%)\
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)\
-volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)\
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)\
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)\
-//#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!\
-volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)\
+#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!\
+volatile int dieselKnockAdaptiveVolumePercentage = 90; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)\
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound\
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)\
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)\
@@ -158,13 +158,20 @@ volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knoc
 //#include "sounds/DefenderV8Knock4.h" // Land Rover Defender V8 knock (experimental, don't use it)\
 //#include "sounds/V8TrophyTruckKnock.h" // V8 Trophy Truck\
 //#include "sounds/chevyNovaV8Knock.h" // Chevy Nova Coupe 1975\
-#include "sounds/JeepGrandCherokeeTrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock\
+//#include "sounds/JeepGrandCherokeeTrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock\
+#include "sounds/TrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock, the more aggressive one!\
 //#include "sounds/DAFXFKnock.h" // DAF XF truck\
 \
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------\
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)\
 volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)\
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!\
+\
+// Adjust the additional supercharger sound (set "chargerVolumePercentage" to "0", if you don't want it) --------\
+volatile int chargerVolumePercentage = 90; // Adjust the supercharger volume (usually = 70%)\
+volatile int chargerIdleVolumePercentage = 10; // the supercharger volume will be engine rpm dependent (usually = 10%)\
+volatile int chargerStartPoint = 10; // Volume will raise above this point ( usually 10)\
+#include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!\
 \
 // Adjust the additional turbo wastegate  / blowoff valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------\
 volatile int wastegateVolumePercentage = 10; // Adjust the wastegate volume (usually = 70%, up to 250%)\
@@ -176,20 +183,20 @@ volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, af
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------\
 volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%)\
 volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm dependent (usually = 10%)\
-volatile int fanStartPoint = 250; // Volume will raise above this point (250 for Tatra 813)\
+volatile int fanStartPoint = 50; // Volume will raise above this point (250 for Tatra 813)\
 //#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan\
 #include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)\
 //#include "sounds/Tatra813FanNewSlow.h" // Tatra 813 8x8 V12 Diesel Cooling Fan\
 \
 // Choose the horn sound (uncomment the one you want) --------\
-volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)\
+volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 100%)\
 //#include "sounds/TrainHorn.h" // American train horn\
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long\
-//#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short\
+#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short\
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)\
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)\
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn\
-#include "sounds/CarHorn.h" // A boring car horn\
+//#include "sounds/CarHorn.h" // A boring car horn\
 //#include "sounds/TruckHorn.h" // A generic truck horn\
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn\
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn\
