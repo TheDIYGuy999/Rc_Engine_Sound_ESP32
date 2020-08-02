@@ -39,7 +39,7 @@ Motor: 540 size, 35 turns, stock pinion\
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--\
 // SBUS communication --------\
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)\
-boolean sbusInverted = true; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)\
+boolean sbusInverted = false; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)\
 \
 // Serial communication --------\
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)\
@@ -146,8 +146,8 @@ volatile int dieselKnockAdaptiveVolumePercentage = 40; // Adjust the Diesel knoc
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)\
 //#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highway race against Volvo truck (500%, 10%, Interval = 2 possible, for slow running V8 engines)\
 //#include "sounds/ScaniaDieselKnock2.h" // Strong, short Scania V8 diesel knock while highway race against Volvo truck (Interval = 4 possible, for faster running engines)\
-//#include "sounds/Scan\uc0\u305 aR730V8DieselKnockShort.h" // Hard knock (400%, 0%, Interval = up to 8 possible, for small engines)\
-//#include "sounds/Scan\uc0\u305 aR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))\
+//#include "sounds/ScaniaR730V8DieselKnockShort.h" // Hard knock (400%, 0%, Interval = up to 8 possible, for small engines)\
+//#include "sounds/ScaniaR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))\
 //#include "sounds/SCANIAV850TonKnock.h" // 50 ton SCANIA knock\
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck\
 //#include "sounds/Tatra813Knock.h" // Tatra 813 8x8 air cooled V12 Diesel\
@@ -180,7 +180,7 @@ volatile int wastegateVolumePercentage = 100; // Adjust the wastegate volume (us
 volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, after rapid throttle drop with engaged clutch\
 //#include "sounds/WastegateDummy.h"\
 //#include "sounds/UnimogU1000TurboWastegate.h"\
-#include "sounds/Scan\uc0\u305 aR730V8TurboWastegate.h"\
+#include "sounds/ScaniaR730V8TurboWastegate.h"\
 \
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------\
 volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%)\
@@ -218,8 +218,8 @@ volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 
 //#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound\
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound\
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound\
-//#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound\
-#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound\
+#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound\
+//#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound\
 \
 // Choose the parking brake engaging sound (uncomment the one you want) --------\
 volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)\
