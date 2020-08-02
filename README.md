@@ -312,6 +312,11 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - New insanely loud supercharger sound option
 - Example see "JeepCherokeeTrackhawkSettings" (use 6 gears in "curves.h)
 
+## New in V 4.81:
+- Bugfix: Several file names contained "Scanıa" (with Turkish i) instead of "Scania". This appears to be a problem under Windows but works fine under macOS
+- Example configurations and .h files were reworked accordingly
+- Thanks to MAN Tgx on the German RC Modellbau Portal for reporting this bug: https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/page-14#post-229253
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables

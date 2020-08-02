@@ -31,7 +31,7 @@ Motor: 540 size, 35 turns, stock pinion
 // ---------------------------------------------------------------------------------------------------------------------
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
 // SBUS communication --------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
 boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
 
 // Serial communication --------
@@ -126,19 +126,19 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 400; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 700; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 #define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!
-volatile int dieselKnockAdaptiveVolumePercentage = 70; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+volatile int dieselKnockAdaptiveVolumePercentage = 80; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
 //#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highwyway race against Volvo truck (500%, 10%, Interval = 2 possible, for slow running V8 engines)
 //#include "sounds/ScaniaDieselKnock2.h" // Strong, short Scania V8 diesel knock while highwyway race against Volvo truck (Interval = 4 possible, for faster running engines)
-//#include "sounds/ScanıaR730V8DieselKnockShort.h" // Hard knock (400%, 0%, Interval = up to 8 possible, for small engines)
-//#include "sounds/ScanıaR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))
+//#include "sounds/ScaniaR730V8DieselKnockShort.h" // Hard knock (400%, 0%, Interval = up to 8 possible, for small engines)
+//#include "sounds/ScaniaR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))
 //#include "sounds/SCANIAV850TonKnock.h" // 50 ton SCANIA knock
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck
 //#include "sounds/Tatra813Knock.h" // Tatra 813 8x8 air cooled V12 Diesel
@@ -153,6 +153,7 @@ volatile int dieselKnockAdaptiveVolumePercentage = 70; // Adjust the Diesel knoc
 //#include "sounds/chevyNovaV8Knock.h" // Chevy Nova Coupe 1975
 //#include "sounds/JeepGrandCherokeeTrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock
 #include "sounds/TrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock, the more aggressive one!
+//#include "sounds/demonhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock, 1100HP tuned
 //#include "sounds/DAFXFKnock.h" // DAF XF truck
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
@@ -171,7 +172,7 @@ volatile int wastegateVolumePercentage = 10; // Adjust the wastegate volume (usu
 volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, after rapid throttle drop with engaged clutch
 #include "sounds/WastegateDummy.h"
 //#include "sounds/UnimogU1000TurboWastegate.h"
-//#include "sounds/ScanıaR730V8TurboWastegate.h"
+//#include "sounds/ScaniaR730V8TurboWastegate.h"
 
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------
 volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%)
