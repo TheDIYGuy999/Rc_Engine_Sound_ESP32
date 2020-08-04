@@ -249,6 +249,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 // PWM input signal range calibration ------------------------------------------------------------------------------------
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)
+const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
 const int16_t escPulseSpan = 500; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)

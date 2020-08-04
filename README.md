@@ -317,6 +317,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Example configurations and .h files were reworked accordingly
 - Thanks to MAN Tgx on the German RC Modellbau Portal for reporting this bug: https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/page-14#post-229253
 
+## New in V 4.82:
+- Missing .h files for the Ural 2 setting added
+- Once again thanks to MAN Tgx for pointing out this issue
+
 ## PCB files available:
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
