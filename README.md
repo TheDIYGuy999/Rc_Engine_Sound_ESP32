@@ -325,6 +325,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
 
+## New in V 4.9:
+- Ignition knock sound is now triggered by the optional revving sound as well
+- Sounds and configuration example for Messerschmitt Bf 109 added (first example, which uses rev sound)
+
 ## On the todo list:
 - your suggestions?
 

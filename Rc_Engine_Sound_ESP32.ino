@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.82; // Software revision.
+const float codeVersion = 4.9; // Software revision.
 
 //
 // =======================================================================================================
@@ -371,10 +371,20 @@ void IRAM_ATTR variablePlaybackTimer() {
           if (i >= 2) { // slow it down, play every sample 2 times!
             curRevSample ++;
             i = 0;
+
+            // Trigger Diesel ignition "knock" sound (played in the fixed sample rate interrupt)
+            if (curRevSample - lastDieselKnockSample > (revSampleCount / dieselKnockInterval)) {
+              dieselKnockTrigger = true;
+              dieselKnockTriggerFirst = false;
+              lastDieselKnockSample = curRevSample;
+            }
           }
         }
         else {
           curRevSample = 0;
+          lastDieselKnockSample = 0;
+          dieselKnockTrigger = true;
+          dieselKnockTriggerFirst = true;
         }
 #endif
       }
@@ -1035,12 +1045,12 @@ void readRcSignals() {
   // measure RC signal pulsewidth:
 
   // CH1 Steering
-#if not defined CATERPILLAR_MODE  
+#if not defined CATERPILLAR_MODE
   if (indicators) pulseWidth[0] = pulseIn(SERVO1_PIN, HIGH, 50000);
   else pulseWidth[0] = 1500;
 #else
   pulseWidth[0] = 1500;
-#endif    
+#endif
 
   // CH2 Gearbox servo (left throttle in CATERPILLAR_MODE)
   pulseWidth[1] = pulseIn(SERVO2_PIN, HIGH, 50000);
@@ -1326,7 +1336,7 @@ void mapThrottle() {
   }
 #endif
 
-// Auto throttle --------------------------------------------------------------------------
+  // Auto throttle --------------------------------------------------------------------------
 
   // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
   if (!escIsBraking && escIsDriving && shiftingAutoThrottle) {
@@ -1336,16 +1346,16 @@ void mapThrottle() {
   }
 
   // Volume calculations --------------------------------------------------------------------------
-  
+
   // As a base for some calculations below, fade the current throttle to make it more natural
   static int32_t currentThrottleFaded = 0;
   static unsigned long throttleFaderMicros;
   if (micros() - throttleFaderMicros > 500) { // Every 0.5ms
     throttleFaderMicros = micros();
 
-  if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 500) currentThrottleFaded ++;
-  if (currentThrottleFaded > currentThrottle) currentThrottleFaded = currentThrottle;
-  //Serial.println(currentThrottleFaded);
+    if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 500) currentThrottleFaded ++;
+    if (currentThrottleFaded > currentThrottle) currentThrottleFaded = currentThrottle;
+    //Serial.println(currentThrottleFaded);
   }
 
   // Calculate throttle dependent engine idle volume
@@ -1592,7 +1602,7 @@ void led() {
 #else // Beacons used for tank cannon fire simulation flash in CATERPILLAR_MODE
   if (cannonFlash) beaconLight1.on();
   else beaconLight1.off();
-#endif  
+#endif
 
   // Headlights, tail lights ----
   if (lightsOn) {
@@ -1789,7 +1799,7 @@ void automaticGearSelector() {
 void esc() {
 
 #if not defined CATERPILLAR_MODE // No ESC control in CATERPILLAR_MODE
-  
+
   static int32_t escPulseWidth = 1500;
   static uint32_t escSignal;
   static unsigned long escMillis;
