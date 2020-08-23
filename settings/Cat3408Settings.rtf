@@ -39,7 +39,7 @@ Motor: 540 size, 35 turns, stock pinion\
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--\
 // SBUS communication --------\
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)\
-boolean sbusInverted = false; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)\
+boolean sbusInverted = true; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)\
 \
 // Serial communication --------\
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)\
@@ -152,7 +152,7 @@ volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volum
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)\
 volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)\
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)\
-//#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!\
+#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!\
 volatile int dieselKnockAdaptiveVolumePercentage = 65; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)\
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound\
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)\
