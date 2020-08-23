@@ -283,7 +283,7 @@ const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less de
 const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false\
 \
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------\
-const int16_t escPulseSpan = 500; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)\
+const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)\
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)\
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)\
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler\
