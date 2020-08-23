@@ -138,6 +138,7 @@ const uint8_t revSwitchPoint = 150; // The rev sound is played instead of the id
 //#include "sounds/MesserschmittBf109Rev.h" // Messerschmitt Bf109 Rev
 //#include "sounds/MesserschmittBf109Rev2.h" // Messerschmitt Bf109 Rev
 #include "sounds/3408CatRev.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
+//#include "sounds/3408CaterpillarPeterbiltRev.h" // CAT 3408 V8 Diesel rev (Peterbilt)
 #endif
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
@@ -146,7 +147,7 @@ volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volum
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
-//#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!
+#define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!
 volatile int dieselKnockAdaptiveVolumePercentage = 65; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)
@@ -175,6 +176,7 @@ volatile int dieselKnockAdaptiveVolumePercentage = 65; // Adjust the Diesel knoc
 //#include "sounds/MesserschmittBf109Knock2.h" // Messerschmitt Bf109 Knock
 //#include "sounds/UnimogU1000TurboKnock.h" // Unimog U1000 Turbo
 #include "sounds/3408CatKnock.h" // CAT 3408 V8 Diesel knock (Kenworth W900A)
+//#include "sounds/3408CaterpillarPeterbiltKnock.h" // CAT 3408 V8 Diesel rev (Peterbilt)
 //#include "sounds/DetroitDieselKnock.h" // Detroit R6 Diesel
 //#include "sounds/DetroitDieselKnock2.h" // Detroit R6 Diesel
 //#include "sounds/8V71DetroitDieselStraightStacksKnock.h" // Detroit 8V71 two stroke V8 Diesel
@@ -276,7 +278,7 @@ const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less de
 const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false
 
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const int16_t escPulseSpan = 500; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
+const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler

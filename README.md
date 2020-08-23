@@ -332,6 +332,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Optimised and new sound examples: Unimog U 1000 Turbo, Caterpillar 3408 (for King Hauler)
 - Note, that only the "Master" settings example is listing all the .h files. Use this as a base for own settings
 
+## New in V 5.01:
+- Configuration erro solved: "ADAPTIVE_KNOCK_VOLUME" (for V8) was not enabled
+- CAT 3408 Peterbilt added
+
 ## On the todo list:
 - your suggestions?
 
