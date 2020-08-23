@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 4.9; // Software revision.
+const float codeVersion = 5.0; // Software revision.
 
 //
 // =======================================================================================================
@@ -172,7 +172,7 @@ volatile boolean shiftingTrigger = false;       // Trigger for shifting noise
 volatile boolean EngineWasAboveIdle = false;    // Engine RPM was above idle
 volatile boolean wastegateTrigger = false;      // Trigger Wastegate after rapid throttle drop
 volatile boolean dieselKnockTrigger = false;    // Trigger Diesel ignition "knock"
-volatile boolean dieselKnockTriggerFirst = false;    // Trigger First Diesel ignition "knock"
+volatile boolean dieselKnockTriggerFirst = false;    // The first  Diesel ignition "knock" per sequence
 
 
 uint8_t selectedGear = 1;                       // The currently used gear of our shifting gearbox
@@ -300,13 +300,14 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t lastDieselKnockSample;        // Index of last Diesel knock sample
   static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static int32_t a, b, c, d, e;                 // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sounf
+  static int32_t a, a1, a2, b, c, d, e;         // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sound
+  uint8_t a1Multi;                              // Volume multipliers
 
   portENTER_CRITICAL_ISR(&variableTimerMux);
 
   switch (engineState) {
 
-    case 0: // Engine off ----
+    case 0: // Engine off -----------------------------------------------------------------------
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -317,7 +318,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 1: // Engine start ----
+    case 1: // Engine start --------------------------------------------------------------------
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -334,62 +335,58 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 2: // Engine running ----
+    case 2: // Engine running ------------------------------------------------------------------
 
-      if (!engineRevving) {
-        // Engine idle sound
-        variableTimerTicks = currentRpmScaled;  // our variable idle sampling rate!
-        timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+      // Engine idle & revving sounds (mixed together according to engine rpm, new in v5.0)
+      variableTimerTicks = currentRpmScaled;  // our variable idle sampling rate!
+      timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
-        if (curEngineSample < sampleCount) {
-          a = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100);
-          curEngineSample ++;
+      if (curEngineSample < sampleCount) {
+        a1 = (samples[curEngineSample] * throttleDependentVolume / 100 * idleVolumePercentage / 100); // Idle sound
+        curEngineSample ++;
 
-          // Trigger Diesel ignition "knock" sound (played in the fixed sample rate interrupt)
-          if (curEngineSample - lastDieselKnockSample > (sampleCount / dieselKnockInterval)) {
-            dieselKnockTrigger = true;
-            dieselKnockTriggerFirst = false;
-            lastDieselKnockSample = curEngineSample;
-          }
-        }
-        else {
-          curEngineSample = 0;
-          lastDieselKnockSample = 0;
+      // Optional rev sound, recorded at medium rpm. Note, that it needs to represent the same number of ignition cycles as the
+      // idle sound. For example 4 or 8 for a V8 engine. It also needs to have about the same length. In order to adjust the length
+      // or "revSampleCount", change the "Rate" setting in Audacity until it is about the same.
+#ifdef REV_SOUND
+        a2 = (revSamples[curRevSample] * throttleDependentRevVolume / 100 * revVolumePercentage / 100); // Rev sound
+        if (curRevSample < revSampleCount) curRevSample ++;
+#endif
+
+        // Trigger throttle dependent Diesel ignition "knock" sound (played in the fixed sample rate interrupt)
+        if (curEngineSample - lastDieselKnockSample > (sampleCount / dieselKnockInterval)) {
           dieselKnockTrigger = true;
-          dieselKnockTriggerFirst = true;
+          dieselKnockTriggerFirst = false;
+          lastDieselKnockSample = curEngineSample;
         }
       }
       else {
-        // Engine rev sound (experimental)
+        curEngineSample = 0;
 #ifdef REV_SOUND
-        static uint8_t i;
-        variableTimerTicks = currentRevRpmScaled;  // our variable rev sampling rate!
-        timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
-        if (curRevSample < revSampleCount) {
-          a = (revSamples[curRevSample] * throttleDependentRevVolume / 100 * revVolumePercentage / 100);
-          i ++;
-          if (i >= 2) { // slow it down, play every sample 2 times!
-            curRevSample ++;
-            i = 0;
-
-            // Trigger Diesel ignition "knock" sound (played in the fixed sample rate interrupt)
-            if (curRevSample - lastDieselKnockSample > (revSampleCount / dieselKnockInterval)) {
-              dieselKnockTrigger = true;
-              dieselKnockTriggerFirst = false;
-              lastDieselKnockSample = curRevSample;
-            }
-          }
-        }
-        else {
-          curRevSample = 0;
-          lastDieselKnockSample = 0;
-          dieselKnockTrigger = true;
-          dieselKnockTriggerFirst = true;
-        }
+        curRevSample = 0;
 #endif
+        lastDieselKnockSample = 0;
+        dieselKnockTrigger = true;
+        dieselKnockTriggerFirst = true;
       }
 
-      // Turbo sound
+      
+#ifdef REV_SOUND
+      // Mixing the idle and rev sounds together, according to engine rpm
+      // Below the "revSwitchPoint" target, the idle volume precentage is 90%, then falling to 0% @ max. rpm.
+      // The total of idle and rev volume percentage is always 100%
+      if (currentRpm > revSwitchPoint) a1Multi = map(currentRpm, 500, revSwitchPoint, 0, 90);
+      else a1Multi = 90;
+
+      a1 = a1 * a1Multi / 100; // Idle volume
+      a2 = a2 * (100 - a1Multi) / 100; // Rev volume
+
+      a = a1 + a2; // Idle and rev sounds mixed together
+#else
+      a = a1; // Idle sound only
+#endif
+
+      // Turbo sound ----------------------------------
       if (curTurboSample < turboSampleCount) {
         c = (turboSamples[curTurboSample] * throttleDependentTurboVolume / 100 * turboVolumePercentage / 100);
         curTurboSample ++;
@@ -398,7 +395,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         curTurboSample = 0;
       }
 
-      // Fan sound
+      // Fan sound -----------------------------------
       if (curFanSample < fanSampleCount) {
         d = (fanSamples[curFanSample] * throttleDependentFanVolume / 100 * fanVolumePercentage / 100);
         curFanSample ++;
@@ -407,7 +404,7 @@ void IRAM_ATTR variablePlaybackTimer() {
         curFanSample = 0;
       }
 
-      // Supercharger sound
+      // Supercharger sound --------------------------
       if (curChargerSample < chargerSampleCount) {
         e = (chargerSamples[curChargerSample] * throttleDependentChargerVolume / 100 * chargerVolumePercentage / 100);
         curChargerSample ++;
@@ -425,7 +422,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 3: // Engine stop ----
+    case 3: // Engine stop --------------------------------------------------------------------
       variableTimerTicks = 4000000 / sampleRate * speedPercentage / 100; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -453,7 +450,7 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       break;
 
-    case 4: // parking brake bleeding air sound after engine is off ----
+    case 4: // parking brake bleeding air sound after engine is off ----------------------------
 
       if (!parkingBrakeTrigger) {
         engineState = 0;
@@ -462,7 +459,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   } // end of switch case
 
-  // DAC output (groups a, b, c mixed together) ----------------------------------------------------
+  // DAC output (groups a, b, c mixed together) ************************************************************************
 
   dacWrite(DAC1, (constrain((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + dacOffset, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
@@ -477,24 +474,26 @@ void IRAM_ATTR variablePlaybackTimer() {
 
 void IRAM_ATTR fixedPlaybackTimer() {
 
-  static uint32_t curHornSample;                    // Index of currently loaded horn sample
-  static uint32_t curSirenSample;                   // Index of currently loaded siren sample
-  static uint32_t curSound1Sample;                  // Index of currently loaded sound1 sample
-  static uint32_t curReversingSample;               // Index of currently loaded reversing beep sample
-  static uint32_t curIndicatorSample;               // Index of currently loaded indicator tick sample
-  static uint32_t curWastegateSample;               // Index of currently loaded wastegate sample
-  static uint32_t curBrakeSample;                   // Index of currently loaded brake sound sample
-  static uint32_t curParkingBrakeSample;            // Index of currently loaded brake sound sample
-  static uint32_t curShiftingSample;                // Index of currently loaded shifting sample
-  static uint32_t curDieselKnockSample;             // Index of currently loaded Diesel knock sample
-  static int32_t a, b, b1, b2, b3, b4, b5, b6, b7;  // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting
-  static boolean knockSilent;
+  static uint32_t curHornSample;                           // Index of currently loaded horn sample
+  static uint32_t curSirenSample;                          // Index of currently loaded siren sample
+  static uint32_t curSound1Sample;                         // Index of currently loaded sound1 sample
+  static uint32_t curReversingSample;                      // Index of currently loaded reversing beep sample
+  static uint32_t curIndicatorSample;                      // Index of currently loaded indicator tick sample
+  static uint32_t curWastegateSample;                      // Index of currently loaded wastegate sample
+  static uint32_t curBrakeSample;                          // Index of currently loaded brake sound sample
+  static uint32_t curParkingBrakeSample;                   // Index of currently loaded brake sound sample
+  static uint32_t curShiftingSample;                       // Index of currently loaded shifting sample
+  static uint32_t curDieselKnockSample[4];                 // Index of currently loaded Diesel knock sample
+  static int32_t a, b, b1, b2, b3, b4, b5, b6, b7[4], b8;  // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting, knock  static int32_t b7[4];                                    // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting, knock
+  static boolean knockSilent;                              // This konck will be more silent
+  static uint8_t curKnockCylinder;                         // Index of currently ignited zylinder
+  static uint8_t curKnockSlot;                             // Slot for knock sound sample
 
   portENTER_CRITICAL_ISR(&fixedTimerMux);
 
   switch (soundNo) {
 
-    // Group "a" (never more than one active at a time) ----------------------------------------------
+    // Group "a" (never more than one active at a time) ******************************************************************
 
     case 0: // Horn "a" ----
       fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
@@ -515,7 +514,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
       }
       break;
 
-    case 1: // Siren (or tank cannon) "a" ----
+    case 1: // Siren (or tank cannon) "a" -----------------------------------------------------
       fixedTimerTicks = 4000000 / sirenSampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
       curHornSample = 0;
@@ -536,7 +535,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
       else cannonFlash = false;
       break;
 
-    case 2: // Sound 1 "a" ----
+    case 2: // Sound 1 "a" ---------------------------------------------------------------------
       fixedTimerTicks = 4000000 / sound1SampleRate; // our fixed sampling rate
       timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
       curSirenSample = 0;
@@ -557,7 +556,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   } // end of switch case
 
-  // Group "b" (multiple sounds are mixed together) ----------------------------------------------
+  // Group "b" (multiple sounds are mixed together) **********************************************************************
 
   // Reversing beep sound "b1" ----
   if (engineRunning && escInReverse) {
@@ -577,7 +576,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b1 = 0;
   }
 
-  // Indicator tick sound "b2" ----
+  // Indicator tick sound "b2" ----------------------------------------------------------------------
   if (indicatorSoundOn) {
     fixedTimerTicks = 4000000 / indicatorSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
@@ -596,7 +595,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b2 = 0;
   }
 
-  // Wastegate sound, triggered after rapid throttle drop
+  // Wastegate sound, triggered after rapid throttle drop -----------------------------------------
   if (wastegateTrigger) {
     if (curWastegateSample < wastegateSampleCount) {
       b3 = (wastegateSamples[curWastegateSample] * throttleDependentWastegateVolume / 100 * wastegateVolumePercentage / 100);
@@ -611,7 +610,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curWastegateSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Air brake release sound, triggered after stop
+  // Air brake release sound, triggered after stop -----------------------------------------------
   if (airBrakeTrigger) {
     if (curBrakeSample < brakeSampleCount) {
       b4 = (brakeSamples[curBrakeSample] * brakeVolumePercentage / 100);
@@ -627,7 +626,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curBrakeSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Air parking brake release sound, triggered after engine off
+  // Air parking brake release sound, triggered after engine off ----------------------------------
   if (parkingBrakeTrigger) {
     if (curParkingBrakeSample < parkingBrakeSampleCount) {
       b5 = (parkingBrakeSamples[curParkingBrakeSample] * parkingBrakeVolumePercentage / 100);
@@ -642,7 +641,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curParkingBrakeSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Pneumatic gear shifting sound, triggered while shifting the TAMIYA 3 speed transmission
+  // Pneumatic gear shifting sound, triggered while shifting the TAMIYA 3 speed transmission ------
   if (shiftingTrigger && engineRunning) {
     if (curShiftingSample < shiftingSampleCount) {
       b6 = (shiftingSamples[curShiftingSample] * shiftingVolumePercentage / 100);
@@ -657,26 +656,60 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curShiftingSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Diesel ignition "knock" played in fixed sample rate section!
-  if (dieselKnockTrigger) {
+  // Diesel ignition "knock" played in fixed sample rate section, because we don't want changing pitch! ------
+  /*if (dieselKnockTrigger) {
     dieselKnockTrigger = false;
     knockSilent = !knockSilent; // change knock volume
     curDieselKnockSample = 0;
+    }TODO*/
+
+  if (dieselKnockTriggerFirst) {
+    dieselKnockTriggerFirst = false;
+    curKnockCylinder = 0;
   }
 
-  if (curDieselKnockSample < knockSampleCount) {
-    b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
-    curDieselKnockSample ++;
-#ifdef ADAPTIVE_KNOCK_VOLUME
-    if (knockSilent) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: alternating knock volume!
-    //if (!dieselKnockTriggerFirst) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: only the first knock has full volume!
-#endif
+  if (dieselKnockTrigger) {
+    dieselKnockTrigger = false;
+    curKnockCylinder ++; // Count ignition sequence
+    //curDieselKnockSample = 0;
+    //curKnockSlot ++; // Count slot index for overlapping knock samples, experimental, TODO
+    if (curKnockSlot > 3) curKnockSlot = 0;
+    curDieselKnockSample[curKnockSlot] = 0; // Reset slots index alternating
   }
+
+  // Ford or Scania V8 ignition sequence: 1 - 5 - 4 - 2* - 6 - 3 - 7 - 8* (* = louder, because 2nd exhaust in same manifold after 90°)
+  if (curKnockCylinder == 4 || curKnockCylinder == 8) knockSilent = false;
+  else knockSilent = true;
+
+
+
+
+
+  // We have four slots, which can overlap. This allows to generate a smooth sound @ higher rpm. Experimental! TODO
+  for (int i = 0; i < 4; i++) {
+    if (curDieselKnockSample[i] < knockSampleCount) {
+      b7[i] = (knockSamples[curDieselKnockSample[i]] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
+      //b8 = (knockSamples[curDieselKnockSample + 100] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 500);  // Experimental exhaust harmonic TODO
+      curDieselKnockSample[i] ++;
+#ifdef ADAPTIVE_KNOCK_VOLUME
+      if (knockSilent) b7[i] = b7[i] * dieselKnockAdaptiveVolumePercentage / 100; // Experimental: changing knock volume!
+#endif
+    }
+    else {
+      //b7[i] = 0; // TODO
+      //curDieselKnockSample[i] = 0; // ensure, next sound will start @ first sample
+    }
+  }
+
+
+
+
 
   // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" + "b7" together ----
-  b = b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7;
+  //b = b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8; // TODO
+  b = b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7[0] + b7[1] + b7[2] + b7[3];
 
-  // DAC output (groups a + b mixed together) ----------------------------------------------------
+  // DAC output (groups a + b mixed together) ****************************************************************************
 
   dacWrite(DAC2, (constrain((a * 8 / 10) + (b * 2 / 10) + dacOffset, 0, 255))); // Mix signals, add 128 offset, write result to DAC
 
@@ -1353,17 +1386,17 @@ void mapThrottle() {
   if (micros() - throttleFaderMicros > 500) { // Every 0.5ms
     throttleFaderMicros = micros();
 
-    if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 500) currentThrottleFaded ++;
-    if (currentThrottleFaded > currentThrottle) currentThrottleFaded = currentThrottle;
+    if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 499) currentThrottleFaded += 2;
+    if (currentThrottleFaded > currentThrottle && currentThrottleFaded > 2) currentThrottleFaded -= 2;
     //Serial.println(currentThrottleFaded);
   }
 
   // Calculate throttle dependent engine idle volume
-  if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottle, 0, 500, engineIdleVolumePercentage, 100);
+  if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottleFaded, 0, 500, engineIdleVolumePercentage, 100);
   else throttleDependentVolume = engineIdleVolumePercentage;
 
   // Calculate throttle dependent engine rev volume
-  if (!escIsBraking && engineRunning) throttleDependentRevVolume = map(currentThrottle, 0, 500, engineRevVolumePercentage, 100);
+  if (!escIsBraking && engineRunning) throttleDependentRevVolume = map(currentThrottleFaded, 0, 500, engineRevVolumePercentage, 100);
   else throttleDependentRevVolume = engineRevVolumePercentage;
 
   // Calculate throttle dependent Diesel knock volume
@@ -1379,7 +1412,7 @@ void mapThrottle() {
   else throttleDependentFanVolume = fanIdleVolumePercentage;
 
   // Calculate throttle dependent supercharger volume
-  if (!escIsBraking && engineRunning && (currentRpm > chargerStartPoint)) throttleDependentChargerVolume = map(currentThrottle, chargerStartPoint, 500, chargerIdleVolumePercentage, 100);
+  if (!escIsBraking && engineRunning && (currentRpm > chargerStartPoint)) throttleDependentChargerVolume = map(currentThrottleFaded, chargerStartPoint, 500, chargerIdleVolumePercentage, 100);
   else throttleDependentChargerVolume = chargerIdleVolumePercentage;
 
   // Calculate engine rpm dependent wastegate volume
@@ -1465,7 +1498,7 @@ void engineMassSimulation() {
   }
 
   // Trigger Wastegate, if throttle rapidly dropped
-  if (lastThrottle - currentThrottle > 200) {
+  if (lastThrottle - currentThrottle > 70) {
     wastegateTrigger = true;
   }
   lastThrottle = currentThrottle;

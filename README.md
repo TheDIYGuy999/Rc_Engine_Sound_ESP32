@@ -321,13 +321,16 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Missing .h files for the Ural 2 setting added
 - Once again thanks to MAN Tgx for pointing out this issue
 
-## PCB files available:
-- for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
-- for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
-
 ## New in V 4.9:
 - Ignition knock sound is now triggered by the optional revving sound as well
 - Sounds and configuration example for Messerschmitt Bf 109 added (first example, which uses rev sound)
+
+## New in V 5.0:
+- The already existing "REV_SOUND" option is now fading over between the idle sound and the rev sound. This provides a very realistic behavior for heavy truck engines. Example see "Cat3408Settings", "Messerschmitt Bf109", "Unimog U1000". The fading threshold can be adjusted with the "revSwitchPoint" variable
+- Optimized throttle fader for more realistinc sound while gear shifting
+- Optimised Wastegate triggering
+- Optimised and new sound examples: Unimog U 1000 Turbo, Caterpillar 3408 (for King Hauler)
+- Note, that only the "Master" settings example is listing all the .h files. Use this as a base for own settings
 
 ## On the todo list:
 - your suggestions?
@@ -378,6 +381,10 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 https://jlcpcb.com (upload Gerbers.zip)
 
 https://oshpark.com (upload Gerbers.zip or .brd file)
+
+## PCB files available:
+- for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
+- for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
 
 ## Wiring:
 ### Before you begin:
