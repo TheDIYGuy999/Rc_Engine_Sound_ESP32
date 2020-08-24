@@ -444,10 +444,18 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - never connect capacitors to the speaker ports
 
 ## Software:
-### Required software for code uploading:
+
+### Required software for code uploading and editing:
 - Arduino IDE: https://www.arduino.cc/en/Main/Software
 
-### Required board definition:
+### Downloading and preparing the code:
+- Download the code from here (hit "Code > Download zip"): https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32
+- Unzip the folder, if required
+- Remove the "-master" part of the folder name
+- Install libraries and board definitions below first, restart Arduino IDE
+- Open "Rc_Engine_Sound_ESP32.ino" with a double click (Arduino IDE should start)
+
+### Required ESP32 board definition:
 - Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 - Set is according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
 
@@ -455,6 +463,8 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - statusLED: https://github.com/TheDIYGuy999/statusLED
 - SBUS: https://github.com/TheDIYGuy999/SBUS
 - rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
+
+Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
 
 ## Vehicle adjustments:
 
