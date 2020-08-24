@@ -2,6 +2,8 @@
 It's based on the ATmega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
+Wiring and software installation instructions see further down.
+
 ## Features:
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for ech gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
@@ -333,7 +335,7 @@ and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 - Note, that only the "Master" settings example is listing all the .h files. Use this as a base for own settings
 
 ## New in V 5.01:
-- Configuration erro solved: "ADAPTIVE_KNOCK_VOLUME" (for V8) was not enabled
+- Configuration mistake solved: "ADAPTIVE_KNOCK_VOLUME" (for V8) was not enabled in "Cat3408Settings" and *Master" setting"
 - CAT 3408 Peterbilt added
 
 ## On the todo list:
@@ -421,10 +423,12 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - All four ports are pairs, wired in parallel. This allows to feed servo signals through, eliminating the need for Y-cables
 - You should always connect all four channels, otherwise it may cause lags
 - If you don't want to connect all signals, comment out the unused "pulseIn" functions in the main tab by adding //
+- Note that you need to change the configuration as described below, if you want to use this wiring method
 
 ### Receiver wiring for PPM signals:
 - Internal channel map as above
 - Connect a 3 pin wire fom your receiver PPM port to the PPM port on the sound controller (Sig, V+, GND)
+- Note that you need to change the configuration as described below, if you want to use this wiring method
 
 ### Receiver wiring for SBUS signals (recommended):
 - Internal channel map as above
@@ -439,13 +443,33 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 . never use tow ports in parallel to drive one speaker
 - never connect capacitors to the speaker ports
 
-## Adjustments:
+## Software:
+### Required software for code uploading:
+- Arduino IDE: https://www.arduino.cc/en/Main/Software
+
+### Required board definition:
+- Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+- Set is according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
+
+### Required libraries:
+- statusLED: https://github.com/TheDIYGuy999/statusLED
+- SBUS: https://github.com/TheDIYGuy999/SBUS
+- rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
+
+## Vehicle adjustments:
+
+Note, that you need to re-upload the code after you changed the following settings. Otherwise it will not take effect.
+Select >Sketch > Upload to upload the code. Important! Always lift your vehicle off the ground while uploading.
 
 ### Example files:
-- They can be found in the "settings" folder. Copy and paste their content to your "Adjustments.h" tab.
+- They can be found in the "settings" folder. Copy and paste their content to your "Adjustments.h" tab (delete the "Adjustments.h" content before).
+- Adjust the communication mode afterwards
 - Try the examples to get a feel for different sounds and vehicles
 
-### Interface types selection in "Adjustments.h":
+### Interface type (communication mode) selection in "Adjustments.h":
+
+Note, that the default communication mode is SBUS. You need to change it as follows, if you want to use classic RC servo signals.
+
 #### PWM (classic RC signals on CH 1 - 4 ports, the most common interface)
 ```
 // ---------------------------------------------------------------------------------------------------------------------
