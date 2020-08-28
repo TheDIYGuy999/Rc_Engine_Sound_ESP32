@@ -6,8 +6,7 @@
 \pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 /* ******* RECOMMENDED Audacity Settings: 22'050 Hz, 8 bit PCM **********\
-\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
-\cf0 \
+\
 // Sound files converted with: https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html\
 // converter code by bitluni (send him a high five, if you like the code)\
 \
@@ -125,7 +124,7 @@ volatile int engineIdleVolumePercentage = 20; // the engine volume will be throt
 //#include "sounds/JeepGrandCherokeeTrackhawkIdle.h" // Jeep Grand Cherokee Trackhawk idle (speaker with good bass required)\
 //#include "sounds/DAFXFIdle.h" // DAF XF truck\
 \
-// Choose the motor revving sound (experimental, uncomment the one you want) --------\
+// Choose the motor revving sound (uncomment the one you want) --------\
 //#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound\
 volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)\
 volatile int engineRevVolumePercentage = 30; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)\
@@ -133,6 +132,15 @@ const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the id
 #ifdef REV_SOUND\
 //#include "sounds/ScaniaV8Rev.h" // Scania V8\
 #include "sounds/ScaniaV8Rev2.h" // Scania V8\
+#endif\
+\
+// Choose the jake brake sound (uncomment the one you want) --------\
+//#define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound\
+volatile int jakeBrakeVolumePercentage = 200; // Adjust the max. volume (usually = 150%)\
+volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)\
+volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)\
+#ifdef JAKE_BRAKE_SOUND\
+#include "sounds/JakeBrake.h" // V8 Jake Brake sound\
 #endif\
 \
 // Choose the Diesel ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,\
@@ -260,6 +268,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 // PWM input signal range calibration ------------------------------------------------------------------------------------\
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range\
 const uint16_t pulseSpan = 450; // pulseZero +/- this value (150 for JMT 10A ESC, otherwise around 450)\
+const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false\
 \
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------\
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1600 (new ESC = 1000) for King Hauler)\

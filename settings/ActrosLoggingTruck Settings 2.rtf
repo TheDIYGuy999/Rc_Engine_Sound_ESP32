@@ -123,7 +123,7 @@ volatile int engineIdleVolumePercentage = 100; // the engine volume will be thro
 //#include "sounds/JeepGrandCherokeeTrackhawkIdle.h" // Jeep Grand Cherokee Trackhawk idle (speaker with good bass required)\
 //#include "sounds/DAFXFIdle.h" // DAF XF truck\
 \
-// Choose the motor revving sound (experimental, uncomment the one you want) --------\
+// Choose the motor revving sound (uncomment the one you want) --------\
 //#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound\
 volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)\
 volatile int engineRevVolumePercentage = 30; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)\
@@ -259,6 +259,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 // PWM input signal range calibration ------------------------------------------------------------------------------------\
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range\
 const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range)\
+const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false\
 \
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------\
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)\

@@ -127,7 +127,7 @@ volatile int engineIdleVolumePercentage = 50; // the engine volume will be throt
 //#include "sounds/MesserschmittBf109Idle2.h" // Messerschmitt Bf109 Idle\
 #include "sounds/MesserschmittBf109Idle3.h" // Messerschmitt Bf109 Idle\
 \
-// Choose the motor revving sound (experimental, uncomment the one you want) --------\
+// Choose the motor revving sound (uncomment the one you want) --------\
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound\
 volatile int revVolumePercentage = 200; // Adjust the idle volume (usually = 100%, more also working, depending on sound)\
 volatile int engineRevVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)\
@@ -136,6 +136,15 @@ const uint8_t revSwitchPoint = 50; // The rev sound is played instead of the idl
 //#include "sounds/ScaniaV8Rev.h" // Scania V8\
 //#include "sounds/ScaniaV8Rev2.h" // Scania V8\
 #include "sounds/MesserschmittBf109Rev.h" // Messerschmitt Bf109 Rev\
+#endif\
+\
+// Choose the jake brake sound (uncomment the one you want) --------\
+//#define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound\
+volatile int jakeBrakeVolumePercentage = 200; // Adjust the max. volume (usually = 150%)\
+volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)\
+volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)\
+#ifdef JAKE_BRAKE_SOUND\
+#include "sounds/JakeBrake.h" // V8 Jake Brake sound\
 #endif\
 \
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,\

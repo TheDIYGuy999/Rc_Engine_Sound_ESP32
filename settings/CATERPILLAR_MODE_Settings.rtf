@@ -126,14 +126,22 @@ volatile int engineIdleVolumePercentage = 80; // the engine volume will be throt
 //#include "sounds/DAFXFIdle.h" // DAF XF truck (use International DT 466 start, ADAPTIVE_KNOCK_VOLUME, dieselKnockInterval = 3, dieselKnockAdaptiveVolumePercentage = 60)\
 #include "sounds/Tankmotorsound.h" // V12 tank idle sound  \
 \
-\
-// Choose the motor revving sound (experimental, uncomment the one you want) --------\
+// Choose the motor revving sound (uncomment the one you want) --------\
 //#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound\
 volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)\
 volatile int engineRevVolumePercentage = 30; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)\
 const uint8_t revSwitchPoint = 250; // The rev sound is played instead of the idle sound above this point\
 #ifdef REV_SOUND\
 #include "sounds/ScaniaV8Rev.h" // Scania V8\
+#endif\
+\
+// Choose the jake brake sound (uncomment the one you want) --------\
+//#define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound\
+volatile int jakeBrakeVolumePercentage = 200; // Adjust the max. volume (usually = 150%)\
+volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)\
+volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)\
+#ifdef JAKE_BRAKE_SOUND\
+#include "sounds/JakeBrake.h" // V8 Jake Brake sound\
 #endif\
 \
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,\
@@ -264,6 +272,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 // PWM input signal range calibration ------------------------------------------------------------------------------------\
 const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range\
 const uint16_t pulseSpan = 300; // pulseZero +/- this value (max. 500 or less depending on remote signal range, about 300 in CATERPILLAR_MODE)\
+const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false\
 \
 // PWM ESC output signal range calibration (connect crawler type ESC to pin 33, not active in CATERPILLAR_MODE)------------\
 const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler, 1400 = 100km/h with 35T motor)\
