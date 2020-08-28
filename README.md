@@ -338,6 +338,16 @@ Wiring and software installation instructions see further down.
 - Configuration mistake solved: "ADAPTIVE_KNOCK_VOLUME" (for V8) was not enabled in "Cat3408Settings" and *Master" setting"
 - CAT 3408 Peterbilt added
 
+## New in V 5.1:
+- Compiler warnings issue solved
+- rcTrigger function moved to Core 1
+_ al ot of new functions (see below, triggered in "void rcTrigger()")
+- Jake brake sound added (CH5, SBUS only) Uncomment //#define JAKE_BRAKE_SOUND, if you want to use it
+- Headlight flasher and high / low beam switching added (CH5, SBUS only)
+- Switchable master volume: indoor and outdoor mode (CH5, SBUS only)
+- Switchable, virtual neutral for transmission, allows to rev the engine while standing still! (CH5, SBUS only)
+- Kenworth W900A example configurations in Caterpillar 3408 (V8 4 stroke) and Detroit Diesel 8V71 (V8 2 stroke) version
+
 ## On the todo list:
 - your suggestions?
 
@@ -465,6 +475,7 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
 
 Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
+Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
 ## Vehicle adjustments:
 

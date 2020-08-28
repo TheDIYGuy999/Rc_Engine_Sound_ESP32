@@ -32,7 +32,7 @@ Motor: 540 size, 35 turns, stock pinion
 // Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
 // SBUS communication --------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
-boolean sbusInverted = true; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
 
 // Serial communication --------
 //#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
@@ -123,22 +123,34 @@ volatile int engineIdleVolumePercentage = 60; // the engine volume will be throt
 //#include "sounds/MesserschmittBf109Idle.h" // Messerschmitt Bf109 Idle
 //#include "sounds/MesserschmittBf109Idle2.h" // Messerschmitt Bf109 Idle
 //#include "sounds/MesserschmittBf109Idle3.h" // Messerschmitt Bf109 Idle
-#include "sounds/3408CatIdle.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
+//#include "sounds/3408CatIdle.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
+#include "sounds/3408CatIdleLowpass.h" // CAT 3408 V8 Diesel idle (Kenworth W900A, 1.5kHz lowpass filtered)
 //#include "sounds/8V71DetroitDieselStraightStacksIdle.h" // Detroit 8V71 two stroke V8 Diesel
 //#include "sounds/8V71DetroitDieselStraightStacksIdle2.h" // Detroit 8V71 two stroke V8 Diesel
 
-// Choose the motor revving sound (experimental, uncomment the one you want) --------
+// Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
 volatile int revVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
 volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-const uint8_t revSwitchPoint = 150; // The rev sound is played instead of the idle sound above this point
+const uint8_t revSwitchPoint = 50; // The rev sound is played instead of the idle sound above this point
 #ifdef REV_SOUND
 //#include "sounds/ScaniaV8Rev.h" // Scania V8
 //#include "sounds/ScaniaV8Rev2.h" // Scania V8
 //#include "sounds/MesserschmittBf109Rev.h" // Messerschmitt Bf109 Rev
 //#include "sounds/MesserschmittBf109Rev2.h" // Messerschmitt Bf109 Rev
-#include "sounds/3408CatRev.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
+//#include "sounds/3408CatRev.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
 //#include "sounds/3408CaterpillarPeterbiltRev.h" // CAT 3408 V8 Diesel rev (Peterbilt)
+//#include "sounds/BadAssRev.h" // Badass rev
+#include "sounds/CaboverCATrev.h" // Cabover wit CAT engine rev
+#endif
+
+// Choose the jake brake sound (uncomment the one you want) --------
+#define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
+volatile int jakeBrakeVolumePercentage = 200; // Adjust the max. volume (usually = 150%)
+volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
+volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
+#ifdef JAKE_BRAKE_SOUND
+#include "sounds/JakeBrake.h" // V8 Jake Brake sound
 #endif
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
@@ -146,9 +158,9 @@ const uint8_t revSwitchPoint = 150; // The rev sound is played instead of the id
 volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)
-volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockStartPoint = 110; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 #define ADAPTIVE_KNOCK_VOLUME // Experimental setting: only the first knock per engine cycle will be full volume!
-volatile int dieselKnockAdaptiveVolumePercentage = 65; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/ScaniaR620UphillKnock.h" // Scania R620 V8 (use it for King Hauler)
 //#include "sounds/UralV8Knock2.h" // Ural 4320 V8
@@ -175,15 +187,17 @@ volatile int dieselKnockAdaptiveVolumePercentage = 65; // Adjust the Diesel knoc
 //#include "sounds/MesserschmittBf109Knock.h" // Messerschmitt Bf109 Knock
 //#include "sounds/MesserschmittBf109Knock2.h" // Messerschmitt Bf109 Knock
 //#include "sounds/UnimogU1000TurboKnock.h" // Unimog U1000 Turbo
-#include "sounds/3408CatKnock.h" // CAT 3408 V8 Diesel knock (Kenworth W900A)
+//#include "sounds/3408CatKnock.h" // CAT 3408 V8 Diesel knock (Kenworth W900A)
 //#include "sounds/3408CaterpillarPeterbiltKnock.h" // CAT 3408 V8 Diesel rev (Peterbilt)
 //#include "sounds/DetroitDieselKnock.h" // Detroit R6 Diesel
 //#include "sounds/DetroitDieselKnock2.h" // Detroit R6 Diesel
 //#include "sounds/8V71DetroitDieselStraightStacksKnock.h" // Detroit 8V71 two stroke V8 Diesel
+//#include "sounds/BadAssKnock.h" // Badass knock
+#include "sounds/CaboverCATknock.h" // Cabover wit CAT engine knock
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 80; // Adjust the turbo volume (usually = 70%)
-volatile int turboIdleVolumePercentage = 10; // the turbo volume will be engine rpm dependent (usually = 10%)
+volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
 // Adjust the additional supercharger sound (set "chargerVolumePercentage" to "0", if you don't want it) --------
@@ -209,17 +223,18 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 #include "sounds/GenericFan.h" // Generic engine cooling fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
-#include "sounds/westinghouseHorn.h" // American truck horn (the best)
+//#include "sounds/westinghouseHorn.h" // American truck horn (the best)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
 //#include "sounds/CarHorn.h" // A boring car horn
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
+#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
