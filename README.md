@@ -8,6 +8,8 @@ Wiring and software installation instructions see further down.
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for ech gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
 - Simulated automatic transmission with torque converter (if your vehicle does not have a real shifting transmission)
+- Virtual,switchable neutral allowt to rev the engine while standing still
+- Jake brake (simulated pneumatic engine brake, mainly used in US trucks)
 - Caterpillar mode (dual throttle input on CH2 & CH3, for tanks, diggers etc. No ESC control support in this mode. (New in v4.5)
 - Tank cannon sound & flash (New in v4.6)
 - Triggering multiple latching and non latching actions (sounds, lights) per analog channel, using the rcTrigger library (New in v4.7, still experimental)
@@ -23,8 +25,9 @@ Wiring and software installation instructions see further down.
 - Works best with a PAM8403 amplifier module, connected to pin 25 & 26, via 10kOhm resistors & a 10kOhm potentiometer (see schematic below)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max. on all pins! *** 330 Ohm resistors on all I/O pins recommended!
 - Non linear throttle curves can be generated in "curves.h"
-- Light effects: headlights, tail lights, brake lights, fog lights, roof lights, cab lights, reversing light, indicators (turn signals), hazard lights, blue light etc. (max. 12 outputs)
+- Light effects: headlights (high & low beam), tail lights, brake lights, fog lights, roof lights, cab lights, reversing light, indicators (turn signals), hazard lights, blue light etc. (max. 12 outputs)
 - Engine vibration simulation, using a shaker motor with excentric weight: Strong vibration while cranking, medium wlile idling, slight while revving
+- Adjustable volume (via remote)
 - Use an ESP32, CPU frequency must be set to 240MHz
 - Eagle schematic & board file included. Pre made Gerber files allow you to order your board easily.
 
@@ -341,12 +344,13 @@ Wiring and software installation instructions see further down.
 ## New in V 5.1:
 - Compiler warnings issue solved
 - rcTrigger function moved to Core 1
-_ al ot of new functions (see below, triggered in "void rcTrigger()")
+- a lot of new functions (see below, triggered in "void rcTrigger()")
 - Jake brake sound added (CH5, SBUS only) Uncomment //#define JAKE_BRAKE_SOUND, if you want to use it
 - Headlight flasher and high / low beam switching added (CH5, SBUS only)
 - Switchable master volume: indoor and outdoor mode (CH5, SBUS only)
 - Switchable, virtual neutral for transmission, allows to rev the engine while standing still! (CH5, SBUS only)
 - Kenworth W900A example configurations in Caterpillar 3408 (V8 4 stroke) and Detroit Diesel 8V71 (V8 2 stroke) version
+- note, that you have to use the latest version of the rcTrigger library
 
 ## On the todo list:
 - your suggestions?
