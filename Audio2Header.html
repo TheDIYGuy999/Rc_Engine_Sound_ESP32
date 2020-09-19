@@ -1,0 +1,122 @@
+<head>
+<script>
+window.AudioContext = window.AudioContext || window.webkitAudioContext;
+var context = new AudioContext();
+
+function audioBufferToText(audioBuffer, normalize, resample, sampleRate, fileType)
+{
+	var buffer = audioBuffer.getChannelData(0);
+		
+	if(audioBuffer.numberOfChannels > 1)
+	{
+		for(var c = 1; c < audioBuffer.numberOfChannels; c++)
+		{
+			var cb = audioBuffer.getChannelData(c);
+			for(var i = 0; i < length; i++)
+				buffer[i] += cb[i];
+		}
+	}
+	
+	if(resample)
+	{
+		var scale = audioBuffer.sampleRate / sampleRate;
+		var length = Math.floor((buffer.length - 1) / scale); 
+		var b = new Float32Array(length);
+		for(var i = 0; i < length; i++)
+		{
+			p = Math.floor(i * scale);
+			b[i] = buffer[p];
+		}
+		buffer = b;
+	}
+	else
+		sampleRate = audioBuffer.sampleRate;
+
+	var snippet = document.getElementById("fileTypeSelect").value;
+	var text = "const unsigned int " + snippet + "ampleRate = " + sampleRate + ";\r\n";
+	text += "const unsigned int " + snippet + "ampleCount = " + buffer.length + ";\r\n";
+	text += "const signed char " + snippet + "amples[] = {"
+
+	var max = 0;
+	if(normalize)
+		for(var i = 0; i < buffer.length; i++)
+			max = Math.max(Math.abs(buffer[i]), max);
+	if(max == 0) max = 1;
+	for(var i = 0; i < buffer.length; i++)
+	{
+		if((i & 15) == 0) text += "\r\n";
+		text += Math.round(buffer[i] / max * 127) + ", ";
+	}	
+	text += "};\r\n";
+	return text;
+}
+//isn't that simple code awesome? ...that's bitluni style
+
+function convert(event)
+{
+	var audioBuffer = null;
+	var reader = new FileReader();
+	var file = event.target.files[0];
+	reader.onload = function(){
+	    context.decodeAudioData(reader.result, function(buffer) {
+			var link = document.createElement("a");
+			link.download = file.name.split('.', 1)[0] + ".h";
+			link.href = URL.createObjectURL(new Blob(
+			[audioBufferToText(buffer, document.getElementById("normalize").checked, document.getElementById("resample").checked, document.getElementById("samplerate").value)], {type: "text/plain"}));
+			document.body.appendChild(document.createElement("br"));
+			document.body.appendChild(link);
+			link.innerHTML = link.download;
+			link.click();
+			//document.body.removeChild(link);
+			event.target.value = "";
+		}, function(){
+			//error
+		});
+	}
+	reader.readAsArrayBuffer(file);	
+}
+</script>
+
+<style>
+	body {
+	  background-color: lightblue;
+	}
+	</style>
+
+</head>
+<body style="font-family: arial">
+<h1><a href="https://youtube.com/bitlunislab">bitluni</a>'s audio to header converter</h1>
+Modified version for <a href="https://www.youtube.com/channel/UCqWO3PNCSjHmYiACDMLr23w">TheDIYGuy999</a>'s <a href="https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32">ESP32 RC Engine Sound & Light Controller</a> <br><br>
+
+1. Select the export file format (it is recommended to leave the settings as they are):<br>
+<input id="normalize" type="checkbox" checked>normalize
+<input id="resample" type="checkbox" checked>resample
+<input id="samplerate" value="22050">
+<br><br>
+
+2. Select the export file type you want (for idle, rev, horn etc. sound):<br>
+	<select name="fileTypeSelect" id="fileTypeSelect">
+		<option value="startS">start</option>
+		<option selected value="s">idle</option>
+		<option value="revS">rev</option>
+		<option value="knockS">knock</option>
+		<option value="turboS">turbo</option>
+		<option value="wastegateS">wastegate</option>
+		<option value="chargerS">charger</option>
+		<option value="fanS">fan</option>
+		<option value="brakeS">brake</option>
+		<option value="parkingBrakeS">parkingBrake</option>
+		<option value="jakeBrakeS">jakeBrake</option>
+		<option value="indicatorS">indicator</option>
+		<option value="hornS">horn</option>
+		<option value="sirenS">siren</option>
+		<option value="sound1S">sound1</option>
+	</select>
+<br><br>
+
+3. Open the unsigned 8bit PCM, 22050Hz wav file, which was previously made with Audacity:<br>
+<input type="file" onchange="convert(event)"><br><br>
+
+4. Your .h file is generated and downloaded. -> Save it in /vehicles/sounds<br>
+
+</body></html>
