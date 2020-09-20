@@ -40,6 +40,11 @@ Fully assembled, tested and working 30 pin version
 ## On the todo list:
 - making PWM read function faster
 - testing the experimental IBUS protocol, as soon as I have IBUS hardware
+- making channel order more flexible
+
+## Issues:
+- Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
+- This software was written and tested on macOS but should work just fine on Windows and Linux as well. If not, let me know!
 
 ## How to create new .h sound files:
 
@@ -428,7 +433,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 - New vehicle configuration structure: separate .h preset files for vehicles. Select them in "Adjustments.h". Makes vehicle selection a lot easier.
 - Vehicle presets complely reworked. Most of them are now including a rev sound, which is seamlessly mixed together with the idle sound. Huge sound quality improvements!
 - All vehicle specific presets and sound files are now located in "/vehicles"
-- New vehicles: Defender Td5, VW Käfer, Actros 1863, SCANIA V8 trucks, URAL 375D, Jaguar XJS, MGB GT V8
+- New vehicles: Defender Td5, VW Käfer, Actros 1863, SCANIA V8 trucks, URAL 375D, Jaguar XJS, MGB GT V8, Ford Powerstroke 7.3l V8 Diesel
 - Idle and rev sounds are now throttle dependent es well, not just RPM dependent. Adjustable with "fullThrottleVolumePercentage". Useful, if you don't want to use the separate knock sound.
 - "TOP_SPEED_MULTIPLIER" renamed to "MAX_RPM_PERCENTAGE", Max. engine RPM now adjustable in % of idle RPM instead of integer multiplier. Allows to do finer adjustments.
 - "ADAPTIVE_KNOCK_VOLUME" renamed to "V8", added "V2" (these are ignition volume patterns for different engine types)
