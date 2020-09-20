@@ -146,8 +146,20 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - 4 or 8 ohms speakers are compatible
 - You can use one or two speakers
 - never use two speakers in parallel on a single port
-. never use tow ports in parallel to drive one speaker
+- never use two ports in parallel to drive one speaker
 - never connect capacitors to the speaker ports
+
+### LED
+- The LED need to be wired 2common positive". This means, the long LED legs are all connected together an connect to the 5V rail, coming from the on board regulator
+- All LED (except the ones, which are connected to the TAMIYA trailer connector) need a series resistor
+- Calculate the reqired resistor according to: http://ledcalc.com (supply voltage = 5V)
+- It is not recommended to wire LED in parallel, sharing the series resistor
+
+### Shaker
+- The shaker is used for engine vibration simulation. The speed can be adjusted in the vehicle configuration
+- Connect it to the "shaker" port and is supplied by the on board 5V regulator. The negative side is switched by the on board mosfet
+- Please note, that the used mosfet needs to be a logic level type. Otherwise the shaker will not work!
+- The motor should not draw more than about 300mA @ 5V. I'm using a shaker motor from GT Power.
 
 ## Software:
 ### Required software for code uploading and editing:
@@ -395,6 +407,19 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
+
+## Adjusting things in "vehicles/yourVehiclePreset.h":
+### Shaker
+adjust the shaked power for the different engine states to fit your needs:
+```
+// Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
+const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
+const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
+const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
+const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
+```
+### More to come...
+
 ## Changelog (newest on top):
 
 ### New in V 5.2 (a big update):
