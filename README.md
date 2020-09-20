@@ -7,7 +7,7 @@ Wiring and software installation instructions see further down.
 Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so
 
 Fully assembled, tested and working 30 pin version
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/30PinAssembled.jpg)
+![](pictures/30PinAssembled.jpg)
 
 ## Features:
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for ech gear to ensure maximum realism.
@@ -67,7 +67,7 @@ Fully assembled, tested and working 30 pin version
 ### Include the new header file with your sound in your vehicle preset, adjust settings until you are happy:
 - include this .h file in "Adjustments.h" > "yourVehiclePreset.h"
 - knock sound settings:
-  -"dieselKnockInterval" = number of cylinders
+  - "dieselKnockInterval" = number of cylinders
   - uncomment "V8" for V8 engines or "V2" for V2 (Harley) engines
   - adjust "dieselKnockAdaptiveVolumePercentage" (how loud the "silent" knock pulses are compared with the loud ones), only active, if defined "V8" or "V2"
 - play with the other volumes, start-, end- and switch-points until you are happy
@@ -737,15 +737,15 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 - sounds way better than the ATmega 328 version, thanks to  22'050Hz sampling rate (instead of 8'000Hz)
 
 ## Prototypes:
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/top.jpg)
+![](pictures/top.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/receiver_wiring.jpg)
+![](pictures/receiver_wiring.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/Bestueckt_oben.jpg)
+![](pictures/Bestueckt_oben.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/oben.jpg)
+![](pictures/oben.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/unten.jpg)
+![](pictures/unten.jpg)
 
 
 2019 - 2020, TheDIYGuy999
