@@ -21,7 +21,7 @@ Wiring and software installation instructions see further down.
 - Engine RPM range and inertia adjustable, volume of all sounds adjustable, engine sounds separatly for load and idling.
 - Many other paramerets can be adjusted. All adjustments are easily accessible in "Adjustments.h"
 - Sound files up to 22'050Hz, 8bit, mono can be used
-- Compatible input signals: PWM, PPM, Serial (Micro RC Receiver only), SBUS (inverted & non inverted signals)
+- Compatible input signals: PWM, PPM, Serial (Micro RC Receiver only), SBUS (inverted & non inverted signals), IBUS (experimental)
 - Works best with a PAM8403 amplifier module, connected to pin 25 & 26, via 10kOhm resistors & a 10kOhm potentiometer (see schematic below)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max. on all pins! *** 330 Ohm resistors on all I/O pins recommended!
 - Non linear throttle curves can be generated in "curves.h"
@@ -30,6 +30,7 @@ Wiring and software installation instructions see further down.
 - Adjustable volume (via remote)
 - Use an ESP32, CPU frequency must be set to 240MHz
 - Eagle schematic & board file included. Pre made Gerber files allow you to order your board easily.
+- included, easy to use .wav to .h sound file converter
 
 ## New in V 0.1:
 - Runs on an ESP32 (240MHz)
@@ -332,7 +333,7 @@ Wiring and software installation instructions see further down.
 
 ## New in V 5.0:
 - The already existing "REV_SOUND" option is now fading over between the idle sound and the rev sound. This provides a very realistic behavior for heavy truck engines. Example see "Cat3408Settings", "Messerschmitt Bf109", "Unimog U1000". The fading threshold can be adjusted with the "revSwitchPoint" variable
-- Optimized throttle fader for more realistinc sound while gear shifting
+- Optimized throttle fader for more realistic sound while gear shifting
 - Optimised Wastegate triggering
 - Optimised and new sound examples: Unimog U 1000 Turbo, Caterpillar 3408 (for King Hauler)
 - Note, that only the "Master" settings example is listing all the .h files. Use this as a base for own settings
@@ -343,7 +344,7 @@ Wiring and software installation instructions see further down.
 
 ## New in V 5.1:
 - Compiler warnings issue solved
-- rcTrigger function moved to Core 1
+- rcTrigger function moved to Core 1 (current Arduino IDE required, 1.8.7 does not work!)
 - a lot of new functions (see below, triggered in "void rcTrigger()")
 - Jake brake sound added (CH5, SBUS only) Uncomment //#define JAKE_BRAKE_SOUND, if you want to use it
 - Headlight flasher and high / low beam switching added (CH5, SBUS only)
@@ -352,50 +353,80 @@ Wiring and software installation instructions see further down.
 - Kenworth W900A example configurations in Caterpillar 3408 (V8 4 stroke) and Detroit Diesel 8V71 (V8 2 stroke) version
 - note, that you have to use the latest version of the rcTrigger library
 
-## On the todo list:
-- your suggestions?
+## New in V 5.2 (a big update):
+- New, comfortable .wav to .h sound file converting tool ("Audio2Header.html" included)
+- Experimental Flysky IBUS support (see comunications settings, untested, you need to install this library: https://github.com/bmellink/IBusBM)
+- New vehicle configuration structure: separate .h preset files for vehicles. Select them in "Adjustments.h". Makes vehicle selection a lot easier.
+- Vehicle presets complely reworked. Most of them are now including a rev sound, which is seamlessly mixed together with the idle sound. Huge sound quality improvements!
+- All vehicle specific presets and sound files are now located in "/vehicles"
+- New vehicles: Defender Td5, VW Käfer, Actros 1863, SCANIA V8 trucks, URAL 375D, Jaguar XJS, MGB GT V8
+- Idle and rev sounds are now throttle dependent es well, not just RPM dependent. Adjustable with "fullThrottleVolumePercentage". Useful, if you don't want to use the separate knock sound.
+- "TOP_SPEED_MULTIPLIER" renamed to "MAX_RPM_PERCENTAGE", Max. engine RPM now adjustable in % of idle RPM instead of integer multiplier. Allows to do finer adjustments.
+- "ADAPTIVE_KNOCK_VOLUME" renamed to "V8", added "V2" (these are ignition volume patterns for different engine types)
+- "CATERPILLAR_MODE" renamed to "TRACKED_MODE" (for track based vehicles with dual ESC)
+- new "SUPER_SLOW" option for very heavy, slow responding engines like locomotive diesels (see UnionPacific2002.h)
+- "NumberOfAutomaticGears" setting moved from "curves.h" to "Adjustments.h"
+- Gear ratio of 6 speed automatic transmission 1st gear changed, was too high
+- Experimental pulseRead function (using interrupts) for PWM mode (disabled)
+- Less aggressive RPM rise while downshifting the manual transmission
+- Removed experimental "Multi slot knock samples", takes too much processing power in interrupt and does not sound good
 
-## How to create new sound file arrays:
+
+## On the todo list:
+- making PWM read function faster
+- testing the experimental IBUS protocol, as soon as I have IBUS hardware
+
+## How to create new .h sound files:
 
 ### Audacity:
-- Import the sound file you want in Audacity
-- Convert it to mono, if needed
+- import the WAV sound file you want in Audacity
+- convert it to mono, if needed
 - on the bottom left, select project frequency 22'050Hz
-- cut the sound to one engine cycle. Zoom in to find the exact zero crossing
-- adjust the volume, so that the entire range is used
-- select > export audio > WAV > 8-bit-PCM
-- note, that the files should be as short as possible: search for a repeating sound pattern and cut it to this length
+- search for a cyclic pattern in the idle sound (the amount of ignition pulses is usually the same as the cylinder number), cut the "idle" sample to exactly this length, have a close look at the zero crossings to avoid clicking noises. The loudest peak should always be at the end of the sample.
+- do the same with the "rev" sound. It will be 2 - 4 times shorter than the "idle" sample, depending on the engine and rpm of the "rev" sample
+- change the "Rate" (dropdown on the left of the sample) of the "rev" sample, until the length is the same as in the "idle" sample. This is very important!
+- duplicate a part of the "rev" sample (the one with the original, unchanged "Rate" speed). This is the "knock" sample. Cut it to this max length: "Idle" length / number of cylinders / rpm range "MAX_RPM_PERCENTAGE" (usually 2 - 4 or 200 - 400%)
+- adjust the volume of all samples, so that the entire dynamic range is used
+- you may also want to apply high pass or low pass filters to fine tune the sound
+- select > export audio > selected audio > WAV > 8-bit-PCM
 
-### Convert the wav file with bitlunis converting tool:
-- open https://bitluni.net/wp-content/uploads/2018/01/Audio2Header.html
-- select the generated wav file from Audacity
-- select "normalize"
-- select "resample" and the frequency (22'050 recommended)
+### Convert the .wav file with the modified converting tool (new in v5.2):
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/converter.png)
+- open the included "Audio2Header.html" converter in your browser
+- adjust the export file format (no changes required)
+- select the export file type, depending on the sound you are converting (idle, rev, horn etc.)
+- open the wav file you want to convert
 - a .h file is generated and downloaded
-- move the .h file to your sketch directory
-- rename the variables, according to the exising files of the same category
+- move it to your "sketch/vehicles/sounds" directory
 
-### Processing the new header file with your sound:
-- include this .h file in "settings.h"
+### Include the new header file with your sound in your vehicle preset, adjust settings until you are happy:
+- include this .h file in "Adjustments.h" > "yourVehiclePreset.h"
+- knock sound settings:
+-- "dieselKnockInterval" = number of cylinders
+-- uncomment "V8" for V8 engines or "V2" for V2 (Harley) engines
+-- adjust "dieselKnockAdaptiveVolumePercentage" (how loud the "silent" knock pulses are compared with the loud ones), only active, if defined "V8" or "V2"
+- play with the other volumes, start-, end- and switch-points until you are happy
+- the "rev" sound is optional and only active, if "REV_SOUND" is defined (// removed)
+- adjust the transition from the "idle" to the "rev" sound, using "revSwitchPoint", "idleEndPoint", "idleVolumeProportionPercentage". This step is very important and can make a huge difference!
 
-### Compiling the new sketch:
+### Compile the new sketch:
 - compile and upload the sketch in Arduino IDE
-- the new engine should now run...
+- the new sound should now be ready
 
 ## Schematic (use PDF for current version!):
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/schematic.png)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/schematic.png)
 
 ## PCB:
 
 30 pin (recommended)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcb30pinTop.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcb30pinTop.jpg)
 
 36 pin (not recommended)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbTop.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbTop.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pcbBottom.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbBottom.jpg)
 
 ## Recommended PCB manufacturors:
 https://jlcpcb.com (upload Gerbers.zip)
@@ -458,7 +489,6 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - never connect capacitors to the speaker ports
 
 ## Software:
-
 ### Required software for code uploading and editing:
 - Arduino IDE: https://www.arduino.cc/en/Main/Software
 
@@ -477,119 +507,248 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 - statusLED: https://github.com/TheDIYGuy999/statusLED
 - SBUS: https://github.com/TheDIYGuy999/SBUS
 - rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
+- IBUS // https://github.com/bmellink/IBusBM
 
 Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
 Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
-## Vehicle adjustments:
+## Vehicle selections election in "Adjustments.h":
+### Vehicle selection:
 
-Note, that you need to re-upload the code after you changed the following settings. Otherwise it will not take effect.
+Uncomment (remove //) the vehicle you want in "Adjustments.h". Never uncomment more than one vehicle!
+Note, that you need to re-upload the code after you changed the settings. Otherwise it will not take effect.
 Select >Sketch > Upload to upload the code. Important! Always lift your vehicle off the ground while uploading.
 
-### Example files:
-- They can be found in the "settings" folder. Copy and paste their content to your "Adjustments.h" tab (delete the "Adjustments.h" content before).
-- Adjust the communication mode afterwards
-- Try the examples to get a feel for different sounds and vehicles
+If you want to make a new vehicle, copy vehicles/00_Master.h, store it with your vehicle name. Then edit the settings as you like, add links to the sound files you want.
+Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
-### Interface type (communication mode) selection in "Adjustments.h":
+```
+// VEHICLE SETTINGS ****************************************************************************************************
+// Select the vehicle you want (uncomment the one you want)
+
+// Master --------
+//#include "vehicles/00_Master.h" // This master preset file contains all available sound files, which are not used in existing vehicle presets
+
+// US trucks --------
+//#include "vehicles/CaboverCAT3408.h" // Cabover truck with Caterpillar 3408 V8 Diesel
+//#include "vehicles/KenworthW900ADetroit8V71.h" // Kenworth W900A with Detroit 8V71 V8 2 stroke Diesel
+//#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
+//#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
+//#include "vehicles/MackSuperLiner.h" // MACK Super Liner (TODO, needs rework)
+//#include "vehicles/M35.h"// AM General M35 *deuce and a half" military truck, turbocharged R6 universal fuel engine
+
+// EU trucks --------
+//#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
+#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
+//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren (TODO, rework idle)
+//#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
+//#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
+//#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
+//#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
+//#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
+//#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
+
+// Russian trucks --------
+//#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck (TODO, rework required)
+//#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
+//#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
+
+// Russian tanks -------
+//#include "vehicles/IS3.h" // IS-3 WW2 battle tank, V12 Diesel (dual ESC mode, good bass speaker required))
+
+// US motorcycles --------
+//#include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
+
+// US cars --------
+//#include "vehicles/ChevyNovaCoupeV8.h" // 1975 Chevy Nova Coupe V8
+//#include "vehicles/1965FordMustangV8.h"// 1965 Ford Mustang V8 (TODO rework rev, too fast?)
+
+// EU cars --------
+//#include "vehicles/VwBeetle.h" // VW Käfer / Beetle
+//#include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
+//#include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
+//#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
+//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12
+
+// US SUV --------
+//#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
+//#include "vehicles/FordPowerstroke.h" // Ford Powerstroke 7.3l V8 Diesel, 6 speed automatic (good bass speaker required)
+
+// EU SUV --------
+//#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
+//#include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
+//#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
+
+// US locomotives --------
+//#include "vehicles/UnionPacific2002.h" // Union Pacific 2002 SD70M locomotive with enormous, low revving 16 cylinder Diesel
+
+// Planes --------
+//#include "vehicles/MesserschmittBf109.h" // Messerschmitt BF 109 WW2 German V12 plane
+```
+
+### Interface type (communication mode) selection:
 
 Note, that the default communication mode is SBUS. You need to change it as follows, if you want to use classic RC servo signals.
 
-#### PWM (classic RC signals on CH 1 - 4 ports, the most common interface)
+#### PWM (classic RC signals on CH 1 - 4 ports, the most common interface, but not recommended due to rpm range limitations)
 ```
-// ---------------------------------------------------------------------------------------------------------------------
-// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
-// SBUS communication --------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
-boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!)
+// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// Serial communication --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+
+// SBUS communication (SBUS header)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, TODO experimental, untested!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// Serial communication (RX header, deprecated, use SBUS) --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
-// PPM communication --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+// PPM communication (PPM header) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
 #### Serial communication (for my "Micro RC" receiver only, deprecated, wired to Rx port)
 ```
-// ---------------------------------------------------------------------------------------------------------------------
-// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
-// SBUS communication --------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
-boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!)
+// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// Serial communication --------
-#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+
+// SBUS communication (SBUS header)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, TODO experimental, untested!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// Serial communication (RX header, deprecated, use SBUS) --------
+#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
-// PPM communication --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+// PPM communication (PPM header) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
 #### PPM (multiple channels pulse pause modulation, wired to PPM port)
 ```
-// ---------------------------------------------------------------------------------------------------------------------
-// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
-// SBUS communication --------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
-boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!)
+// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// Serial communication --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+
+// SBUS communication (SBUS header)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, TODO experimental, untested!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// Serial communication (RX header, deprecated, use SBUS) --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
-// PPM communication --------
-#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+// PPM communication (PPM header) --------
+#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
 #### SBUS (recommended, default setting, wired to SBUS port)
 ```
-// ---------------------------------------------------------------------------------------------------------------------
-// Choose the receiver communication mode (never uncomment more than one! If all commented out = classic PWM RC signal communication)--
-// SBUS communication --------
-#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic RC signals)
-boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!)
+// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// Serial communication --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic RC signals)
+// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+
+// SBUS communication (SBUS header)--------
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, TODO experimental, untested!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// Serial communication (RX header, deprecated, use SBUS) --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
 // Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
 
-// PPM communication --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic RC signals)
+// PPM communication (PPM header) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 #define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
+
 SBUS Invereted (if your receiver sends a non-standard SBUS signal):
 ```
-boolean sbusInverted = true; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 ```
 
 SBUS not inverted (default, used in most cases)
 ```
-boolean sbusInverted = false; // true = wired to NPN transistor signal inverter or uninverted SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+```
+
+#### IBUS (experimental, untested, use it @ you own risk!)
+```
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!)
+// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
+
+// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+
+// SBUS communication (SBUS header)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, TODO experimental, untested!) --------
+#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// Serial communication (RX header, deprecated, use SBUS) --------
+//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
+// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
+
+// PPM communication (PPM header) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
+#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
 ## Pictures:
 Fully assembled, tested and working 30 pin version
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/30PinAssembled.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/30PinAssembled.jpg)
 
 Prototypes
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/top.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/top.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/receiver_wiring.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/receiver_wiring.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Bestueckt_oben.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/Bestueckt_oben.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/oben.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/oben.jpg)
 
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/unten.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/unten.jpg)
 
 
 2019 - 2020, TheDIYGuy999

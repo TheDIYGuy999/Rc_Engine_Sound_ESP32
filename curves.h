@@ -7,11 +7,11 @@
 // Automatic transmission gear ratios (times 10!, for example 15 means 1.5)
 // see: https://www.allisontransmission.com/docs/default-source/marketing-materials/sa7943en_-2017-vocational-model-guide_-vmg-lr9af07359281567eeb272ff0000a566aa.pdf?sfvrsn=13
 
-#define NumberOfAutomaticGears 6 // <<------- Select 3, 4 or 6 gears!
+//#define NumberOfAutomaticGears 6 // <<------- Select 3, 4 or 6 gears! // Relocated to vehicle adjustments!
 
 //Reverse, 1st, 2nd, 3rd, 4th gear etc. (adjust reverse to match your ESC reverse speed)
 #if NumberOfAutomaticGears == 6
-int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 54, 32, 22, 15, 12, 10}; // Allison 3200 EVS (10, 54, 26, 22, 15, 12, 10)
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 48, 32, 22, 15, 12, 10}; // Allison 3200 EVS (10, 54, 26, 22, 15, 12, 10)
 #elif NumberOfAutomaticGears == 4
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 44, 23, 14, 10}; // GM Turbo HydraMatic 700-R4
 #elif NumberOfAutomaticGears == 3
