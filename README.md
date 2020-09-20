@@ -156,8 +156,8 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - It is not recommended to wire LED in parallel, sharing the series resistor
 
 ### Shaker
-- The shaker is used for engine vibration simulation. The speed can be adjusted in the vehicle configuration
-- Connect it to the "shaker" port and is supplied by the on board 5V regulator. The negative side is switched by the on board mosfet
+- The shaker is used for engine vibration simulation. The speed can be adjusted in the vehicle configuration and will vary depending on the engine state and rpm
+- It needs to be connected to the "shaker" port and is supplied by the on board 5V regulator. The negative side is switched by the on board mosfet
 - Please note, that the used mosfet needs to be a logic level type. Otherwise the shaker will not work!
 - The motor should not draw more than about 300mA @ 5V. I'm using a shaker motor from GT Power.
 
@@ -410,7 +410,7 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 
 ## Adjusting things in "vehicles/yourVehiclePreset.h":
 ### Shaker
-adjust the shaked power for the different engine states to fit your needs:
+adjust the shaker power for the different engine states to fit your needs:
 ```
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
