@@ -56,7 +56,7 @@ Fully assembled, tested and working 30 pin version
 - select > export audio > selected audio > WAV > 8-bit-PCM
 
 ### Convert the .wav file with the modified converting tool (new in v5.2):
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/converter.png)
+![](pictures/converter.png)
 - open the included "Audio2Header.html" converter in your browser
 - adjust the export file format (no changes required)
 - select the export file type, depending on the sound you are converting (idle, rev, horn etc.)
@@ -67,9 +67,9 @@ Fully assembled, tested and working 30 pin version
 ### Include the new header file with your sound in your vehicle preset, adjust settings until you are happy:
 - include this .h file in "Adjustments.h" > "yourVehiclePreset.h"
 - knock sound settings:
--- "dieselKnockInterval" = number of cylinders
--- uncomment "V8" for V8 engines or "V2" for V2 (Harley) engines
--- adjust "dieselKnockAdaptiveVolumePercentage" (how loud the "silent" knock pulses are compared with the loud ones), only active, if defined "V8" or "V2"
+  -"dieselKnockInterval" = number of cylinders
+  - uncomment "V8" for V8 engines or "V2" for V2 (Harley) engines
+  - adjust "dieselKnockAdaptiveVolumePercentage" (how loud the "silent" knock pulses are compared with the loud ones), only active, if defined "V8" or "V2"
 - play with the other volumes, start-, end- and switch-points until you are happy
 - the "rev" sound is optional and only active, if "REV_SOUND" is defined (// removed)
 - adjust the transition from the "idle" to the "rev" sound, using "revSwitchPoint", "idleEndPoint", "idleVolumeProportionPercentage". This step is very important and can make a huge difference!
@@ -79,19 +79,20 @@ Fully assembled, tested and working 30 pin version
 - the new sound should now be ready
 
 ## Schematic (use PDF for current version!):
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/schematic.png)
+![](pictures/schematic.png)
 
 ## PCB
 ### Included PCB files:
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcb30pinTop.jpg)
+![](pictures/pcb30pinTop.jpg)
 
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbTop.jpg)
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbBottom.jpg)
+![](pictures/pcbTop.jpg)
+![](pictures/pcbBottom.jpg)
 
 ### Recommended manufacturors:
 https://jlcpcb.com (upload Gerbers.zip)
+
 https://oshpark.com (upload Gerbers.zip or .brd file)
 
 ### Assembling tutorial (for the 36 pin version):
