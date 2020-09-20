@@ -82,19 +82,20 @@ Fully assembled, tested and working 30 pin version
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/schematic.png)
 
 ## PCB
-### Recommended manufacturors:
-https://jlcpcb.com (upload Gerbers.zip)
-
-https://oshpark.com (upload Gerbers.zip or .brd file)
-
 ### Included PCB files:
-![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbBottom.jpg)
-
 - for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcb30pinTop.jpg)
 
 - for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
 ![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbTop.jpg)
+![](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/pcbBottom.jpg)
+
+### Recommended manufacturors:
+https://jlcpcb.com (upload Gerbers.zip)
+https://oshpark.com (upload Gerbers.zip or .brd file)
+
+### Assembling tutorial (for the 36 pin version):
+https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so&index=13
 
 ## Wiring:
 ### Before you begin:
@@ -160,7 +161,7 @@ https://oshpark.com (upload Gerbers.zip or .brd file)
 
 ### Required ESP32 board definition:
 - Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-- Set is according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
+- Settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
 
 ### Required libraries:
 - statusLED: https://github.com/TheDIYGuy999/statusLED
