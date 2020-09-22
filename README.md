@@ -122,7 +122,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - Connect a Hobbywing 1080 ESC to the ESC port (GND, V+ and Sig)
 - Adjust the ESC parameters, using the programming card as described on the top of "Adjustments.h"
 - I do not recommend any other ESC
-- The ESC is controlled by the cound controller, rather than directly by the receiver. This allows to use the unique "virtual inertia" feature.
+- The ESC is controlled by the cound controller, rather than directly by the receiver. This allows to use the unique "virtual inertia" feature. NOTE: Use this feature at your own risk! I'm not responsible, if any damage is caused. It's running very stable and I never had an issue, but you never know.
 - "escPulseSpan" can be used to limit the top speed of your vehicle. 500 = not limited, anything above 500 will limit the top speed
 
 ### Receiver wiring for PWM servo signals:
@@ -155,7 +155,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - never connect capacitors to the speaker ports
 
 ### LED
-- The LED need to be wired 2common positive". This means, the long LED legs are all connected together an connect to the 5V rail, coming from the on board regulator
+- The LED need to be wired "common positive". This means, the long LED legs are all connected together an connect to the 5V rail, coming from the on board regulator
 - All LED (except the ones, which are connected to the TAMIYA trailer connector) need a series resistor
 - Calculate the reqired resistor according to: http://ledcalc.com (supply voltage = 5V)
 - It is not recommended to wire LED in parallel, sharing the series resistor
@@ -428,7 +428,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ## Changelog (newest on top):
 
 ### New in V 5.2 (a big update):
-- New, comfortable .wav to .h sound file converting tool ("Audio2Header.html" included)
+- New, comfortable .wav to .h sound file converting tool ("Audio2Header.html" included). Based on bitluni's work
 - Experimental Flysky IBUS support (see comunications settings, untested, you need to install this library: https://github.com/bmellink/IBusBM)
 - New vehicle configuration structure: separate .h preset files for vehicles. Select them in "Adjustments.h". Makes vehicle selection a lot easier.
 - Vehicle presets complely reworked. Most of them are now including a rev sound, which is seamlessly mixed together with the idle sound. Huge sound quality improvements!
