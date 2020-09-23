@@ -3,7 +3,8 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 180; // Adjust the start volume (usually = 100%)
-#include "sounds/UnimogU1000Start.h" // Unimog U1000 Turbo
+//#include "sounds/UnimogU1000Start.h" // Unimog U1000 Turbo
+#include "sounds/UnimogU1000Start2.h" // Unimog U1000 Turbo
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
@@ -11,7 +12,8 @@ volatile int engineIdleVolumePercentage = 35; // the engine volume will be throt
 volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full throttle (for rev sound as well)
 //#include "sounds/UnimogU1000TurboFullLoad.h" // Unimog U1000 Turbo (Volume 100%, 35%, Turbo 50%, 10%, Wastegate 150%, 1%)
 //#include "sounds/UnimogU1000TurboIdle.h" // Unimog U1000 Turbo (Volume 100%, 35%, Turbo 50%, 10%, Wastegate 150%, 1%)
-#include "sounds/OM352Idle.h" // Unimog U1000 Turbo
+//#include "sounds/OM352Idle.h" // Unimog U1000 Turbo
+#include "sounds/UnimogU1000TurboIdle.h" // Unimog U1000 Turbo
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
@@ -19,9 +21,10 @@ volatile int revVolumePercentage = 120; // Adjust the idle volume (usually = 100
 volatile int engineRevVolumePercentage = 75; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile const uint16_t revSwitchPoint = 30; // The rev sound is played instead of the idle sound above this point
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
-volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
+volatile const uint16_t idleVolumeProportionPercentage = 80; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-#include "sounds/UnimogU1000TurboRev.h" // Unimog U1000 Turbo
+//#include "sounds/UnimogU1000TurboRev.h" // Unimog U1000 Turbo
+#include "sounds/UnimogU1000TurboRev2.h" // Unimog U1000 Turbo
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
@@ -35,14 +38,15 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 140; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 200; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 0; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 65; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
-#include "sounds/UnimogU1000TurboKnock.h" // Unimog U1000 Turbo
+//#include "sounds/UnimogU1000TurboKnock.h" // Unimog U1000 Turbo
+#include "sounds/UnimogU1000TurboKnock2.h" // Unimog U1000 Turbo
 
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
@@ -163,7 +167,7 @@ const boolean doubleClutch = false; // do not activate it at the same time as au
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 80; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
+uint16_t clutchEngagingPoint = 90; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
@@ -175,7 +179,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 //Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
 const boolean engineManualOnOff = false;
 
-// Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors. Note, that 300% is the maximum with PWM RC signal interface. SBUS allows 400%
+// Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
 const uint32_t MAX_RPM_PERCENTAGE = 350; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation

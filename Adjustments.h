@@ -33,9 +33,9 @@ Motor: 540 size, 35 turns, stock pinion
 // Choose the receiver communication mode (never uncomment more than one!)
 // NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
 // SBUS communication (SBUS header)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
@@ -54,7 +54,7 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 
 // VEHICLE SETTINGS ****************************************************************************************************
-// Select the vehicle you want (uncomment the one you want)
+// Select the vehicle you want (uncomment the one you want, remove //, never more than one)
 
 // Master --------
 //#include "vehicles/00_Master.h" // This master preset file contains all available sound files, which are not used in existing vehicle presets
@@ -70,7 +70,7 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
 //#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
-//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren (TODO, rework idle)
+//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 //#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
@@ -79,12 +79,15 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 
 // Russian trucks --------
-//#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck (TODO, rework required)
+//#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
 //#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
 // Russian tanks -------
 //#include "vehicles/IS3.h" // IS-3 WW2 battle tank, V12 Diesel (dual ESC mode, good bass speaker required))
+
+// Tractors -------
+#include "vehicles/KirovetsK700.h" // Russian Kirovets K700 V12 Diesel monster tractor. Extreme turbo sound!
 
 // US motorcycles --------
 //#include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
@@ -98,7 +101,7 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 //#include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
 //#include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
 //#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
-#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission
+//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission
 
 // US SUV --------
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic

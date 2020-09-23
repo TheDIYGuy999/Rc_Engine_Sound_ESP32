@@ -10,7 +10,7 @@ Fully assembled, tested and working 30 pin version
 ![](pictures/30PinAssembled.jpg)
 
 ## Features:
-- Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for ech gear to ensure maximum realism.
+- Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for each gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
 - Simulated automatic transmission with torque converter (if your vehicle does not have a real shifting transmission)
 - Virtual,switchable neutral allowt to rev the engine while standing still
@@ -38,9 +38,9 @@ Fully assembled, tested and working 30 pin version
 - included, easy to use .wav to .h sound file converter
 
 ## On the todo list:
-- making PWM read function faster
 - testing the experimental IBUS protocol, as soon as I have IBUS hardware
 - making channel order more flexible
+- remove "pwmSoundTrigger", "indicators"
 
 ## Issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
@@ -106,7 +106,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 ## Wiring:
 ### Before you begin:
 - This device is not protected against wrong polarity!
-- Always use series resistors for LED ports (except TAMIYA trailer port)
+- Always use series resistors for LED headers (except TAMIYA trailer header)
 - Maximum input voltage on "Sig" pins = 3.3V (be careful with very old receivers, which may deliver 5V)
 - It is recommended to use a fuse between your battery and the sound controller / ESC
 
@@ -115,11 +115,11 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 
 ### Supply for ESP32:
 - The ESP32 is not supplied through the "X1" terminal
-- It can be supplied through the Micro USB port
-- or through the +V and GND pin row on the top of the board (the voltage is usually coming from the BEC in your ESC, which needs to be connected to the "ESC" port)
+- It can be supplied through the Micro USB header
+- or through the +V and GND pin row on the top of the board (the voltage is usually coming from the BEC in your ESC, which needs to be connected to the "ESC" header)
 
 ### ESC wiring:
-- Connect a Hobbywing 1080 ESC to the ESC port (GND, V+ and Sig)
+- Connect a Hobbywing 1080 ESC to the ESC header (GND, V+ and Sig)
 - Adjust the ESC parameters, using the programming card as described on the top of "Adjustments.h"
 - I do not recommend any other ESC
 - The ESC is controlled by the cound controller, rather than directly by the receiver. This allows to use the unique "virtual inertia" feature. NOTE: Use this feature at your own risk! I'm not responsible, if any damage is caused. It's running very stable and I never had an issue, but you never know.
@@ -130,29 +130,28 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - CH2 = 3 speed shifting transmission (3 position switch on transmitter)
 - CH3 = throttle
 - CH4 = additional functions: horn, siren/ bluelights (3 position switch on transmitter)
+- 35 (CH5) = additional functions: horn, siren/ bluelights (3 push buttons on transmitter high / low beam, transmission neutral, jake brake etc.)
 - at least one CH needs to be connected, using a 3 pin wire, so that GND and V+ are connected as well (receiver supply)
-- All four ports are pairs, wired in parallel. This allows to feed servo signals through, eliminating the need for Y-cables
-- You should always connect all four channels, otherwise it may cause lags
-- If you don't want to connect all signals, comment out the unused "pulseIn" functions in the main tab by adding //
+- CH1 - 4 headers are pairs, wired in parallel. This allows to feed servo signals through, eliminating the need for Y-cables
 - Note that you need to change the configuration as described below, if you want to use this wiring method
 
 ### Receiver wiring for PPM signals:
 - Internal channel map as above
-- Connect a 3 pin wire fom your receiver PPM port to the PPM port on the sound controller (Sig, V+, GND)
+- Connect a 3 pin wire fom your receiver PPM header to the PPM header on the sound controller (Sig, V+, GND)
 - Note that you need to change the configuration as described below, if you want to use this wiring method
 
 ### Receiver wiring for SBUS signals (recommended):
 - Internal channel map as above
-- Connect a 3 pin wire fom your receiver SBUS port to the SBUS port on the sound controller (Sig, V+, GND)
-- The "Sig" pin on the SBUS port is 5V tolerant
+- Connect a 3 pin wire fom your receiver SBUS header to the SBUS header on the sound controller (Sig, V+, GND)
+- The "Sig" pin on the SBUS header is 5V tolerant
 - additional signals for fog lights, roof lights etc. can be reveived in this mode (tested with my "Micro RC" receiver only)
 
 ### Speakers
 - 4 or 8 ohms speakers are compatible
 - You can use one or two speakers
-- never use two speakers in parallel on a single port
-- never use two ports in parallel to drive one speaker
-- never connect capacitors to the speaker ports
+- never use two speakers in parallel on a single header
+- never use two headers in parallel to drive one speaker
+- never connect capacitors to the speaker headers
 
 ### LED
 - The LED need to be wired "common positive". This means, the long LED legs are all connected together an connect to the 5V rail, coming from the on board regulator
@@ -162,7 +161,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 
 ### Shaker
 - The shaker is used for engine vibration simulation. The speed can be adjusted in the vehicle configuration and will vary depending on the engine state and rpm
-- It needs to be connected to the "shaker" port and is supplied by the on board 5V regulator. The negative side is switched by the on board mosfet
+- It needs to be connected to the "shaker" header and is supplied by the on board 5V regulator. The negative side is switched by the on board mosfet
 - Please note, that the used mosfet needs to be a logic level type. Otherwise the shaker will not work!
 - The motor should not draw more than about 300mA @ 5V. I'm using a shaker motor from GT Power.
 
@@ -179,7 +178,8 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 
 ### Required ESP32 board definition:
 - Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-- Settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
+- Adjust settings according to:
+![](pictures/settings.png)
 
 ### Required libraries:
 - statusLED: https://github.com/TheDIYGuy999/statusLED
@@ -202,7 +202,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 ```
 // VEHICLE SETTINGS ****************************************************************************************************
-// Select the vehicle you want (uncomment the one you want)
+// Select the vehicle you want (uncomment the one you want, remove //, never more than one)
 
 // Master --------
 //#include "vehicles/00_Master.h" // This master preset file contains all available sound files, which are not used in existing vehicle presets
@@ -217,8 +217,8 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
-#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
-//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren (TODO, rework idle)
+//#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
+//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 //#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
@@ -227,12 +227,15 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 
 // Russian trucks --------
-//#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck (TODO, rework required)
+//#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
 //#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
 // Russian tanks -------
 //#include "vehicles/IS3.h" // IS-3 WW2 battle tank, V12 Diesel (dual ESC mode, good bass speaker required))
+
+// Tractors -------
+#include "vehicles/KirovetsK700.h" // Russian Kirovets K700 V12 Diesel monster tractor. Extreme turbo sound!
 
 // US motorcycles --------
 //#include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
@@ -246,7 +249,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
 //#include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
 //#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
-//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12
+//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission
 
 // US SUV --------
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
@@ -268,15 +271,15 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 Note, that the default communication mode is SBUS. You need to change it as follows, if you want to use classic RC servo signals.
 
-#### PWM (classic RC signals on CH 1 - 4 ports, the most common interface, but not recommended due to rpm range limitations)
+#### PWM (classic RC signals on CH 1 - 4 & "35" headers, the most common interface)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
 // NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
 // SBUS communication (SBUS header)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
@@ -295,15 +298,15 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
-#### Serial communication (for my "Micro RC" receiver only, deprecated, wired to Rx port)
+#### Serial communication (for my "Micro RC" receiver only, deprecated, wired to Rx header)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
 // NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
 // SBUS communication (SBUS header)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
@@ -322,15 +325,15 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
-#### PPM (multiple channels pulse pause modulation, wired to PPM port)
+#### PPM (multiple channels pulse pause modulation, wired to PPM header)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
 // NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
 // SBUS communication (SBUS header)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
@@ -349,15 +352,15 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 #define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
-#### SBUS (recommended, default setting, wired to SBUS port)
+#### SBUS (recommended, default setting, wired to SBUS header)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
 // NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
 // SBUS communication (SBUS header)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
@@ -392,9 +395,9 @@ boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS si
 // Choose the receiver communication mode (never uncomment more than one!)
 // NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - 4 headers) --------
+// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-//#define PWM_CHANNEL_5 // If you want to feed in a 5th PWM channel on pin 35 for additional functions (not recommended, TODO, not working!)
+#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
 // SBUS communication (SBUS header)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
@@ -426,6 +429,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 5.3:
+- PWM RC signal processing completely rewritten. It's now using the interrupt based ESP32 "rmt" core function rather than pulseRead(). Thanks to croky_b for the hint! No "MAX_RPM_PERCENTAGE" limitations anymore in PWM mode. 400% can now be used as well.
+- PWM CH5 is now accessible on pin 35. This means, that the CH5 functions can also be used in PWM mode!
+- Gear manual shifting sound not triggered anymore in automatic or doubleClutch mode. No need to disable it in automatic vehicles anymore.
+- URAL4320, Unimog 1000 optimised
+- New: Kirovets K700 V12 Diesel monster tractor with extreme turbo sound!
 
 ### New in V 5.2 (a big update):
 - New, comfortable .wav to .h sound file converting tool ("Audio2Header.html" included). Based on bitluni's work

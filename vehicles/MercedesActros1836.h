@@ -173,7 +173,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 //Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
 const boolean engineManualOnOff = false;
 
-// Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors. Note, that 300% is the maximum with PWM RC signal interface. SBUS allows 400%
+// Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
 const uint32_t MAX_RPM_PERCENTAGE = 330; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
