@@ -42,6 +42,7 @@ function audioBufferToText(audioBuffer, normalize, resample, sampleRate, fileTyp
 		for(var i = 0; i < buffer.length; i++)
 			max = Math.max(Math.abs(buffer[i]), max);
 	if(max == 0) max = 1;
+
 	for(var i = 0; i < buffer.length; i++)
 	{
 		if((i & 15) == 0) text += "\r\n";

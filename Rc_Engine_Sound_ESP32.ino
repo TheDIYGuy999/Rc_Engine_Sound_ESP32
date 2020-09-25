@@ -10,7 +10,7 @@
 
 */
 
-const float codeVersion = 5.3; // Software revision.
+const float codeVersion = 5.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -726,6 +726,12 @@ void IRAM_ATTR fixedPlaybackTimer() {
 #ifdef V2
   // V2 engine: 1st and 2nd knock pulses (of 4) will be louder
   if (curKnockCylinder == 1 || curKnockCylinder == 2) knockSilent = false;
+  else knockSilent = true;
+#endif
+
+#ifdef R6
+  // R6 inline 6 engine: 6th knock pulse (of 6) will be louder
+  if (curKnockCylinder == 6) knockSilent = false;
   else knockSilent = true;
 #endif
 
