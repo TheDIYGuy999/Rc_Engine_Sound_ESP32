@@ -13,17 +13,18 @@ volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int revVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
 volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 const uint16_t revSwitchPoint = 10; // The rev sound is played instead of the idle sound above this point
 const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
+volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more
 #ifdef REV_SOUND
 #include "sounds/MackSuperLinerRev.h" // MACK Super Liner rev
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
 #define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
-volatile int jakeBrakeVolumePercentage = 140; // Adjust the max. volume (usually = 150%)
+volatile int jakeBrakeVolumePercentage = 130; // Adjust the max. volume (usually = 150%)
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
 #ifdef JAKE_BRAKE_SOUND
@@ -40,7 +41,6 @@ volatile int dieselKnockStartPoint = 10; // Volume will raise above this point (
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the more silent knocks (usually = 50%)
 #include "sounds/MackSuperLinerKnock.h" // MACK Super Liner knock
-
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 25; // Adjust the turbo volume (usually = 70%)
@@ -130,31 +130,23 @@ volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volum
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
-const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
+// Choose the light options --------
+#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
+
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
-// PWM input signal range calibration ------------------------------------------------------------------------------------
-const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
-const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range)
-const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false
-
-// PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
+// Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
-
-// Horn trigger signal type (true / false)-------------------------------------------------------------------------------
-const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"
-// Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
 const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
@@ -165,18 +157,9 @@ const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, th
 // Clutch parameters ---------------------------------------------------------------------------------------------------
 uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
-// Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
-const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
-const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
-const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
-const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
-
 // Engine parameters ----------------------------------------------------------------------------------------------------
-//Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
-const boolean engineManualOnOff = false;
-
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-const uint32_t MAX_RPM_PERCENTAGE = 400; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 400; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck. Always 2 for automatic transmission!

@@ -58,7 +58,7 @@ volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 90; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
 volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile const uint16_t revSwitchPoint = 10; // The rev sound is played instead of the idle sound above this point
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
@@ -157,7 +157,7 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 #include "sounds/GenericFan.h" // Generic engine cooling fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 170; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 130; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
@@ -170,14 +170,15 @@ volatile int hornVolumePercentage = 170; // Adjust the horn volume (usually = 10
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
 //#include "sounds/CaboverCAThorn.h" // Cabover with CAT engine horn
 //#include "sounds/MackSuperLinerHorn.h" // MACK Super Liner horn
-#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
+//#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
+#include "sounds/DixieHorn.h" // Dixie horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
-#include "sounds/sirenDummy.h" // If you don't want siren sound
+//#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
-//#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
@@ -207,40 +208,32 @@ volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usua
 volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually = 100%)
 //#include "sounds/EMDLocomotiveBell.h" // American EMD locomotive bell
 //#include "sounds/007JamesBond.h" // James Bond melody
-//#include "sounds/M2Fire.h" // M2 salve
+#include "sounds/M2Fire.h" // M2 salve
 //#include "sounds/GlenCanyon.h" // Glen Canyon country song for truckers ;-)
-#include "sounds/door.h" // opening and closing the door
+//#include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
 volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
-const boolean indicators = true; // "true", if you want to trigger indicator lights (turn signals)
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
+// Choose the light options --------
+#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
+
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
-// PWM input signal range calibration ------------------------------------------------------------------------------------
-const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
-const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range)
-const boolean THROTTLE_DIR = false; // adjust throttle direction with true or false
-
-// PWM ESC output signal range calibration (connect crawler type ESC to pin 33)-------------------------------------------
-const int16_t escPulseSpan = 1000; // pulseZero +/- this value (> 500 = limited top speed, about 1000 for King Hauler)
+// Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
-
-// Horn trigger signal type (true / false)-------------------------------------------------------------------------------
-const boolean pwmSoundTrigger = true; // horn triggered by RC PWM signal instead of constant high level signal, if "true"
-// Do NOT enable this boolean, if no PWM signal is connected or you will experience huge engine RPM resopnse delays
 
 // Gearbox parameters ---------------------------------------------------------------------------------------------------
 const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
@@ -249,23 +242,14 @@ const boolean doubleClutch = false; // do not activate it at the same time as au
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
-
-// Shaker parameters (simulating engine vibrations) ---------------------------------------------------------------------
-const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
-const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
-const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
-const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
+uint16_t clutchEngagingPoint = 90; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
-//Activate for "engine on off" functionality in combination with "Micro RC" Receiver from TheDIYGuy999. No Pulse Zero auto calibration in this case!!
-const boolean engineManualOnOff = false;
-
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-const uint32_t MAX_RPM_PERCENTAGE = 300; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 330; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
-#define SUPER_SLOW // super slow running, heavy engine for locomotives etc. Makes rpm response much slower
+//#define SUPER_SLOW // super slow running, heavy engine for locomotives etc. Makes rpm response much slower
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck. Always 2 for automatic transmission!
 const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
 

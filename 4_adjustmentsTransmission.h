@@ -1,0 +1,16 @@
+/* General TRANSMISSION SETTINGS ************************************************************************************************
+ *  
+ * Most transmission settings like automatic, double clutch etc. are done in the vehicle configuration files in the /vehicles/ directory.
+ * 
+ */
+
+// #define VIRTUAL_3_SPEED allows to simulate a 3 speed shifing transmission, if your vehicle doesn't have a real one.
+// Gears are shifted, using the 3 position switch. Example: your crawler has a 2 speed transmission, which is used as off road reducer,
+// but no real 3 speed shifting transmission. Don't uncomment if for vehicles with electric or hydrostatic drive or automatic transmissions!
+#define VIRTUAL_3_SPEED
+
+//#define TRANSMISSION_NEUTRAL Allows to put the transmission in neutral. This can't be used, if the mode 1 button is used for other stuff!
+#define TRANSMISSION_NEUTRAL
+
+uint16_t maxClutchSlippingRpm = 300; // The clutch will never slip above this limit! (about 300) 500 for vehicles like locomotives
+// and the Kirovets tractor with hydrostatic or electric drive! Mainly required for "VIRTUAL_3_SPEED" mode

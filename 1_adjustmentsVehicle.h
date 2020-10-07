@@ -1,60 +1,5 @@
-/* ******* RECOMMENDED Audacity Settings: 22'050 Hz, 8 bit PCM **********
-
- Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Audio2Header.html
- Original converter code by bitluni (send him a high five, if you like the code)
-
-Recommended ESC & settings for TAMIYA trucks with 3 speed transmission:
-
-ESC: HOBBYWING QUICRUN WP Crawler Brushed with the following settings:
-1: 3
-2: 1
-3: 3
-4: 3
-5: 4
-6: 2
-7: 9
-8: 1 
-9: 8 (change it, important)
-10: 4
-11: 4
-12: 5
-13: 4
-14: 1 (be careful here!!)
-15: 1 (change it, important)
-
-Motor: 540 size, 35 turns, stock pinion
-*/
-
-// BOARD SETTINGS ******************************************************************************************************
-// Choose the board version
-//#define PROTOTYPE_36 // 36 or 30 pin board (do not uncomment it or it will cause boot issues!)
-
-// COMMUNICATION SETTINGS **********************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
-// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
-
-// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
-
-// SBUS communication (SBUS header)--------
-#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
-
-// IBUS communication (RX header, TODO experimental, untested!) --------
-//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
-
-// Serial communication (RX header, deprecated, use SBUS) --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
-// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
-
-// PPM communication (PPM header) --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
-#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
-
 // VEHICLE SETTINGS ****************************************************************************************************
-// Select the vehicle you want (uncomment the one you want, remove //, never more than one)
+// Select the vehicle preset you want (uncomment the one you want, remove //, never more than one)
 
 // Master --------
 //#include "vehicles/00_Master.h" // This master preset file contains all available sound files, which are not used in existing vehicle presets
@@ -64,8 +9,8 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 //#include "vehicles/KenworthW900ADetroit8V71.h" // Kenworth W900A with Detroit 8V71 V8 2 stroke Diesel
 //#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
 //#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
-//#include "vehicles/MackSuperLiner.h" // MACK Super Liner (TODO, needs rework)
-//#include "vehicles/M35.h"// AM General M35 *deuce and a half" military truck, turbocharged R6 universal fuel engine
+//#include "vehicles/MackSuperLiner.h" // MACK Super Liner
+//#include "vehicles/M35.h"// AM General M35 "deuce and a half" military truck, turbocharged R6 universal fuel engine
 
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
@@ -75,7 +20,7 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 //#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
-//#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
+#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 
@@ -102,12 +47,12 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 //#include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
 //#include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
 //#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
-//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission
+//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission (not compatible with iBus communication)
 
 // US SUV --------
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
 //#include "vehicles/FordPowerstroke.h" // Ford Powerstroke 7.3l V8 Diesel, 6 speed automatic (good bass speaker required)
-#include "vehicles/RAM2500_Cummins12V.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, manual transmission
+//#include "vehicles/RAM2500_Cummins12V.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, manual transmission
 
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)

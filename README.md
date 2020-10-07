@@ -26,7 +26,7 @@ Fully assembled, tested and working 30 pin version
 - Engine RPM range and inertia adjustable, volume of all sounds adjustable, engine sounds separatly for load and idling.
 - Many other paramerets can be adjusted. All adjustments are easily accessible in "Adjustments.h"
 - Sound files up to 22'050Hz, 8bit, mono can be used
-- Compatible input signals: PWM, PPM, Serial (Micro RC Receiver only), SBUS (inverted & non inverted signals), IBUS (experimental)
+- Compatible input signals: PWM, PPM, SBUS (inverted & non inverted signals), IBUS
 - Works best with a PAM8403 amplifier module, connected to pin 25 & 26, via 10kOhm resistors & a 10kOhm potentiometer (see schematic below)
 - The engine RPM is calculated according to RC signal input on pin 13 *** CAUTION, 3.3V max. on all pins! *** 330 Ohm resistors on all I/O pins recommended!
 - Non linear throttle curves can be generated in "curves.h"
@@ -36,11 +36,12 @@ Fully assembled, tested and working 30 pin version
 - Use an ESP32, CPU frequency must be set to 240MHz
 - Eagle schematic & board file included. Pre made Gerber files allow you to order your board easily.
 - included, easy to use .wav to .h sound file converter
+- Channels can easily be assigned, using "remoteSetup.h"
+- Pre made configuration profiles for Flysky FS-i6X and Arduino Mirco RC remote
 
 ## On the todo list:
-- testing the experimental IBUS protocol, as soon as I have IBUS hardware
-- making channel order more flexible
-- remove "pwmSoundTrigger", "indicators"
+- Add infinite loop areas for horn & siren sounds
+- Add PWM outputs in bus mode
 
 ## Issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
@@ -73,8 +74,8 @@ Fully assembled, tested and working 30 pin version
 - include this .h file in "Adjustments.h" > "yourVehiclePreset.h"
 - knock sound settings:
   - "dieselKnockInterval" = number of cylinders
-  - uncomment "V8" for V8 engines or "V2" for V2 (Harley) engines
-  - adjust "dieselKnockAdaptiveVolumePercentage" (how loud the "silent" knock pulses are compared with the loud ones), only active, if defined "V8" or "V2"
+  - uncomment "V8" for V8 engines, R6 for inline 6 engines or "V2" for V2 (Harley) engines
+  - adjust "dieselKnockAdaptiveVolumePercentage" (how loud the "silent" knock pulses are compared with the loud ones), only active, if defined "V8", "R6"  or "V2"
 - play with the other volumes, start-, end- and switch-points until you are happy
 - the "rev" sound is optional and only active, if "REV_SOUND" is defined (// removed)
 - adjust the transition from the "idle" to the "rev" sound, using "revSwitchPoint", "idleEndPoint", "idleVolumeProportionPercentage". This step is very important and can make a huge difference!
@@ -125,26 +126,29 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - The ESC is controlled by the cound controller, rather than directly by the receiver. This allows to use the unique "virtual inertia" feature. NOTE: Use this feature at your own risk! I'm not responsible, if any damage is caused. It's running very stable and I never had an issue, but you never know.
 - "escPulseSpan" can be used to limit the top speed of your vehicle. 500 = not limited, anything above 500 will limit the top speed
 
-### Receiver wiring for PWM servo signals:
-- CH1 = steering
-- CH2 = 3 speed shifting transmission (3 position switch on transmitter)
-- CH3 = throttle
-- CH4 = additional functions: horn, siren/ bluelights (3 position switch on transmitter)
-- 35 (CH5) = additional functions: horn, siren/ bluelights (3 push buttons on transmitter high / low beam, transmission neutral, jake brake etc.)
-- at least one CH needs to be connected, using a 3 pin wire, so that GND and V+ are connected as well (receiver supply)
+### Receiver wiring for PWM servo signals (the most common wiring):
+- Channel assignment according to "remoteSetup.h" and remoteSetup.xlsx", easily adjustable (new in v5.5). It is important to plug in the wires according to the channel assignment
+- CH5 & 6 are coming in via the "35" & PPM" headers
+- At least one CH needs to be connected, using a 3 pin wire, so that GND and V+ are connected as well (receiver supply)
 - CH1 - 4 headers are pairs, wired in parallel. This allows to feed servo signals through, eliminating the need for Y-cables
 - Note that you need to change the configuration as described below, if you want to use this wiring method
 
 ### Receiver wiring for PPM signals:
-- Internal channel map as above
-- Connect a 3 pin wire fom your receiver PPM header to the PPM header on the sound controller (Sig, V+, GND)
+- Internal channel assignment as above
+- Connect a 3 pin wire fom your receiver PPM header to the RX (changed in v5.5, was PPM) header on the sound controller (Sig, V+, GND)
 - Note that you need to change the configuration as described below, if you want to use this wiring method
+- 8 channels can be read in this mode
 
 ### Receiver wiring for SBUS signals (recommended):
-- Internal channel map as above
+- Internal channel assignment as above
 - Connect a 3 pin wire fom your receiver SBUS header to the SBUS header on the sound controller (Sig, V+, GND)
 - The "Sig" pin on the SBUS header is 5V tolerant
-- additional signals for fog lights, roof lights etc. can be reveived in this mode (tested with my "Micro RC" receiver only)
+- 13 channels can be read in this mode
+
+### Receiver wiring for IBUS signals:
+- Internal channel assignment as above
+- Connect a 3 pin wire fom your receiver IBUS header to the RX header on the sound controller (Sig, V+, GND)
+- 13 channels can be read in this mode
 
 ### Speakers
 - 4 or 8 ohms speakers are compatible
@@ -190,8 +194,10 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
 Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
-## Adjusting things in "Adjustments.h":
+## Adjusting things in "adjustmentsXyz.h":
 ### Vehicle selection:
+
+Note, that in v5.5 the former "Adjustments.h" configuration file was divided in multiple files.
 
 Uncomment (remove //) the vehicle you want in "Adjustments.h". Never uncomment more than one vehicle!
 Note, that you need to re-upload the code after you changed the settings. Otherwise it will not take effect.
@@ -273,112 +279,61 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 Note, that the default communication mode is SBUS. You need to change it as follows, if you want to use classic RC servo signals.
 
-#### PWM (classic RC signals on CH 1 - 4 & "35" headers, the most common interface)
+#### PWM (classic RC signals on "CH1" - "CH4", "35" & "PPM" headers, the most common interface)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
-// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
-// SBUS communication (SBUS header)--------
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
-// IBUS communication (RX header, TODO experimental, untested!) --------
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
-// Serial communication (RX header, deprecated, use SBUS) --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
-// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
-
-// PPM communication (PPM header) --------
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
-#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
-#### Serial communication (for my "Micro RC" receiver only, deprecated, wired to Rx header)
+#### PPM (multiple channels pulse pause modulation, wired to "RX" header, 8 channels)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
-// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
-// SBUS communication (SBUS header)--------
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
-// IBUS communication (RX header, TODO experimental, untested!) --------
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
-// Serial communication (RX header, deprecated, use SBUS) --------
-#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
-// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
-
-// PPM communication (PPM header) --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
-#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
-```
-
-#### PPM (multiple channels pulse pause modulation, wired to PPM header)
-```
-// COMMUNICATION SETTINGS **********************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
-// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
-
-// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
-
-// SBUS communication (SBUS header)--------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
-
-// IBUS communication (RX header, TODO experimental, untested!) --------
-//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
-
-// Serial communication (RX header, deprecated, use SBUS) --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
-// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
-
-// PPM communication (PPM header) --------
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 #define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
-#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
-#### SBUS (recommended, default setting, wired to SBUS header)
+#### SBUS (recommended, default setting, wired to "SBUS" header, 13 channels)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
-// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
-// SBUS communication (SBUS header)--------
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
-// IBUS communication (RX header, TODO experimental, untested!) --------
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
-// Serial communication (RX header, deprecated, use SBUS) --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
-// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
-
-// PPM communication (PPM header) --------
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
-#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
 SBUS Invereted (if your receiver sends a non-standard SBUS signal):
@@ -391,31 +346,23 @@ SBUS not inverted (default, used in most cases)
 boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 ```
 
-#### IBUS (experimental, untested, use it @ you own risk!)
+#### IBUS (not recommended, NO FAILSAFE, if bad contact in iBUS wiring! "RX" header, 13 channels)
 ```
 // COMMUNICATION SETTINGS **********************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!)
-// NOTE: SBUS is strongly recommended, because it allows to have a bigger RPM range: MAX_RPM_PERCENTAGE can be 400 instead of 300!
 
-// PWM servo signal communication (CH1 - CH4  & "35" headers) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
-#define RECEIVER_CHANNELS_NUM 5 // Number of PWM channels
 
-// SBUS communication (SBUS header)--------
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
-// IBUS communication (RX header, TODO experimental, untested!) --------
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
-// Serial communication (RX header, deprecated, use SBUS) --------
-//#define SERIAL_COMMUNICATION // control signals are coming in via the serial interface (comment it out for classic PWM RC signals)
-// Only for my "Micro RC" receiver! See: https://github.com/TheDIYGuy999/Micro_RC_Receiver
-
-// PPM communication (PPM header) --------
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-#define NUM_OF_CHL 8          // The number of channels inside our PPM signal (usually max. 8)
-#define NUM_OF_AVG 1          // Number of averaging passes (usually one, more will be slow)
 ```
 
 ## Adjusting things in "vehicles/yourVehiclePreset.h":
@@ -431,6 +378,28 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 5.5 (another big update):
+- Way more flexible channel assignment, can easily be configured for my "Micro RC" remote, for a FLSKY FS-i6X or others. New "2_adjustmentsRemote.h" config file. You don't have to change the main code anymore in order to assign your channels. For details refer to "adjustmentsRemote.xlsx"
+- New, state machine controlled lights control, if "#define AUTO_LIGHTS" commented out. Otherwise lights are controlled by the engine state
+- New, optional xenon bulb ignition flash for headlights, if "#define XENON_LIGHTS" defined
+- New option "#define ESC_DIR" allows to change the motor spinning direction in software
+- New option "#define VIRTUAL_3_SPEED" lets you use the 3 position switch controlled 3 speed transmission, even if it doesn't exist ;-)
+- Engine can be started manually by CH5 or automatically with the throttle stick (or the "momentary1" button on the "Micro RC" remote). Depending on setting "#define AUTO_ENGINE_ON_OFF"
+- Serial communication mode for "Micro RC" remote removed (replaced with SBUS)
+- Actions triggering rewritten, using updated rcTrigger library. You have to use the latest version: https://github.com/TheDIYGuy999/rcTrigger
+- Added the missing "shifting" file type & german dropdown translations in "Audio2Header.html"
+- Bug in Mack Super Liner configuration fixed
+- IBUS interface tested, works fine, but "MAX_RPM_PERCENTAGE" > 350 will crash the ESP32. I recommend to use SBUS instead, because current Flysky firmware can generate SBUS signals as well.
+- "MAX_RPM_PERCENTAGE" automatically limited according to communication mode. Required to prevent the controller from crashing (see above)
+- In PWM mode, we can now read 6 channels
+- PPM interface moved to RX pin, pins "35" & "PPM" are now used for PWM channels 5 & 6
+- Bug fixed: wasteghate not triggered anymore while releasing brake rapidly
+- Two-stage triggering for bluelight and siren, so we can use the bluelight separately
+- Changing between jake braking and the normal engine sound is locked unless the current sample is looping back. This eliminates erratic lkicking noises, if enabling or disabling the jake brake!
+- To prevent issues with the mode buttons, you should install the latest software v3.5 on the "Micro RC" receiver
+- If you use your own vehicle preset, you have to edit them, so that they use the same structure as the pre made ones. example: remove "const" in front of "uint32_t MAX_RPM_PERCENTAGE"
+- New jake brake sounds for: Actros, URAL 4320, URAL 375D, Tatra 813 & M35. New dixie horn.
 
 ### New in V 5.4:
 - New: Volvo FH16 750, Dodge RAM 2500 with Cummins 12V

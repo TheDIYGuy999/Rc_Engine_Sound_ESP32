@@ -4,7 +4,7 @@
 // =======================================================================================================
 //
 
-// Automatic transmission gear ratios (times 10!, for example 15 means 1.5)
+// Automatic transmission gear ratios (times 10!, for example 15 means 1.5) -----------------------
 // see: https://www.allisontransmission.com/docs/default-source/marketing-materials/sa7943en_-2017-vocational-model-guide_-vmg-lr9af07359281567eeb272ff0000a566aa.pdf?sfvrsn=13
 
 //#define NumberOfAutomaticGears 6 // <<------- Select 3, 4 or 6 gears! // Relocated to vehicle adjustments!
@@ -18,7 +18,14 @@ int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 44, 23, 14, 10}; // GM Turb
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo HydraMatic 400
 #endif
 
-// Manual transmission
+
+// Virtual 3 speed transmission gear ratios (times 10!, for example 15 means 1.5) ----------------
+// Use it, if your vecicle does't have a real shifting transmission and you still want to shift
+// your gears manually, using the 3 position switch
+int32_t virtualManualGearRatio[4] = {10, 23, 14, 10}; // unused, 1st, 2nd, 3rd gear 32, 17, 10
+
+
+// Real manual 3 speed transmission --------------------------------------------------------------
 // Use it in combination with a real 3 speed shifting transmission like the one from TAMIYA
 float curveLinear[][2] = { 
   {0, 0} // {input value, output value}
