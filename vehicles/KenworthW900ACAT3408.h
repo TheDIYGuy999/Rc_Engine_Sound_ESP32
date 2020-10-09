@@ -82,7 +82,6 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 170; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
-//#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)
@@ -95,10 +94,10 @@ volatile int hornVolumePercentage = 170; // Adjust the horn volume (usually = 10
 #include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
-#include "sounds/sirenDummy.h" // If you don't want siren sound
+volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 100%)
+//#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
-//#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
+#include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
 //#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren

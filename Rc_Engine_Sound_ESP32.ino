@@ -9,7 +9,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 5.5; // Software revision.
+const float codeVersion = 5.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -222,7 +222,6 @@ boolean right;
 boolean unlock5thWheel;
 
 // Sound
-volatile uint8_t soundNo = 0;                            // 0 = horn, 1 = siren, 2 = sound1
 volatile boolean engineOn = false;                       // Signal for engine on / off
 volatile boolean engineStart = false;                    // Active, if engine is starting up
 volatile boolean engineRunning = false;                  // Active, if engine is running
@@ -235,10 +234,26 @@ volatile boolean dieselKnockTriggerFirst = false;        // The first  Diesel ig
 volatile boolean airBrakeTrigger = false;                // Trigger for air brake noise
 volatile boolean parkingBrakeTrigger = false;            // Trigger for air parking brake noise
 volatile boolean shiftingTrigger = false;                // Trigger for shifting noise
-volatile boolean hornOn = false;                         // Signal for horn on / off
-volatile boolean sirenOn = false;                        // Signal for siren  on / off
-volatile boolean sound1On = false;                       // Signal for sound1  on / off
+volatile boolean hornTrigger = false;                    // Trigger for horn on / off
+volatile boolean sirenTrigger = false;                   // Trigger for siren  on / off
+volatile boolean sound1trigger = false;                  // Trigger for sound1  on / off
 volatile boolean indicatorSoundOn = false;               // active, if indicator bulb is on
+
+// Sound latches
+volatile boolean hornLatch = false;                      // Horn latch bit
+volatile boolean sirenLatch = false;                     // Siren latch bit
+
+// Sound volumes
+volatile uint16_t throttleDependentVolume = 0;           // engine volume according to throttle position
+volatile uint16_t throttleDependentRevVolume = 0;        // engine rev volume according to throttle position
+volatile uint16_t rpmDependentJakeBrakeVolume = 0;       // Engine rpm dependent jake brake volume
+volatile uint16_t throttleDependentKnockVolume = 0;      // engine Diesel knock volume according to throttle position
+volatile uint16_t throttleDependentTurboVolume = 0;      // turbo volume according to rpm
+volatile uint16_t throttleDependentFanVolume = 0;        // cooling fan volume according to rpm
+volatile uint16_t throttleDependentChargerVolume = 0;    // cooling fan volume according to rpm
+volatile uint16_t throttleDependentWastegateVolume = 0;  // wastegate volume according to rpm
+volatile int16_t masterVolume = 100;                     // Master volume percentage
+volatile uint8_t dacOffset = 0;  // 128, but needs to be ramped up slowly to prevent popping noise, if switched on
 
 // Throttle
 int16_t currentThrottle = 0;                             // 0 - 500 (Throttle trigger input)
@@ -274,31 +289,15 @@ int16_t escPulseMax;                                     // ESC calibration vari
 int16_t escPulseMin;
 uint16_t currentSpeed = 0;                               // 0 - 500 (current ESC power)
 
-// Sound
-volatile boolean hornSwitch = false;                     // Switch state for horn triggering
-volatile boolean sirenSwitch = false;                    // Switch state for siren triggering
-
 // Lights
 int8_t lightsState = 0;                                  // for lights state machine
 volatile boolean lightsOn = false;                       // Lights on
 volatile boolean headLightsFlasherOn = false;            // Headlights flasher impulse (Lichthupe)
 volatile boolean headLightsHighBeamOn = false;           // Headlights high beam (Fernlicht)
-volatile boolean blueLightOn = false;                    // Bluelight on
-boolean indicatorLon = false;                            // Left indicator
-boolean indicatorRon = false;                            // Right indicator
+volatile boolean blueLightTrigger = false;               // Bluelight on 8Blaulicht)
+boolean indicatorLon = false;                            // Left indicator (Blinker links)
+boolean indicatorRon = false;                            // Right indicator 8Blinker rechts)
 boolean cannonFlash = false;                             // Flashing cannon fire
-
-// Sound variables
-volatile uint16_t throttleDependentVolume = 0;           // engine volume according to throttle position
-volatile uint16_t throttleDependentRevVolume = 0;        // engine rev volume according to throttle position
-volatile uint16_t rpmDependentJakeBrakeVolume = 0;       // Engine rpm dependent jake brake volume
-volatile uint16_t throttleDependentKnockVolume = 0;      // engine Diesel knock volume according to throttle position
-volatile uint16_t throttleDependentTurboVolume = 0;      // turbo volume according to rpm
-volatile uint16_t throttleDependentFanVolume = 0;        // cooling fan volume according to rpm
-volatile uint16_t throttleDependentChargerVolume = 0;    // cooling fan volume according to rpm
-volatile uint16_t throttleDependentWastegateVolume = 0;  // wastegate volume according to rpm
-volatile int16_t masterVolume = 100;                     // Master volume percentage
-volatile uint8_t dacOffset = 0;  // 128, but needs to be ramped up slowly to prevent popping noise, if switched on
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -548,59 +547,57 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curParkingBrakeSample;                   // Index of currently loaded brake sound sample
   static uint32_t curShiftingSample;                       // Index of currently loaded shifting sample
   static uint32_t curDieselKnockSample;                    // Index of currently loaded Diesel knock sample
-  static int32_t a, b, b0, b1, b2, b3, b4, b5, b6, b7, b8; // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting, knock  static int32_t b7[4];                                    // Input signals for mixer: a = horn or siren, b = reversing sound, indicator sound, wastegate, brake, parking brake, shifting, knock
+  static int32_t a, a1, a2;                                // Input signals "a" for mixer
+  static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8;    // Input signals "b" for mixer
   static boolean knockSilent;                              // This knock will be more silent
   static uint8_t curKnockCylinder;                         // Index of currently ignited zylinder
 
   //portENTER_CRITICAL_ISR(&fixedTimerMux);
 
-  // Group "a" (never more than one active at a time) ******************************************************************
-  switch (soundNo) {
+  // Group "a" (horn & siren) ******************************************************************
 
-    case 0: // Horn "a" ----
-      fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
-      timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
-      curSirenSample = 0;
+  if (hornTrigger || hornLatch) {
+    fixedTimerTicks = 4000000 / hornSampleRate; // our fixed sampling rate
+    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
-      if (hornOn) {
-        if (curHornSample < hornSampleCount - 1) {
-          a =  (hornSamples[curHornSample] * hornVolumePercentage / 100);
-          curHornSample ++;
-        }
-        else {
-          curHornSample = 0;
-          a = 0;
-          if (!hornSwitch) hornOn = false; // Latch required to prevent it from popping
-        }
-      }
-      break;
-
-    case 1: // Siren (or tank cannon) "a" -----------------------------------------------------
-      fixedTimerTicks = 4000000 / sirenSampleRate; // our fixed sampling rate
-      timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+    if (curHornSample < hornSampleCount - 1) {
+      a1 =  (hornSamples[curHornSample] * hornVolumePercentage / 100);
+      curHornSample ++;
+#ifdef HORN_LOOP // Optional "endless loop" (points to be defined manually in horn file)
+      if (hornTrigger && curHornSample == hornLoopEnd) curHornSample = hornLoopBegin; // Loop, if trigger still present
+#endif
+    }
+    else { // End of sample
       curHornSample = 0;
+      a1 = 0;
+      hornLatch = false;
+    }
+  }
 
-      if (sirenOn) {
-        if (curSirenSample < sirenSampleCount - 1) {
-          a = (sirenSamples[curSirenSample] * sirenVolumePercentage / 100);
-          curSirenSample ++;
-        }
-        else {
-          curSirenSample = 0;
-          a = 0;
-          if (!sirenSwitch) sirenOn = false; // Latch required to prevent it from popping
-        }
-      }
-      if (curSirenSample > 10 && curSirenSample < 500) cannonFlash = true; // Tank cannon flash triggering in TRACKED_MODE
-      else cannonFlash = false;
-      break;
+  if (sirenTrigger || sirenLatch) {
+    fixedTimerTicks = 4000000 / sirenSampleRate; // our fixed sampling rate
+    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
-  } // end of switch case
+    if (curSirenSample < sirenSampleCount - 1) {
+      a2 = (sirenSamples[curSirenSample] * sirenVolumePercentage / 100);
+      curSirenSample ++;
+#ifdef SIREN_LOOP // Optional "endless loop" (points to be defined manually in siren file)
+      if (sirenTrigger && curSirenSample == sirenLoopEnd) curSirenSample = sirenLoopBegin; // Loop, if trigger still present
+#endif
+    }
+    else { // End of sample
+      curSirenSample = 0;
+      a2 = 0;
+      sirenLatch = false;
+    }
+  }
+  if (curSirenSample > 10 && curSirenSample < 500) cannonFlash = true; // Tank cannon flash triggering in TRACKED_MODE
+  else cannonFlash = false;
 
-  // Group "b" (multiple sounds are mixed together) **********************************************************************
+  // Group "b" (other sounds) **********************************************************************
 
   // Sound 1 "b0" ----
-  if (sound1On) {
+  if (sound1trigger) {
     fixedTimerTicks = 4000000 / sound1SampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -609,7 +606,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
       curSound1Sample ++;
     }
     else {
-      sound1On = false;
+      sound1trigger = false;
     }
   }
   else {
@@ -749,8 +746,9 @@ void IRAM_ATTR fixedPlaybackTimer() {
     if (knockSilent) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // changing knock volume according to engine type and cylinder!
   }
 
-  // Mixing "b1" + "b2" + "b3" + "b4" + "b5" + "b6" + "b7" together ----
-  b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7;
+  // Mixing sounds together ----
+  a = a1 + a2; // Horn & siren
+  b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7; // Other sounds
 
   // DAC output (groups a + b mixed together) ****************************************************************************
 
@@ -907,9 +905,9 @@ void setup() {
 
 #endif // -----------------------------------------------------------
 
-// Refresh sample intervals (important, because MAX_RPM_PERCENTAGE was probably changed above)
-maxSampleInterval = 4000000 / sampleRate;
-minSampleInterval = 4000000 / sampleRate * 100 / MAX_RPM_PERCENTAGE;
+  // Refresh sample intervals (important, because MAX_RPM_PERCENTAGE was probably changed above)
+  maxSampleInterval = 4000000 / sampleRate;
+  minSampleInterval = 4000000 / sampleRate * 100 / MAX_RPM_PERCENTAGE;
 
   // Time
   timelast = micros();
@@ -1535,7 +1533,7 @@ void led() {
 
   // Beacons (blue light) ----
 #if not defined TRACKED_MODE  // Normal beacons mode 
-  if (blueLightOn) {
+  if (blueLightTrigger) {
     if (doubleFlashBlueLight) {
       beaconLight1.flash(30, 80, 400, 2); // Simulate double flash lights
       beaconLight2.flash(30, 80, 400, 2, 330); // Simulate double flash lights (with delay for first pass)
@@ -2029,22 +2027,28 @@ void triggerHorn() {
 
   // detect horn trigger ( impulse length > 1900us) -------------
   if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) {
-    hornOn = true;
-    soundNo = 0;  // 0 = horn
+    hornTrigger = true;
+    hornLatch = true;
+  }
+  else {
+    hornTrigger = false;
   }
 
   // detect siren trigger ( impulse length < 1100us) ----------
   if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) {
-    sirenOn = true;
-    soundNo = 1;  // 1 = siren
+    sirenTrigger = true;
+    sirenLatch = true;
+  }
+  else {
+    sirenTrigger = false;
   }
 
   // detect bluelight trigger ( impulse length < 1300us) ----------
-  if (pulseWidth[4] < 1300 && pulseWidth[4] > pulseMinLimit[4]) {
-    blueLightOn = true;
+  if (pulseWidth[4] < 1300 && pulseWidth[4] > pulseMinLimit[4] || sirenLatch) {
+    blueLightTrigger = true;
   }
   else {
-    blueLightOn = false;
+    blueLightTrigger = false;
   }
 }
 
@@ -2199,7 +2203,7 @@ void rcTrigger() {
   neutralGear = mode1; // Transmission neutral
 #endif
   mode2 = mode2Trigger.onOff(pulseWidth[9], 1800, 1200); // CH9 (MODE2)
-  if (mode2) sound1On = true; //Trigger sound 1 (It is reset after playback is done
+  if (mode2) sound1trigger = true; //Trigger sound 1 (It is reset after playback is done
 
   // Momentary buttons ******************************************************************
   // Engine on / off momentary button CH10 -----

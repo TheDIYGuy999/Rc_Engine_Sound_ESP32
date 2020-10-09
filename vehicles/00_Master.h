@@ -101,10 +101,6 @@ volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knoc
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/UralV8Knock2.h" // Ural 4320 V8
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
-//#include "sounds/ScaniaDieselKnock.h" // Strong Scania V8 diesel knock while highway race against Volvo truck (500%, 10%, Interval = 2 possible, for slow running V8 engines)
-//#include "sounds/ScaniaDieselKnock2.h" // Strong, short Scania V8 diesel knock while highway race against Volvo truck (Interval = 4 possible, for faster running engines)
-//#include "sounds/ScaniaR730V8DieselKnockShort.h" // Hard knock (400%, 0%, Interval = up to 8 possible, for small engines)
-//#include "sounds/ScaniaR730V8DieselKnockSlow.h" // Soft knock (500%, 10%, Interval = up to 4 possible, for meduim engines and Scania open pipe (interval = 1))
 //#include "sounds/SCANIAV850TonKnock.h" // 50 ton SCANIA knock
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck
 //#include "sounds/V8TrophyTruckKnock.h" // V8 Trophy Truck
@@ -158,26 +154,27 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 130; // Adjust the horn volume (usually = 100%)
-//#include "sounds/TrainHorn.h" // American train horn
-//#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
-//#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
-//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
-//#include "sounds/westinghouseHorn.h" // American truck horn (the best)
-//#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
-//#include "sounds/CarHorn.h" // A boring car horn
-//#include "sounds/TruckHorn.h" // A generic truck horn
-//#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
+//#include "sounds/TrainHorn.h" // American train horn (no loop)
+//#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short (incl. loop)
+//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (incl. loop)
+//#include "sounds/westinghouseHorn.h" // American truck horn (incl. loop)
+//#include "sounds/FireTruckAirHorn.h" // US fire truck air horn (incl. loop)
+//#include "sounds/CarHorn.h" // A boring car horn (incl. loop)
+//#include "sounds/TruckHorn.h" // A generic truck horn (incl. loop)
+#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn (incl. loop, not the best)
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
-//#include "sounds/CaboverCAThorn.h" // Cabover with CAT engine horn
-//#include "sounds/MackSuperLinerHorn.h" // MACK Super Liner horn
-//#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
-#include "sounds/DixieHorn.h" // Dixie horn
+//#include "sounds/CaboverCAThorn.h" // Cabover with CAT engine horn (incl. loop)
+//#include "sounds/MackSuperLinerHorn.h" // MACK Super Liner horn (incl. loop)
+//#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn (incl. loop)
+//#include "sounds/DixieHorn.h" // Dixie horn
+//#include "sounds/FireTruckAirHorn.h" // US fire truck (incl. loop)
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
+volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 100%)
 //#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
+//#include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
 #include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren

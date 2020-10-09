@@ -35,6 +35,18 @@ function audioBufferToText(audioBuffer, normalize, resample, sampleRate, fileTyp
 	var snippet = document.getElementById("fileTypeSelect").value;
 	var text = "const unsigned int " + snippet + "ampleRate = " + sampleRate + ";\r\n";
 	text += "const unsigned int " + snippet + "ampleCount = " + buffer.length + ";\r\n";
+	if(snippet == "hornS") // Optional variables for horn
+	{
+		text += "#define HORN_LOOP\r\n";
+		text += "const unsigned int hornLoopBegin = 0; // Adjust start of loop manually\r\n";
+		text += "const unsigned int hornLoopEnd = " + buffer.length + "; // Adjust end of loop manually\r\n";
+	}
+	if(snippet == "sirenS") // Optional variables for siren
+	{
+		text += "#define SIREN_LOOP\r\n";
+		text += "const unsigned int sirenLoopBegin = 0; // Adjust start of loop manually\r\n";
+		text += "const unsigned int sirenLoopEnd = " + buffer.length + "; // Adjust end of loop manually\r\n";
+	}
 	text += "const signed char " + snippet + "amples[] = {"
 
 	var max = 0;
@@ -45,7 +57,7 @@ function audioBufferToText(audioBuffer, normalize, resample, sampleRate, fileTyp
 
 	for(var i = 0; i < buffer.length; i++)
 	{
-		if((i & 15) == 0) text += "\r\n";
+		if((i & 15) == 0) text += "//" + i + "\r\n";
 		text += Math.round(buffer[i] / max * 127) + ", ";
 	}	
 	text += "};\r\n";

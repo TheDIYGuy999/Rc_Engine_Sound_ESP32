@@ -13,7 +13,9 @@ Fully assembled, tested and working 30 pin version
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for each gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
 - Simulated automatic transmission with torque converter (if your vehicle does not have a real shifting transmission)
-- Virtual,switchable neutral allows to rev the engine while standing still
+- Simulated double clutch transmission
+- simulated, manually shifted 3 speed transmission (new in v5.5)
+- Virtual, switchable neutral allows to rev the engine while standing still
 - Jake brake (simulated pneumatic engine brake, mainly used in US trucks)
 - Tracked mode (dual throttle input on CH2 & CH3, for tanks, diggers etc. No ESC control support in this mode. (New in v4.5)
 - Tank cannon sound & flash (New in v4.6)
@@ -24,7 +26,7 @@ Fully assembled, tested and working 30 pin version
 - Engine RPM dependent volume sounds: turbo, wastegate
 - Dozens of engine & other sounds included, you can also compose your own, using Audacity and bitlunis conversion tool (link above)
 - Engine RPM range and inertia adjustable, volume of all sounds adjustable, engine sounds separatly for load and idling.
-- Many other paramerets can be adjusted. All adjustments are easily accessible in "Adjustments.h"
+- Many other paramerets can be adjusted. All adjustments are easily accessible in "adjustmentsXyz.h"
 - Sound files up to 22'050Hz, 8bit, mono can be used
 - Compatible input signals: PWM, PPM, SBUS (inverted & non inverted signals), IBUS
 - Works best with a PAM8403 amplifier module, connected to pin 25 & 26, via 10kOhm resistors & a 10kOhm potentiometer (see schematic below)
@@ -37,10 +39,10 @@ Fully assembled, tested and working 30 pin version
 - Eagle schematic & board file included. Pre made Gerber files allow you to order your board easily.
 - included, easy to use .wav to .h sound file converter
 - Channels can easily be assigned, using "remoteSetup.h"
-- Pre made configuration profiles for Flysky FS-i6X and Arduino Mirco RC remote
+- Pre made configuration profiles for Flysky FS-i6X and Arduino Mirco RC remote (new in v.5.5)
+- Variable length for horn & siren, using loop area in sound files (new in v5.6)
 
 ## On the todo list:
-- Add infinite loop areas for horn & siren sounds
 - Add PWM outputs in bus mode
 
 ## Issues:
@@ -378,6 +380,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 5.6:
+- Horn & siren with variable length (as long as triggered). "Audio2Header.html" tool changed to add the required loop area (you need to adjust it manually) in the sound files.
+- Horn & siren can play @ the same time
+- New US fire truck (with CAT3408 V8 & Allison 6 speed automatic transmission) vehicle preset (use it to test the new variable length sounds)
 
 ### New in V 5.5 (another big update):
 - Way more flexible channel assignment, can easily be configured for my "Micro RC" remote, for a FLSKY FS-i6X or others. New "2_adjustmentsRemote.h" config file. You don't have to change the main code anymore in order to assign your channels. For details refer to "adjustmentsRemote.xlsx"

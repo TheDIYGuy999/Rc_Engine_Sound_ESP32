@@ -74,7 +74,6 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
-//#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)
@@ -83,8 +82,8 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
-//#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
-#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
+#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
+//#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)

@@ -11,6 +11,7 @@
 //#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
 //#include "vehicles/MackSuperLiner.h" // MACK Super Liner
 //#include "vehicles/M35.h"// AM General M35 "deuce and a half" military truck, turbocharged R6 universal fuel engine
+#include "vehicles/US_Firetruck.h"// US firetruck with CAT3408 V8 and Allison 6 speed automatic (horn & siren loop capable)
 
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
@@ -20,7 +21,7 @@
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 //#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
-#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
+//#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 

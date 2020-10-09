@@ -74,7 +74,6 @@ volatile int fanStartPoint = 20; // Volume will raise above this point (250 for 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
-//#include "sounds/HornblastersOUTLAWTrainHornLong.h" // Hornblasters outlaw train horn long
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)
