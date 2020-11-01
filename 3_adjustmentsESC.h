@@ -26,4 +26,4 @@ Motor: 540 size, 35 turns, stock pinion
 //#define ESC_DIR // uncomment this, if your motor is spinning in the wrong direction
 
 // Top speed adjusment:
-const int16_t escPulseSpan = 1200; // 500 = full ESC power available, 1000 half ESC power available etc. (1200 for TAMIYA trucks with 35T motor)
+const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. (1200 for TAMIYA trucks with 35T motor)

@@ -9,7 +9,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 5.6; // Software revision.
+const float codeVersion = 5.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -29,10 +29,11 @@ const float codeVersion = 5.6; // Software revision.
 
 // Make sure to remove -master from your sketch folder name
 
-// DEBUG options can slow down the playback loop! Only comment them out for debugging, may slow down your system!
+// DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
+//#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
 
 // TODO = Things to clean up!
@@ -46,7 +47,7 @@ const float codeVersion = 5.6; // Software revision.
 // Header files
 #include "headers/curves.h" // Nonlinear throttle curve arrays
 
-// Libraries (you have to install all of them)
+// Libraries (you have to install all of them in the "Arduino sketchbook"/libraries folder)
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- Install the newest version!
 #include <SBUS.h> // https://github.com/TheDIYGuy999/SBUS you need to install my fork of this library!
 #include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- v4.7: This one is now required as well
@@ -58,7 +59,6 @@ const float codeVersion = 5.6; // Software revision.
 // =======================================================================================================
 // PIN ASSIGNMENTS & GLOBAL VARIABLES (Do not play around here)
 // =======================================================================================================
-
 //
 // Pin assignment and wiring instructions ****************************************************************
 
@@ -79,8 +79,9 @@ const float codeVersion = 5.6; // Software revision.
 //CH1: (steering)
 //CH2: (gearbox) (left throttle in TRACKED_MODE)
 //CH3: (throttle) (right throttle in TRACKED_MODE)
-//CH4: horn and bluelight / siren
+//CH4: (horn and bluelight / siren)
 //CH5: (high / low beam, transmission neutral, jake brake etc.)
+//CH6: (indicators, hazards)
 #define PWM_CHANNELS_NUM 6 // Number of PWM signal input pins
 const uint8_t PWM_CHANNELS[PWM_CHANNELS_NUM] = { 1, 2, 3, 4, 5, 6}; // Channel numbers
 const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input pin numbers
@@ -1411,16 +1412,22 @@ void engineMassSimulation() {
     else {
       // Manual transmission ----
       if (clutchDisengaged) { // Clutch disengaged: Engine revving allowed
+#if defined VIRTUAL_16_SPEED_SEQUENTIAL
+        targetRpm = currentThrottle;
+#else
         targetRpm = reMap(curveLinear, currentThrottle);
+#endif
       }
       else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
 
-#ifndef VIRTUAL_3_SPEED // Real 3 speed transmission           
-        targetRpm = reMap(curveLinear, currentSpeed);
 
-#else // Virtual 3 speed transmission
+
+#if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL // Virtual 3 speed or sequential 16 speed transmission
         targetRpm = currentSpeed * virtualManualGearRatio[selectedGear] / 10; // Add virtual gear ratios
         if (targetRpm > 500) targetRpm = 500;
+
+#else // Real 3 speed transmission           
+        targetRpm = reMap(curveLinear, currentSpeed);
 #endif
       }
     }
@@ -1446,7 +1453,7 @@ void engineMassSimulation() {
       if (currentRpm < minRpm) currentRpm = minRpm;
     }
 
-#ifdef VIRTUAL_3_SPEED
+#if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL
     // Limit top speed, depending on manual gear ratio. Ensures, that the engine will not blow up!
     if (!automatic && !doubleClutch) speedLimit = maxRpm * 10 / virtualManualGearRatio[selectedGear];
 #endif
@@ -1507,6 +1514,7 @@ uint8_t crankingDim;
 uint8_t dipDim;
 uint8_t xenonIgnitionFlash;
 static unsigned long xenonMillis;
+uint32_t indicatorFade = 300; // 300 is the fading time, simulating an incandescent bulb
 
 // Brake light sub function
 void brakeLightsSub(int8_t brightness) {
@@ -1522,6 +1530,10 @@ void brakeLightsSub(int8_t brightness) {
 
 // Main LED function
 void led() {
+
+#if defined LED_INDICATORS
+  indicatorFade = 0; // No soft indicator on / off, if LED
+#endif
 
   // Lights brightness ----
   if (engineStart) crankingDim = 50; else crankingDim = 0; // lights are dimmer while engine cranking
@@ -1556,18 +1568,18 @@ void led() {
   // Indicators (turn signals, blinkers) ----
   if (!hazard) {
     if (indicatorLon) {
-      if (indicatorL.flash(375, 375, 0, 0)) indicatorSoundOn = true; // Left indicator
+      if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade)) indicatorSoundOn = true; // Left indicator
     }
-    else indicatorL.off();
+    else indicatorL.off(indicatorFade);
 
     if (indicatorRon) {
-      if (indicatorR.flash(375, 375, 0, 0)) indicatorSoundOn = true; // Right indicator
+      if (indicatorR.flash(375, 375, 0, 0, 0, indicatorFade)) indicatorSoundOn = true; // Right indicator
     }
-    else indicatorR.off();
+    else indicatorR.off(indicatorFade);
   }
   else { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
-    if (indicatorL.flash(375, 375, 0, 0)) indicatorSoundOn = true;
-    indicatorR.flash(375, 375, 0, 0);
+    if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade)) indicatorSoundOn = true;
+    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade);
   }
 
   // Headlights, tail lights ----
@@ -1701,20 +1713,34 @@ void gearboxDetection() {
 
   static uint8_t previousGear = 1;
   static boolean previousReverse;
+  static boolean sequentialLock;
   static unsigned long upShiftingMillis;
   static unsigned long downShiftingMillis;
 
-#if defined TRACKED_MODE // CH2 is used for left throttle in TRACKED_MODE
+#if defined TRACKED_MODE // CH2 is used for left throttle in TRACKED_MODE --------------------------------
   selectedGear = 2;
 
-#else // only active, if not in TRACKED_MODE
+#else // only active, if not in TRACKED_MODE -------------------------------------------------------------
   // if automatic transmission, always 2nd gear
   if (automatic || doubleClutch) pulseWidth[2] = 1500;
 
+#ifndef VIRTUAL_16_SPEED_SEQUENTIAL // 3 gears, directly selected by 3 position switch ----
   // Gear detection
   if (pulseWidth[2] > 1700) selectedGear = 3;
   else if (pulseWidth[2] < 1300) selectedGear = 1;
   else selectedGear = 2;
+
+#else // 16 gears, selected by up / down impulses ----
+  if (pulseWidth[2] > 1700 && selectedGear < 16 && !sequentialLock) {
+    sequentialLock = true;
+    selectedGear ++;
+  }
+  else if (pulseWidth[2] < 1300 && selectedGear > 1 && !sequentialLock) {
+    sequentialLock = true;
+    selectedGear --;
+  }
+  if (pulseWidth[2] > 1400 && pulseWidth[2] < 1600) sequentialLock = false;
+#endif // End of VIRTUAL_16_SPEED_SEQUENTIAL ----
 
   // Gear upshifting detection
   if (selectedGear > previousGear) {
@@ -1746,7 +1772,22 @@ void gearboxDetection() {
     previousReverse = escInReverse;
     shiftingTrigger = true; // Play shifting sound
   }
+
+
+#ifdef MANUAL_TRANS_DEBUG
+  static unsigned long manualTransDebugMillis;
+  if (millis() - manualTransDebugMillis > 100) {
+    manualTransDebugMillis = millis();
+    Serial.println(currentThrottle);
+    Serial.println(selectedGear);
+    Serial.println(sequentialLock);
+    Serial.println(currentRpm);
+    Serial.println(currentSpeed);
+    Serial.println("");
+  }
 #endif
+
+#endif // End of not TRACKED_MODE -----------------------------------------------------------------------
 }
 
 //
@@ -1826,12 +1867,17 @@ void esc() {
   uint8_t escRampTime;
 
   // Gear dependent ramp speed for acceleration & deceleration
-#ifndef VIRTUAL_3_SPEED
-  if (selectedGear == 1) escRampTime = escRampTimeFirstGear;
-  if (selectedGear == 2) escRampTime = escRampTimeSecondGear;
-  if (selectedGear == 3) escRampTime = escRampTimeThirdGear;
-#else
+#if defined VIRTUAL_3_SPEED
   escRampTime = escRampTimeThirdGear * 10 / virtualManualGearRatio[selectedGear];
+
+#elif defined VIRTUAL_16_SPEED_SEQUENTIAL
+  //escRampTime = escRampTimeThirdGear;// * 10 / map(virtualManualGearRatio[selectedGear], 155, 10, 23, 10);
+  escRampTime = escRampTimeThirdGear * virtualManualGearRatio[selectedGear] / 5;
+
+#else // TAMIYA 3 speed shifting transmission
+  if (selectedGear == 1) escRampTime = escRampTimeFirstGear; // about 20
+  if (selectedGear == 2) escRampTime = escRampTimeSecondGear; // about 50
+  if (selectedGear == 3) escRampTime = escRampTimeThirdGear; // about 75
 #endif
 
   if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
@@ -1880,6 +1926,9 @@ void esc() {
         escInReverse = false;
         escIsDriving = false;
         escPulseWidth = pulseZero[3];  // ESC to neutral position
+#ifdef VIRTUAL_16_SPEED_SEQUENTIAL
+        selectedGear = 1;
+#endif
 
         if (pulse == 1 && engineRunning && !neutralGear) driveState = 1; // Driving forward
         if (pulse == -1 && engineRunning && !neutralGear) driveState = 3; // Driving backwards
@@ -1893,14 +1942,14 @@ void esc() {
         if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain);
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
-#ifndef VIRTUAL_3_SPEED // Only, if we have a real 3 speed trasnsmission        
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
           escPulseWidth -= currentSpeed / 4; // Synchronize engine speed
 #endif
           gearUpShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseZero[3], pulseMax[3]);
         }
         if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
-#ifndef VIRTUAL_3_SPEED // Only, if we have a real 3 speed trasnsmission      
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
           escPulseWidth += 40; // Synchronize engine speed
 #endif
           gearDownShiftingPulse = false;
@@ -1935,14 +1984,14 @@ void esc() {
         if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain);
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
-#ifndef VIRTUAL_3_SPEED // Only, if we have a real 3 speed trasnsmission        
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
           escPulseWidth += currentSpeed / 4; // Synchronize engine speed
 #endif
           gearUpShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseMin[3], pulseZero[3]);
         }
         if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
-#ifndef VIRTUAL_3_SPEED // Only, if we have a real 3 speed trasnsmission      
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
           escPulseWidth -= 40; // Synchronize engine speed
 #endif
           gearDownShiftingPulse = false;

@@ -22,7 +22,18 @@ int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo Hy
 // Virtual 3 speed transmission gear ratios (times 10!, for example 15 means 1.5) ----------------
 // Use it, if your vecicle does't have a real shifting transmission and you still want to shift
 // your gears manually, using the 3 position switch
+#if defined VIRTUAL_3_SPEED
 int32_t virtualManualGearRatio[4] = {10, 23, 14, 10}; // unused, 1st, 2nd, 3rd gear 32, 17, 10
+#endif
+
+// Virtual 16 speed sequential transmission gear ratios (times 10!, for example 15 means 1.5) ----------------
+// Use it, if your vecicle does't have a real shifting transmission and you still want to shift
+// your gears manually, using the 3 position switch (up & down impulses)
+#if defined VIRTUAL_16_SPEED_SEQUENTIAL
+//int32_t virtualManualGearRatio[17] = {10, 154, 128, 107, 89, 74, 62, 52, 43, 36, 30, 25, 21, 17, 14, 12, 10}; // unused, 1st, 2nd etc.
+//int32_t virtualManualGearRatio[17] = {10, 77, 64, 53, 44, 37, 31, 26, 21, 18, 15, 12, 10, 8, 7, 6, 5}; // unused, 1st, 2nd etc.
+int32_t virtualManualGearRatio[17] = {10, 77, 64, 53, 44, 37, 31, 26, 21, 18, 15, 12, 10, 8, 7, 6, 5}; // unused, 1st, 2nd etc.
+#endif
 
 
 // Real manual 3 speed transmission --------------------------------------------------------------

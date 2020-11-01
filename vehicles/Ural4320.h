@@ -138,9 +138,9 @@ volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usua
 volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually = 100%)
 //#include "sounds/EMDLocomotiveBell.h" // American EMD locomotive bell
 //#include "sounds/007JamesBond.h" // James Bond melody
-//#include "sounds/M2Fire.h" // M2 salve
+#include "sounds/M2Fire.h" // M2 salve
 //#include "sounds/GlenCanyon.h" // Glen Canyon country song for truckers ;-)
-#include "sounds/door.h" // opening and closing the door
+//#include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
 volatile int reversingVolumePercentage = 0; // Adjust the reversing sound volume (usually = 70%)

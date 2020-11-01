@@ -381,6 +381,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 5.7:
+- Experimental support for virtual 16 speed sequential transmission "VIRTUAL_16_SPEED_SEQUENTIAL"
+- New, alternative URAL-375D vehicle preset
+- Indicators are now swichting on and off "soft" like incandescent bulbs, using an on and off ramp, if not defined "LED_INDICATORS" in the vehicle preset file. You need to use the latest statusLED update: https://github.com/TheDIYGuy999/statusLED
+- New, untested SMD board version included
+
 ### New in V 5.6:
 - Horn & siren with variable length (as long as triggered). "Audio2Header.html" tool changed to add the required loop area (you need to adjust it manually) in the sound files.
 - Horn & siren can play @ the same time
@@ -403,7 +409,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 - PPM interface moved to RX pin, pins "35" & "PPM" are now used for PWM channels 5 & 6
 - Bug fixed: wasteghate not triggered anymore while releasing brake rapidly
 - Two-stage triggering for bluelight and siren, so we can use the bluelight separately
-- Changing between jake braking and the normal engine sound is locked unless the current sample is looping back. This eliminates erratic lkicking noises, if enabling or disabling the jake brake!
+- Changing between jake braking and the normal engine sound is locked unless the current sample is looping back. This eliminates erratic klicking noises, if enabling or disabling the jake brake!
 - To prevent issues with the mode buttons, you should install the latest software v3.5 on the "Micro RC" receiver
 - If you use your own vehicle preset, you have to edit them, so that they use the same structure as the pre made ones. example: remove "const" in front of "uint32_t MAX_RPM_PERCENTAGE"
 - New jake brake sounds for: Actros, URAL 4320, URAL 375D, Tatra 813 & M35. New dixie horn.
