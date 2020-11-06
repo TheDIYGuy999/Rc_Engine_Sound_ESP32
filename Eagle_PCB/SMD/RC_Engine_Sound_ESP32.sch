@@ -24902,7 +24902,7 @@ Source: AVX .. aphvc.pdf</description>
 <part name="R18" library="pot" library_urn="urn:adsk.eagle:library:331" deviceset="TRIM_EU-" device="S64W" package3d_urn="urn:adsk.eagle:package:22708/1" value="20k"/>
 <part name="R11" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="10k"/>
 <part name="R12" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="10k"/>
-<part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="CPOL-EU" device="E5-10.5" package3d_urn="urn:adsk.eagle:package:23372/2" value="1000uF"/>
+<part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="CPOL-EU" device="UD-10X10" package3d_urn="urn:adsk.eagle:package:23469/1" value="1000uF 10V"/>
 <part name="GND18" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="JP1" library="00_custom_pinhead" deviceset="PINHD-1X3" device=""/>
@@ -24997,7 +24997,7 @@ Potentiometer</text>
 for amplifier &amp; LED</text>
 <text x="7.62" y="238.76" size="1.778" layer="91">Battery input
 7.0 - 12.6V</text>
-<text x="292.1" y="27.94" size="3.048" layer="91">SMD Board for 30 pin ESP32 V1.0</text>
+<text x="292.1" y="27.94" size="3.048" layer="91">SMD Board for 30 pin ESP32 V1.1</text>
 <text x="350.52" y="101.6" size="1.778" layer="91">Shaker motor</text>
 <text x="157.48" y="104.14" size="1.778" layer="91">Headlights</text>
 <text x="127" y="157.48" size="1.778" layer="91">Foglights</text>
@@ -25011,7 +25011,7 @@ light set 56502</text>
 <text x="193.04" y="132.08" size="1.778" layer="91" rot="R90">Rear lights</text>
 <text x="299.72" y="38.1" size="1.778" layer="91">ESP32 RC Sound &amp; Light Controller
 https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32</text>
-<text x="162.56" y="7.62" size="1.778" layer="91">Never connect LED directly, always use a matching series resistor!</text>
+<text x="27.94" y="149.86" size="1.778" layer="91">Never connect LED directly, always use a matching series resistor!</text>
 <text x="96.52" y="104.14" size="1.778" layer="91">Beacon 2</text>
 <text x="127" y="104.14" size="1.778" layer="91">Beacon 1</text>
 <text x="15.24" y="154.94" size="1.778" layer="91">Cabin

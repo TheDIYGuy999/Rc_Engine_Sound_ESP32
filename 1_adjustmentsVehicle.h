@@ -24,11 +24,12 @@
 //#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
+#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
 //#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
-#include "vehicles/Урал375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
+//#include "vehicles/Урал375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
 // Russian tanks -------

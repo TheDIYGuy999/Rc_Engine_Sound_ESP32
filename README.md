@@ -381,6 +381,10 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 5.8:
+- MAN TGX 680 vehicle profile
+- SMD board v1.1, incl. Gerbers, BOM & Pick and Place file (still untestet)
+
 ### New in V 5.7:
 - Experimental support for virtual 16 speed sequential transmission "VIRTUAL_16_SPEED_SEQUENTIAL"
 - New, alternative URAL-375D vehicle preset
