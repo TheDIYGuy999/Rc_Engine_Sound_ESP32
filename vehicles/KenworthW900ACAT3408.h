@@ -80,7 +80,7 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 #include "sounds/GenericFan.h" // Generic engine cooling fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 170; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
@@ -90,14 +90,14 @@ volatile int hornVolumePercentage = 170; // Adjust the horn volume (usually = 10
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
-//#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
-#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
+#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
+//#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 100%)
-//#include "sounds/sirenDummy.h" // If you don't want siren sound
+#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
-#include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
+//#include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
 //#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren
@@ -144,6 +144,8 @@ const boolean INDICATOR_DIR = true; // adjust indicator direction with true or f
 
 // Choose the light options --------
 //#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
+//#define SEPARATE_FULL_BEAM // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
+#define INDICATOR_SIDE_MARKERS // The indicators are used as side markers as well
 
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
@@ -166,7 +168,7 @@ uint16_t clutchEngagingPoint = 80; // CEP. The "clutch" is engaging above this p
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 350; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 310; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage! was 350
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck

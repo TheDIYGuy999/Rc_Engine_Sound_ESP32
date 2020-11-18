@@ -381,6 +381,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 5.9:
+- LED PWM frequency is now 20kHz instead of 500 Hz. No PWM noise anymore in the speakers
+- New "SEPARATE_FULL_BEAM" option. Wire your high beam lamps to the roof lights pin in this case
+- New "INDICATOR_SIDE_MARKERS" option. Indicators are used as side markers as well in this mode
+
 ### New in V 5.8:
 - MAN TGX 680 vehicle profile
 - SMD board v1.1, incl. Gerbers, BOM & Pick and Place file (still untestet)
