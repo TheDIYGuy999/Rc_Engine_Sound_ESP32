@@ -9,7 +9,7 @@ Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H
 Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
 Preview: The upcoming, untested 30 pin SMD version, manufactured and assembled by https://www.pcbway.com
-![](pictures/30pinSmdVersion.jpg)
+![](pictures/30pinSmdVersion.png)
 
 Fully assembled, tested and working 30 pin version
 ![](pictures/30PinAssembled.jpg)
