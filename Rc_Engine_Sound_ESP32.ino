@@ -9,7 +9,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 5.9; // Software revision.
+const float codeVersion = 6.0; // Software revision.
 
 //
 // =======================================================================================================

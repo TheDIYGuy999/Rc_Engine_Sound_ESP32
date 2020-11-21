@@ -3,14 +3,16 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 100%)
-#include "sounds/Cat3408Start.h" // CAT 3408 V8 Diesel start (Kenworth W900A)
+//#include "sounds/Cat3408Start.h" // CAT 3408 V8 Diesel start (Kenworth W900A)
+#include "sounds/Cat3408Start2.h" // CAT 3408 V8 Diesel start (Kenworth W900A, b+7, h-7)
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 70; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 140; // Volume Percentage while full throttle (for rev sound as well)
 //#include "sounds/3408CatIdle.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
-#include "sounds/3408CatIdleLowpass.h" // CAT 3408 V8 Diesel idle (Kenworth W900A, 1.5kHz lowpass filtered)
+//#include "sounds/3408CatIdleLowpass.h" // CAT 3408 V8 Diesel idle (Kenworth W900A, 1.5kHz lowpass filtered)
+#include "sounds/3408CatIdle2.h" // CAT 3408 V8 Diesel idle (Kenworth W900A, b+7, h-7)
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
@@ -24,6 +26,7 @@ volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound v
 //#include "sounds/3408CaterpillarPeterbiltRev.h" // CAT 3408 V8 Diesel rev (Peterbilt)
 //#include "sounds/BadAssRev.h" // Badass rev
 #include "sounds/CaboverCATrev.h" // Cabover wit CAT engine rev
+//#include "sounds/CaboverCATrev3.h" // Cabover wit CAT engine rev (b+2)
 //#include "sounds/straightPipedCompilationRev.h" // Straight piped V8 rev
 #endif
 
@@ -38,7 +41,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 200; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 110; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
@@ -168,7 +171,7 @@ uint16_t clutchEngagingPoint = 80; // CEP. The "clutch" is engaging above this p
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 310; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage! was 350
+uint32_t MAX_RPM_PERCENTAGE = 280; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage! was 350
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck

@@ -6,6 +6,11 @@ Wiring and software installation instructions see further down.
 
 Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so
 
+Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
+
+Preview: The upcoming, untested 30 pin SMD version, manufactured and assembled by https://www.pcbway.com
+![](pictures/30pinSmdVersion.jpg)
+
 Fully assembled, tested and working 30 pin version
 ![](pictures/30PinAssembled.jpg)
 
@@ -99,6 +104,8 @@ Fully assembled, tested and working 30 pin version
 ![](pictures/pcbBottom.jpg)
 
 ### Recommended manufacturors:
+https://www.pcbway.com (including SMD assembling service)
+
 https://jlcpcb.com (upload Gerbers.zip)
 
 https://oshpark.com (upload Gerbers.zip or .brd file)
@@ -160,7 +167,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - never connect capacitors to the speaker headers
 
 ### LED
-- The LED need to be wired "common positive". This means, the long LED legs are all connected together an connect to the 5V rail, coming from the on board regulator
+- The LED need to be wired "common positive". This means, the long LED legs are all connected together and connect to the 5V rail, coming from the on board regulator
 - All LED (except the ones, which are connected to the TAMIYA trailer connector) need a series resistor
 - Calculate the reqired resistor according to: http://ledcalc.com (supply voltage = 5V)
 - It is not recommended to wire LED in parallel, sharing the series resistor
@@ -210,7 +217,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 ```
 // VEHICLE SETTINGS ****************************************************************************************************
-// Select the vehicle you want (uncomment the one you want, remove //, never more than one)
+// Select the vehicle preset you want (uncomment the one you want, remove //, never more than one)
 
 // Master --------
 //#include "vehicles/00_Master.h" // This master preset file contains all available sound files, which are not used in existing vehicle presets
@@ -218,10 +225,12 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 // US trucks --------
 //#include "vehicles/CaboverCAT3408.h" // Cabover truck with Caterpillar 3408 V8 Diesel
 //#include "vehicles/KenworthW900ADetroit8V71.h" // Kenworth W900A with Detroit 8V71 V8 2 stroke Diesel
-//#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
+#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
+//#include "vehicles/KenworthW900ACAT3408new.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (good bass speaker required)
 //#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
-//#include "vehicles/MackSuperLiner.h" // MACK Super Liner (TODO, needs rework)
-//#include "vehicles/M35.h"// AM General M35 *deuce and a half" military truck, turbocharged R6 universal fuel engine
+//#include "vehicles/MackSuperLiner.h" // MACK Super Liner
+//#include "vehicles/M35.h"// AM General M35 "deuce and a half" military truck, turbocharged R6 universal fuel engine
+//#include "vehicles/US_Firetruck.h"// US firetruck with CAT3408 V8 and Allison 6 speed automatic (horn & siren loop capable)
 
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
@@ -234,10 +243,12 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
+//#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
 //#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
+//#include "vehicles/Урал375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
 // Russian tanks -------
@@ -258,12 +269,12 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
 //#include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
 //#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
-//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission
+//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission (not compatible with iBus communication)
 
 // US SUV --------
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
 //#include "vehicles/FordPowerstroke.h" // Ford Powerstroke 7.3l V8 Diesel, 6 speed automatic (good bass speaker required)
-#include "vehicles/RAM2500_Cummins12V.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, manual transmission
+//#include "vehicles/RAM2500_Cummins12V.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, manual transmission
 
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
@@ -380,6 +391,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.0:
+- Pig sound for Onkel_Tom ;-)
+- Kenwworth W900A with CAT3408 made more aggressive (more bass) & alternative profile
+- SMD version preview
 
 ### New in V 5.9:
 - LED PWM frequency is now 20kHz instead of 500 Hz. No PWM noise anymore in the speakers
