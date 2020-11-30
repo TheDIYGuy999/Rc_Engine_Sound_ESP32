@@ -8,8 +8,8 @@ Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H
 
 Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
-Preview: The upcoming, untested 30 pin SMD version, manufactured and assembled by https://www.pcbway.com
-![](pictures/30pinSmdVersion.png)
+Preview: The new 30 pin SMD version, manufactured and assembled by https://www.pcbway.com
+![](pictures/30pinSmdVersion.jpg)
 
 Fully assembled, tested and working 30 pin version
 ![](pictures/30PinAssembled.jpg)
@@ -103,12 +103,8 @@ Fully assembled, tested and working 30 pin version
 ![](pictures/pcbTop.jpg)
 ![](pictures/pcbBottom.jpg)
 
-### Recommended manufacturors:
-https://www.pcbway.com (including SMD assembling service)
-
-https://jlcpcb.com (upload Gerbers.zip)
-
-https://oshpark.com (upload Gerbers.zip or .brd file)
+### Recommended manufacturor:
+https://www.pcbway.com (including SMD assembling service, use Gerbers.zip for board, it also includes BOM. xlsx and CPL.xlsx, if you want to use the SMT assembling service)
 
 ### Assembling tutorial (for the 36 pin version):
 https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so&index=13
@@ -391,6 +387,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.1:
+- SMD version tested
+- "INDICATOR_SIDE_MARKERS" option: indicators are always on with dimmed brightness, if side markeers / parking light is on. This is often used in US trucks. See "KenworthW900ACAT3408.h" vehicle configuration
+- You need to install the latest version of the "statusLED" library: https://github.com/TheDIYGuy999/statusLED
+- Experimental new throttle array for heavy trucks in "curves.h" you need to comment / uncomment it manually for now.
 
 ### New in V 6.0:
 - Pig sound for Onkel_Tom ;-)

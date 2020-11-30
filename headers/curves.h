@@ -38,6 +38,8 @@ int32_t virtualManualGearRatio[17] = {10, 77, 64, 53, 44, 37, 31, 26, 21, 18, 15
 
 // Real manual 3 speed transmission --------------------------------------------------------------
 // Use it in combination with a real 3 speed shifting transmission like the one from TAMIYA
+// Curve for cars (high clutch engaging rpm)
+/*
 float curveLinear[][2] = { 
   {0, 0} // {input value, output value}
   , {83, 200}
@@ -47,6 +49,18 @@ float curveLinear[][2] = {
   , {416, 440}
   , {500, 500}
   , {600, 500} // overload range > 500 will limit output to 500
+};*/
+
+// Curve for heavy trucks (low clutch engaging rpm)
+float curveLinear[][2] = {
+    {0, 0} // {input value, output value}
+    , {83, 120}
+    , {166, 196}
+    , {250, 272}
+    , {333, 348}
+    , {416, 424}
+    , {500, 500}
+    , {600, 500} // overload range > 500 will limit output to 500
 };
 
 //
