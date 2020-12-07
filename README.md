@@ -105,6 +105,7 @@ Fully assembled, tested and working 30 pin version
 
 ### Recommended manufacturor:
 https://www.pcbway.com (including SMD assembling service, use Gerbers.zip for board, it also includes BOM. xlsx and CPL.xlsx, if you want to use the SMT assembling service)
+How to order pre assembled boards see /Eagle_PCB/How To Order Your PCB.pdf
 
 ### Assembling tutorial (for the 36 pin version):
 https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so&index=13
