@@ -139,10 +139,6 @@ const boolean INDICATOR_DIR = true; // adjust indicator direction with true or f
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
-// PWM input signal range calibration ------------------------------------------------------------------------------------
-const uint16_t pulseNeutral = 30; // pulseZero +/- this value (30) is the neutral range
-const uint16_t pulseSpan = 490; // pulseZero +/- this value (max. 500 or less depending on remote signal range)
-
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)

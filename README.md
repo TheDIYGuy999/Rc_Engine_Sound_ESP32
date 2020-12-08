@@ -389,6 +389,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.2:
+- GAZ 66 redefinition bug fixed
+- SMD version BOM error fixed
+- Instructions PDF for ordering of pre assembled boards added
+- STL data for SMD version bottom shell included
+- Wastegate not triggered anymore while downshifting
+
 ### New in V 6.1:
 - SMD version tested
 - "INDICATOR_SIDE_MARKERS" option: indicators are always on with dimmed brightness, if side markeers / parking light is on. This is often used in US trucks. See "KenworthW900ACAT3408.h" vehicle configuration

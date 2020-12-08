@@ -9,7 +9,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.1; // Software revision.
+const float codeVersion = 6.2; // Software revision.
 
 //
 // =======================================================================================================
@@ -1462,8 +1462,11 @@ void engineMassSimulation() {
     engineSampleRate = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval); // Idle
   }
 
+  // Prevent Wastegate from being triggered while downshifting
+  if(gearDownShiftingInProgress) wastegateMillis = millis();
+
   // Trigger Wastegate, if throttle rapidly dropped
-  if (lastThrottle - currentThrottle > 70 && !escIsBraking && millis() - wastegateMillis > 1500) {
+  if (lastThrottle - currentThrottle > 70 && !escIsBraking && millis() - wastegateMillis > 1000) {
     wastegateMillis = millis();
     wastegateTrigger = true;
   }
