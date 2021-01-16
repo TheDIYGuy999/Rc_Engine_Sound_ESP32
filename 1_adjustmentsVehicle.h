@@ -63,8 +63,16 @@
 //#include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
 //#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
 
+// Asian SUV --------
+//#include "vehicles/LandcruiserFJ40.h" // Landcruiser Fj40 with inline 6 petrol engine
+//#include "vehicles/LandcruiserFJ40Diesel.h" // Landcruiser Fj40 with inline 6 12H Turbo Diesel engine
+//#include "vehicles/LandcruiserFJ40Diesel2.h" // Landcruiser Fj40 with inline 6 12H Turbo Diesel engine
+
 // US locomotives --------
 //#include "vehicles/UnionPacific2002.h" // Union Pacific 2002 SD70M locomotive with enormous, low revving 16 cylinder Diesel
 
 // Planes --------
 //#include "vehicles/MesserschmittBf109.h" // Messerschmitt BF 109 WW2 German V12 plane
+
+// Generic Diesels --------
+//#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission, optimised for smaller speakers

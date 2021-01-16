@@ -9,7 +9,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.2; // Software revision.
+const float codeVersion = 6.3; // Software revision.
 
 //
 // =======================================================================================================
@@ -23,15 +23,16 @@ const float codeVersion = 6.2; // Software revision.
 #include "3_adjustmentsESC.h"           // <<------- ESC related adjustments
 #include "4_adjustmentsTransmission.h"  // <<------- Transmission related adjustments
 #include "5_adjustmentsShaker.h"        // <<------- Shaker related adjustments
+#include "6_adjustmentsLights.h"        // <<------- Lights related adjustments
 
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-// Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Board%20settings.png
+// Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
 
 // Make sure to remove -master from your sketch folder name
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
-//#define ESC_DEBUG // uncomment it to debug the ESC
+#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
@@ -288,6 +289,8 @@ volatile boolean escInReverse = false;                   // ESC is driving or br
 int8_t driveState = 0;                                   // for ESC state machine
 int16_t escPulseMax;                                     // ESC calibration variables
 int16_t escPulseMin;
+int16_t escPulseMaxNeutral;
+int16_t escPulseMinNeutral;
 uint16_t currentSpeed = 0;                               // 0 - 500 (current ESC power)
 
 // Lights
@@ -974,9 +977,12 @@ void setup() {
     pulseMinLimit[i] = pulseZero[i] - pulseLimit;
   }
 
-  // ESC output signal range
+  // ESC output calibration
+  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; //Additional takeoff punch around zero
+  escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
+  
   escPulseMax = pulseZero[3] + escPulseSpan;
-  escPulseMin = pulseZero[3] - escPulseSpan;
+  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; //Additional power for ESC with slow reverse
 }
 
 //
@@ -1709,21 +1715,24 @@ void led() {
 
     case 3: // roof & side & head lights ---------------------------------------------------------------------
       cabLight.off();
-      sideLight.pwm(200 - crankingDim);
+      sideLight.pwm(sideLightsBrightness - crankingDim);
       headLightsSub(true, false, true);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
 
     case 4: // roof & side & head & fog lights ---------------------------------------------------------------------
+#ifdef NO_FOGLIGHTS
+    lightsState = 5; // Skip foglights
+#endif    
       cabLight.off();
-      sideLight.pwm(200 - crankingDim);
+      sideLight.pwm(sideLightsBrightness - crankingDim);
       headLightsSub(true, true, true);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
 
     case 5: // cab & roof & side & head & fog lights ---------------------------------------------------------------------
       cabLight.pwm(255 - crankingDim);
-      sideLight.pwm(200 - crankingDim);
+      sideLight.pwm(sideLightsBrightness - crankingDim);
       headLightsSub(true, true, true);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
@@ -1985,9 +1994,13 @@ void esc() {
       case 1: // Driving forward ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = false;
-        escIsDriving = true;
-        if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth += (driveRampRate * driveRampGain);
-        if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain);
+        escIsDriving = true; 
+        if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) {
+          if (escPulseWidth >= escPulseMaxNeutral) escPulseWidth += (driveRampRate * driveRampGain); //Faster
+          else escPulseWidth = escPulseMaxNeutral; // Initial boost
+        }       
+        //if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth += (driveRampRate * driveRampGain); // Faster
+        if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
@@ -2028,8 +2041,12 @@ void esc() {
         escIsBraking = false;
         escInReverse = true;
         escIsDriving = true;
-        if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth -= (driveRampRate * driveRampGain);
-        if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain);
+        if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) {
+          if (escPulseWidth <= escPulseMinNeutral) escPulseWidth -= (driveRampRate * driveRampGain); //Faster
+          else escPulseWidth = escPulseMinNeutral; // Initial boost
+        } 
+        //if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth -= (driveRampRate * driveRampGain); // Faster
+        if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        

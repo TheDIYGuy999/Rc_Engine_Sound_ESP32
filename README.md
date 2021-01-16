@@ -389,6 +389,15 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.3:
+- Additional ESC adjustments parameters in tab "3-adjustmentsESC.h" added. Allows to optimise the HOBBYWING 1060 ESC, even if it has no internal adjustments parameters:
+ - "escTakeoffPunch" adds more power, if accelerating from zero. Used, if your "clutch" is slipping too much while taking off.
+ - "escReversePlus" allows to make the reverse speed faster (only, if "escPulseSpan" is more than 500)
+ - Additional "6_adjustmentsLights.h" tab:
+ -  "NO_FOGLIGHTS" will skip the foglights step in the light control sequence, if defined. Use it, if your vehicle does not have fog lights
+ -  "sideLightsBrightness" allows to adjust the brightness" of your parking lights / side markers
+ - New vehicle configurations like Diesel and petrol Landcruisers, generic 6 Cylinder Diesel (optimised for smaller speakers)
+
 ### New in V 6.2:
 - GAZ 66 redefinition bug fixed
 - SMD version BOM error fixed
