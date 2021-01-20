@@ -9,7 +9,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.3; // Software revision.
+const float codeVersion = 6.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -24,6 +24,7 @@ const float codeVersion = 6.3; // Software revision.
 #include "4_adjustmentsTransmission.h"  // <<------- Transmission related adjustments
 #include "5_adjustmentsShaker.h"        // <<------- Shaker related adjustments
 #include "6_adjustmentsLights.h"        // <<------- Lights related adjustments
+#include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
 
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
@@ -55,6 +56,7 @@ const float codeVersion = 6.3; // Software revision.
 #include <IBusBM.h> // https://github.com/bmellink/IBusBM required for IBUS interface
 
 #include "driver/rmt.h" // No need to install this, comes with ESP32 board definition (used for PWM signal detection)
+#include "driver/mcpwm.h" // for servo PWM output
 
 //
 // =======================================================================================================
@@ -88,6 +90,9 @@ const uint8_t PWM_CHANNELS[PWM_CHANNELS_NUM] = { 1, 2, 3, 4, 5, 6}; // Channel n
 const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input pin numbers
 
 #define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk! Not supported in TRACKED_MODE) -----
+
+#define STEERING_PIN 13 // output for steering servo (bus communication only)
+#define SHIFTING_PIN 12 // output for shifting servo (bus communication only)
 
 #ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
 #define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
@@ -829,6 +834,30 @@ void IRAM_ATTR readPpm() {
 
 //
 // =======================================================================================================
+// mcpwm SETUP (1x during startup)
+// =======================================================================================================
+//
+// See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
+
+void setupMcpwm() {
+  // 1. set our servo output pins
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN);    //Set steering as PWM0A
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN);    //Set shifting as PWM0B
+
+  // 2. configure MCPWM parameters
+  mcpwm_config_t pwm_config;
+  pwm_config.frequency = SERVO_FREQUENCY;     //frequency usually = 50Hz, some servos may run smoother @ 100Hz
+  pwm_config.cmpr_a = 0;                      //duty cycle of PWMxA = 0
+  pwm_config.cmpr_b = 0;                      //duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER;
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
+
+  // 3. configure channels with settings above
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B with above settings
+}
+
+//
+// =======================================================================================================
 // MAIN ARDUINO SETUP (1x during startup)
 // =======================================================================================================
 //
@@ -874,14 +903,17 @@ void setup() {
 #if defined SBUS_COMMUNICATION // SBUS ----
   if (MAX_RPM_PERCENTAGE > maxSbusRpmPercentage) MAX_RPM_PERCENTAGE = maxSbusRpmPercentage; // Limit RPM range
   sBus.begin(COMMAND_RX, COMMAND_TX, sbusInverted); // begin SBUS communication with compatible receivers
+  setupMcpwm(); // mcpwm servo output setup
 
 #elif defined IBUS_COMMUNICATION // IBUS ----
   if (MAX_RPM_PERCENTAGE > maxIbusRpmPercentage) MAX_RPM_PERCENTAGE = maxIbusRpmPercentage; // Limit RPM range
-  iBus.begin(Serial2, IBUSBM_NOTIMER, COMMAND_RX, COMMAND_TX); // begin IBUS communication with compatible receivers TODO
+  iBus.begin(Serial2, IBUSBM_NOTIMER, COMMAND_RX, COMMAND_TX); // begin IBUS communication with compatible receivers
+  setupMcpwm(); // mcpwm servo output setup
 
 #elif defined PPM_COMMUNICATION // PPM ----
   if (MAX_RPM_PERCENTAGE > maxPpmRpmPercentage) MAX_RPM_PERCENTAGE = maxPpmRpmPercentage; // Limit RPM range
   attachInterrupt(digitalPinToInterrupt(PPM_PIN), readPpm, RISING); // begin PPM communication with compatible receivers
+  setupMcpwm(); // mcpwm servo output setup
 
 #else
   // PWM ----
@@ -980,7 +1012,7 @@ void setup() {
   // ESC output calibration
   escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; //Additional takeoff punch around zero
   escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
-  
+
   escPulseMax = pulseZero[3] + escPulseSpan;
   escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; //Additional power for ESC with slow reverse
 }
@@ -1237,6 +1269,37 @@ void failsafeRcSignals() {
 
 //
 // =======================================================================================================
+// MCPWM SERVO RC SIGNAL OUTPUT (bus communication mode only)
+// =======================================================================================================
+//
+// See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
+
+void mcpwmOutput() {
+
+  // Steering
+  uint16_t steeringServoMicros;
+  if (pulseWidth[1] < 1500) steeringServoMicros = map(pulseWidth[1], 1000, 1500, CH1L, CH1C);
+  else if (pulseWidth[1] > 1500) steeringServoMicros = map(pulseWidth[1], 1500, 2000, CH1C, CH1R);
+  else steeringServoMicros = CH1C;
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, steeringServoMicros);
+
+  // Shifting
+  static uint16_t shiftingServoMicros;
+#if not defined MODE1_SHIFTING
+  if (selectedGear == 1) shiftingServoMicros = CH2L;
+  if (selectedGear == 2) shiftingServoMicros = CH2C;
+  if (selectedGear == 3) shiftingServoMicros = CH2R;
+#else
+  if (currentSpeed > 100 && currentSpeed < 150) { // Only shift WPL gearbox, if vehicle is moving slowly, so it's engaging properly
+    if (!mode1) shiftingServoMicros = CH2L;
+    else shiftingServoMicros = CH2C;
+  }
+#endif
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, shiftingServoMicros);
+}
+
+//
+// =======================================================================================================
 // MAP PULSEWIDTH TO THROTTLE CH3
 // =======================================================================================================
 //
@@ -1469,7 +1532,7 @@ void engineMassSimulation() {
   }
 
   // Prevent Wastegate from being triggered while downshifting
-  if(gearDownShiftingInProgress) wastegateMillis = millis();
+  if (gearDownShiftingInProgress) wastegateMillis = millis();
 
   // Trigger Wastegate, if throttle rapidly dropped
   if (lastThrottle - currentThrottle > 70 && !escIsBraking && millis() - wastegateMillis > 1000) {
@@ -1722,8 +1785,8 @@ void led() {
 
     case 4: // roof & side & head & fog lights ---------------------------------------------------------------------
 #ifdef NO_FOGLIGHTS
-    lightsState = 5; // Skip foglights
-#endif    
+      lightsState = 5; // Skip foglights
+#endif
       cabLight.off();
       sideLight.pwm(sideLightsBrightness - crankingDim);
       headLightsSub(true, true, true);
@@ -1994,11 +2057,11 @@ void esc() {
       case 1: // Driving forward ---------------------------------------------------------------------
         escIsBraking = false;
         escInReverse = false;
-        escIsDriving = true; 
+        escIsDriving = true;
         if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) {
           if (escPulseWidth >= escPulseMaxNeutral) escPulseWidth += (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMaxNeutral; // Initial boost
-        }       
+        }
         //if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth += (driveRampRate * driveRampGain); // Faster
         if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
 
@@ -2044,7 +2107,7 @@ void esc() {
         if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) {
           if (escPulseWidth <= escPulseMinNeutral) escPulseWidth -= (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMinNeutral; // Initial boost
-        } 
+        }
         //if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth -= (driveRampRate * driveRampGain); // Faster
         if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
 
@@ -2312,8 +2375,8 @@ void rcTrigger() {
   // if (unlock5thWheel) Serial.println("5th wheel unlocked!"); // TODO, program action!
 
   // Latching 2 position switches ******************************************************************
-#ifdef TRANSMISSION_NEUTRAL
   mode1 = mode1Trigger.onOff(pulseWidth[8], 1800, 1200); // CH8 (MODE1)
+#ifdef TRANSMISSION_NEUTRAL
   neutralGear = mode1; // Transmission neutral
 #endif
   mode2 = mode2Trigger.onOff(pulseWidth[9], 1800, 1200); // CH9 (MODE2)
@@ -2350,10 +2413,13 @@ void loop() {
 
 #if defined SBUS_COMMUNICATION
   readSbusCommands(); // SBUS communication (pin 36)
+  mcpwmOutput(); // PWM servo signal output
 #elif defined IBUS_COMMUNICATION
   readIbusCommands(); // IBUS communication (pin 36)
+  mcpwmOutput(); // PWM servo signal output
 #elif defined PPM_COMMUNICATION
   readPpmCommands(); // PPM communication (pin 34)
+  mcpwmOutput(); // PWM servo signal output
 #else
   // measure RC signals mark space ratio
   readPwmSignals();

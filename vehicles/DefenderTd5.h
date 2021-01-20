@@ -105,9 +105,9 @@ volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usu
 
 // Choose the gear shifting sound (uncomment the one you want) --------
 volatile int shiftingVolumePercentage = 100; // Adjust the shifting volume (usually = 200%)
-#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
+//#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 //#include "sounds/AirShifting.h" // Pneumatic shifting sound
-//#include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
+#include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
 
 // Choose the additional "sound1" (uncomment the one you want) --------
 volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually = 100%)

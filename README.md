@@ -46,6 +46,7 @@ Fully assembled, tested and working 30 pin version
 - Channels can easily be assigned, using "remoteSetup.h"
 - Pre made configuration profiles for Flysky FS-i6X and Arduino Mirco RC remote (new in v.5.5)
 - Variable length for horn & siren, using loop area in sound files (new in v5.6)
+- BUS decoder for steering servo and shifting servo (connect servos to CH1 & CH2) pins
 
 ## On the todo list:
 - Add PWM outputs in bus mode
@@ -388,6 +389,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.4:
+- CH1 & CH2 input pins can be used as PWM output for the steering servo and for the shifting servo. The outputs are active, if a BUS communication mode (SBUS, IBUS or PPM) is selected. This allows to use vers small "BUS-only" receivers. In this case, the servos are connected to the sound controller instead.
+- Additional Servo adjustments parameters in tab "7-adjustmentsServo.h" added:
+   - "SERVO_FREQUENCY" 50Hz is standard, some servos run smoother @ 100Hz.
+   - Servo limits: left, center, right (allows to adjust both end points as well as the center point separately
 
 ### New in V 6.3:
 - Additional ESC adjustments parameters in tab "3-adjustmentsESC.h" added. Allows to optimise the HOBBYWING 1060 ESC, even if it has no internal adjustments parameters:
