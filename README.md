@@ -53,7 +53,7 @@ Fully assembled, tested and working 30 pin version
 
 ## Issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
-- This software was written and tested on macOS but should work just fine on Windows and Linux as well. If not, let me know!
+- The ESP32 does not work on macOS Big Sur 11.x, but this issue can be fixed easily as described here: ![](![](BigSurFix.md))
 
 ## How to create new .h sound files:
 
@@ -198,6 +198,10 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
 - IBUS // https://github.com/bmellink/IBusBM
 
+### Uploading the code to the board:
+- IMPORTANT: Depending on your board, you may have to press and hold the "BOOT" button, if the IDE just shows "Connecting........_____...." Release it, as soon as the upload starts.
+- On macOS Big Sur, you need to apply the following fix: ![](![](BigSurFix.md))
+
 Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
 Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
@@ -223,7 +227,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 // US trucks --------
 //#include "vehicles/CaboverCAT3408.h" // Cabover truck with Caterpillar 3408 V8 Diesel
 //#include "vehicles/KenworthW900ADetroit8V71.h" // Kenworth W900A with Detroit 8V71 V8 2 stroke Diesel
-#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
+//#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
 //#include "vehicles/KenworthW900ACAT3408new.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (good bass speaker required)
 //#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
 //#include "vehicles/MackSuperLiner.h" // MACK Super Liner
@@ -277,13 +281,21 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
 //#include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
-//#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
+#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
+
+// Asian SUV --------
+//#include "vehicles/LandcruiserFJ40.h" // Landcruiser Fj40 with inline 6 petrol engine
+//#include "vehicles/LandcruiserFJ40Diesel.h" // Landcruiser Fj40 with inline 6 12H Turbo Diesel engine
+//#include "vehicles/LandcruiserFJ40Diesel2.h" // Landcruiser Fj40 with inline 6 12H Turbo Diesel engine
 
 // US locomotives --------
 //#include "vehicles/UnionPacific2002.h" // Union Pacific 2002 SD70M locomotive with enormous, low revving 16 cylinder Diesel
 
 // Planes --------
 //#include "vehicles/MesserschmittBf109.h" // Messerschmitt BF 109 WW2 German V12 plane
+
+// Generic Diesels --------
+//#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission, optimised for smaller speakers
 ```
 
 ### Interface type (communication mode) selection:
@@ -389,6 +401,10 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.5:
+- macOS Big Sur 11.x compiling error fix explained. See: ![](![](BigSurFix.md))
+- Trailer coupling & uncoupling sounds in preparation, not yet working
 
 ### New in V 6.4:
 - CH1 & CH2 input pins can be used as PWM output for the steering servo and for the shifting servo. The outputs are active, if a BUS communication mode (SBUS, IBUS or PPM) is selected. This allows to use vers small "BUS-only" receivers. In this case, the servos are connected to the sound controller instead.

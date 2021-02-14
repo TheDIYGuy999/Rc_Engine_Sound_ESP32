@@ -2,6 +2,7 @@
     Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
+ *  ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 
    Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Audio2Header.html
    Original converter code by bitluni (send him a high five, if you like the code)
@@ -9,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.4; // Software revision.
+const float codeVersion = 6.5; // Software revision.
 
 //
 // =======================================================================================================
