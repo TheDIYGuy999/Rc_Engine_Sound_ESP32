@@ -53,7 +53,7 @@ Fully assembled, tested and working 30 pin version
 
 ## Issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
-- The ESP32 does not work on macOS Big Sur 11.x, but this issue can be fixed easily as described here: ![](BigSurFix.md)
+- The ESP32 does not work on macOS Big Sur 11.x, but this issue can be fixed easily as described here: [Big Sur Fix](BigSurFix.md)
 
 ## How to create new .h sound files:
 
@@ -200,7 +200,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 
 ### Uploading the code to the board:
 - IMPORTANT: Depending on your board, you may have to press and hold the "BOOT" button, if the IDE just shows "Connecting........_____...." Release it, as soon as the upload starts.
-- On macOS Big Sur, you need to apply the following fix:  ![](BigSurFix.md)
+- On macOS Big Sur, you need to apply the following fix:  [Big Sur Fix](BigSurFix.md)
 
 Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
 Install them according to: https://www.arduino.cc/en/Guide/Libraries
@@ -403,7 +403,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ## Changelog (newest on top):
 
 ### New in V 6.5:
-- macOS Big Sur 11.x compiling error fix explained. See:  ![](BigSurFix.md)
+- macOS Big Sur 11.x compiling error fix explained. See:  [Big Sur Fix](BigSurFix.md)
 - Trailer coupling & uncoupling sounds in preparation, not yet working
 
 ### New in V 6.4:
