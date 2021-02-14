@@ -21,12 +21,15 @@ https://forum.arduino.cc/index.php?topic=699989.0
 I tried to make it a bit easier to understand. It was tested on the new Mac mini M1 with ARM chip, but it should work as well on Intel based systems.
 
 1. Open Finder, select "Go to > Library"  in dropdown menu (hidden folder, only visible, if °alt" is pressed"
+
 copy "esptool.py" from:
 /Users/XXXXX/Library/Arduino15/packages/esp32/hardware/esp32/1.0.4/tools
+
 to:
 /Users/XXXXX/Library/Arduino15/packages/esp32/tools/esptool_py/2.6.1
 
 2. Run the following commands in Terminal:
+
 Enable superuser permissions (you need to enter your user password):
 ```
 sudo su
@@ -44,8 +47,10 @@ chmod +x esptool.py
 
 3. Back in finder, change the following in the file:
 /Users/XXXXX/Library/Arduino15/packages/esp32/hardware/esp32/1.0.4/platform.txt
+
 from:
 tools.esptool_py.cmd=esptool
+
 to:
 tools.esptool_py.cmd=esptool.py
 
