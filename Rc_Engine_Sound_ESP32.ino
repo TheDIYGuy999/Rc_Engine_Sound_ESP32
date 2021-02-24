@@ -2,7 +2,7 @@
     Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
- *  ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
+    ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 
    Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Audio2Header.html
    Original converter code by bitluni (send him a high five, if you like the code)
@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.5; // Software revision.
+const float codeVersion = 6.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -92,8 +92,9 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 
 #define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk! Not supported in TRACKED_MODE) -----
 
-#define STEERING_PIN 13 // output for steering servo (bus communication only)
-#define SHIFTING_PIN 12 // output for shifting servo (bus communication only)
+#define STEERING_PIN 13 // CH1 output for steering servo (bus communication only)
+#define SHIFTING_PIN 12 // CH2 output for shifting servo (bus communication only)
+#define COUPLER_PIN 27 // CH4 output for coupler (5th. wheel) servo (bus communication only)
 
 #ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
 #define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
@@ -112,7 +113,11 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 #define BEACON_LIGHT1_PIN 21 // Blue beacons light
 #define CABLIGHT_PIN 22 // Cabin lights
 
+#if defined THIRD_BRAKLELIGHT
 #define BRAKELIGHT_PIN 32 // Upper brake lights
+#else
+#define COUPLER_SWITCH_PIN 32 // switch for trailer coupler sound
+#endif
 
 #define SHAKER_MOTOR_PIN 23 // Shaker motor (shaking truck while idling and engine start / stop)
 
@@ -245,6 +250,8 @@ volatile boolean shiftingTrigger = false;                // Trigger for shifting
 volatile boolean hornTrigger = false;                    // Trigger for horn on / off
 volatile boolean sirenTrigger = false;                   // Trigger for siren  on / off
 volatile boolean sound1trigger = false;                  // Trigger for sound1  on / off
+volatile boolean couplingTrigger = false;                // Trigger for trailer coupling  sound
+volatile boolean uncouplingTrigger = false;              // Trigger for trailer uncoupling  sound
 volatile boolean indicatorSoundOn = false;               // active, if indicator bulb is on
 
 // Sound latches
@@ -557,8 +564,10 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curParkingBrakeSample;                   // Index of currently loaded brake sound sample
   static uint32_t curShiftingSample;                       // Index of currently loaded shifting sample
   static uint32_t curDieselKnockSample;                    // Index of currently loaded Diesel knock sample
+  static uint32_t curCouplingSample;                       // Index of currently loaded trailer coupling sample
+  static uint32_t curUncouplingSample;                     // Index of currently loaded trailer uncoupling sample
   static int32_t a, a1, a2;                                // Input signals "a" for mixer
-  static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8;    // Input signals "b" for mixer
+  static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9;// Input signals "b" for mixer
   static boolean knockSilent;                              // This knock will be more silent
   static uint8_t curKnockCylinder;                         // Index of currently ignited zylinder
 
@@ -756,9 +765,39 @@ void IRAM_ATTR fixedPlaybackTimer() {
     if (knockSilent) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // changing knock volume according to engine type and cylinder!
   }
 
+  // Trailer coupling sound, triggered by switch -----------------------------------------------
+  if (couplingTrigger) {
+    if (curCouplingSample < couplingSampleCount - 1) {
+      b8 = (couplingSamples[curCouplingSample] * couplingVolumePercentage / 100);
+      curCouplingSample ++;
+    }
+    else {
+      couplingTrigger = false;
+    }
+  }
+  else {
+    b8 = 0;
+    curCouplingSample = 0; // ensure, next sound will start @ first sample
+  }
+
+  // Trailer uncoupling sound, triggered by switch -----------------------------------------------
+  if (uncouplingTrigger) {
+    if (curUncouplingSample < couplingSampleCount - 1) {
+      b9 = (uncouplingSamples[curCouplingSample] * couplingVolumePercentage / 100);
+      curUncouplingSample ++;
+    }
+    else {
+      uncouplingTrigger = false;
+    }
+  }
+  else {
+    b9 = 0;
+    curUncouplingSample = 0; // ensure, next sound will start @ first sample
+  }
+
   // Mixing sounds together ----
   a = a1 + a2; // Horn & siren
-  b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7; // Other sounds
+  b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8 + b9; // Other sounds
 
   // DAC output (groups a + b mixed together) ****************************************************************************
 
@@ -835,6 +874,21 @@ void IRAM_ATTR readPpm() {
 
 //
 // =======================================================================================================
+// TRAILER PRESENCE SWITCH INTERRUPT
+// =======================================================================================================
+//
+#if not defined THIRD_BRAKLELIGHT
+void trailerPresenceSwitchInterrupt() {
+  if (digitalRead(COUPLER_SWITCH_PIN)) {
+    couplingTrigger = true;
+  }
+  else {
+    uncouplingTrigger = true;
+  }
+}
+#endif
+//
+// =======================================================================================================
 // mcpwm SETUP (1x during startup)
 // =======================================================================================================
 //
@@ -844,17 +898,19 @@ void setupMcpwm() {
   // 1. set our servo output pins
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN);    //Set steering as PWM0A
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN);    //Set shifting as PWM0B
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1A, COUPLER_PIN);    //Set coupling as PWM1A
 
   // 2. configure MCPWM parameters
   mcpwm_config_t pwm_config;
   pwm_config.frequency = SERVO_FREQUENCY;     //frequency usually = 50Hz, some servos may run smoother @ 100Hz
-  pwm_config.cmpr_a = 0;                      //duty cycle of PWMxA = 0
+  pwm_config.cmpr_a = 0;                      //duty cycle of PWMxa = 0
   pwm_config.cmpr_b = 0;                      //duty cycle of PWMxb = 0
   pwm_config.counter_mode = MCPWM_UP_COUNTER;
   pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
 
   // 3. configure channels with settings above
-  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B with above settings
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
+  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_1, &pwm_config);    //Configure PWM1A & PWM1B
 }
 
 //
@@ -878,6 +934,12 @@ void setup() {
 
   pinMode(COMMAND_RX, INPUT_PULLDOWN);
 
+
+#if not defined THIRD_BRAKLELIGHT // If a third brakelight is not defined, pin 32 for the trailer presence switch
+  pinMode(COUPLER_SWITCH_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(COUPLER_SWITCH_PIN), trailerPresenceSwitchInterrupt, CHANGE);
+#endif
+
   // LED & shaker motor setup (note, that we only have timers from 0 - 15)
   headLight.begin(HEADLIGHT_PIN, 1, 20000); // Timer 1, 20kHz
   tailLight.begin(TAILLIGHT_PIN, 2, 20000); // Timer 2, 20kHz
@@ -890,7 +952,9 @@ void setup() {
 
   beaconLight1.begin(BEACON_LIGHT1_PIN, 9, 20000); // Timer 9, 20kHz
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 20000); // Timer 10, 20kHz
+#if defined THIRD_BRAKLELIGHT
   brakeLight.begin(BRAKELIGHT_PIN, 11, 20000); // Timer 11, 20kHz
+#endif
   cabLight.begin(CABLIGHT_PIN, 12, 20000); // Timer 12, 20kHz
 
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
@@ -1206,7 +1270,7 @@ void processRawChannels() {
 
     // Compensate pulsewidth with auto zero offset
     pulseWidth[i] += pulseOffset[i];
-    if (!autoZeroDone) { // Print offsets, if switching con the controller
+    if (!autoZeroDone) { // Print offsets, if switching on the controller
       Serial.println(i);
       Serial.println(pulseOffset[i]);
     }
@@ -1277,14 +1341,14 @@ void failsafeRcSignals() {
 
 void mcpwmOutput() {
 
-  // Steering
+  // Steering CH1
   uint16_t steeringServoMicros;
   if (pulseWidth[1] < 1500) steeringServoMicros = map(pulseWidth[1], 1000, 1500, CH1L, CH1C);
   else if (pulseWidth[1] > 1500) steeringServoMicros = map(pulseWidth[1], 1500, 2000, CH1C, CH1R);
   else steeringServoMicros = CH1C;
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, steeringServoMicros);
 
-  // Shifting
+  // Shifting CH2
   static uint16_t shiftingServoMicros;
 #if not defined MODE1_SHIFTING
   if (selectedGear == 1) shiftingServoMicros = CH2L;
@@ -1297,6 +1361,12 @@ void mcpwmOutput() {
   }
 #endif
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, shiftingServoMicros);
+
+  // Trailer coupler (5th wheel) CH4
+  static uint16_t couplerServoMicros;
+  if (unlock5thWheel) couplerServoMicros = CH4R;
+  else couplerServoMicros = CH4L;
+  mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, couplerServoMicros);
 }
 
 //
@@ -2373,7 +2443,6 @@ void rcTrigger() {
       fifthWheelStateLock = !fifthWheelStateLock;
     }
   }
-  // if (unlock5thWheel) Serial.println("5th wheel unlocked!"); // TODO, program action!
 
   // Latching 2 position switches ******************************************************************
   mode1 = mode1Trigger.onOff(pulseWidth[8], 1800, 1200); // CH8 (MODE1)

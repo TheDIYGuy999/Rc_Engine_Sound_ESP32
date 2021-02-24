@@ -47,9 +47,11 @@ Fully assembled, tested and working 30 pin version
 - Pre made configuration profiles for Flysky FS-i6X and Arduino Mirco RC remote (new in v.5.5)
 - Variable length for horn & siren, using loop area in sound files (new in v5.6)
 - BUS decoder for steering servo and shifting servo (connect servos to CH1 & CH2) pins
+- Trailer coupler (5th wheel) servo can be connected to the CH4 pins (not in PWM communication mode)
+- TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKLELIGHT" setting in "6_adjustmentsLights.h" tab)
 
 ## On the todo list:
-- Add PWM outputs in bus mode
+- Your suggestions?
 
 ## Issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
@@ -401,6 +403,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.6:
+- Trailer coupling & uncoupling sounds now triggered by a normally open switch, connected between pin 32 and GND. Intended to use the original TAMIYA switch.
+- New "#define THIRD_BRAKLELIGHT" setting in the "6_adjustmentsLights.h" tab. Comment it out, if you want to use the switch above.
+- A trailer coupler (5th wheel) servo can now be connectet to the "CH4" header" (not available in PWM communication mode). See note (3 in "adjustmentsRemote.xlsx"
 
 ### New in V 6.5:
 - macOS Big Sur 11.x compiling error fix explained. See:  [Big Sur Fix](BigSurFix.md)

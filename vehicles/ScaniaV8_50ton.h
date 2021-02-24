@@ -133,6 +133,14 @@ const uint16_t indicatorOn = 300; // The indicator will be switched on above +/-
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
+// Choose the trailer couplig & uncoupling sounds (uncomment the ones you want) --------
+#define COUPLING_SOUND // uncomment this, if you want to use the trailer coupling & uncoupling sounds
+volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100%)
+#ifdef COUPLING_SOUND
+#include "sounds/coupling.h" // coupling
+#include "sounds/uncoupling.h" // uncoupling
+#endif
+
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
 
