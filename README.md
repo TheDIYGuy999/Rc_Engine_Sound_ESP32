@@ -404,6 +404,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.61:
+- "'couplingSampleCount' was not declared in this scope" bug fixed
+
 ### New in V 6.6:
 - Trailer coupling & uncoupling sounds now triggered by a normally open switch, connected between pin 32 and GND. Intended to use the original TAMIYA switch.
 - New "#define THIRD_BRAKLELIGHT" setting in the "6_adjustmentsLights.h" tab. Comment it out, if you want to use the switch above.

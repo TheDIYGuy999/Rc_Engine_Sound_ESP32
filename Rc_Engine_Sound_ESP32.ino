@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.6; // Software revision.
+const float codeVersion = 6.61; // Software revision.
 
 //
 // =======================================================================================================
@@ -766,6 +766,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 
   // Trailer coupling sound, triggered by switch -----------------------------------------------
+#ifdef COUPLING_SOUND  
   if (couplingTrigger) {
     if (curCouplingSample < couplingSampleCount - 1) {
       b8 = (couplingSamples[curCouplingSample] * couplingVolumePercentage / 100);
@@ -794,6 +795,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b9 = 0;
     curUncouplingSample = 0; // ensure, next sound will start @ first sample
   }
+#endif  
 
   // Mixing sounds together ----
   a = a1 + a2; // Horn & siren
