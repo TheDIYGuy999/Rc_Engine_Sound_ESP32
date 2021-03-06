@@ -1,20 +1,20 @@
 
 // Select the remote configuration you have:
-//#define FLYSKY_FS_I6X // <------- Select (remove //) one of the remote configurations below
-#define MICRO_RC
+#define FLYSKY_FS_I6X // <------- Select (remove //) one of the remote configurations below
+//#define MICRO_RC
 
 
 // BOARD SETTINGS ********************************************************************************************************************
 // Choose the board version
 //#define PROTOTYPE_36 // 36 or 30 pin board (do not uncomment it or it will cause boot issues!)
 
-// COMMUNICATION SETTINGS ************************************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
+// COMMUNICATION SETTINGS  ***********************************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
 // PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
 // PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 

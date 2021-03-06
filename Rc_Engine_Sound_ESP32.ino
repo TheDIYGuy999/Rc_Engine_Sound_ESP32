@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.61; // Software revision.
+const float codeVersion = 6.62; // Software revision.
 
 //
 // =======================================================================================================
@@ -2073,7 +2073,7 @@ void esc() {
   if (selectedGear == 3) escRampTime = escRampTimeThirdGear; // about 75
 #endif
 
-  if (millis() - escMillis > escRampTime) { // About very 2 - 6ms
+  if (millis() - escMillis > escRampTime) { // About very 20 - 75ms
     escMillis = millis();
 
     // calulate throttle dependent brake & acceleration steps
@@ -2135,7 +2135,6 @@ void esc() {
           if (escPulseWidth >= escPulseMaxNeutral) escPulseWidth += (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMaxNeutral; // Initial boost
         }
-        //if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth += (driveRampRate * driveRampGain); // Faster
         if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
@@ -2162,6 +2161,7 @@ void esc() {
         escInReverse = false;
         escIsDriving = false;
         if (escPulseWidth > pulseZero[3]) escPulseWidth -= brakeRampRate; // brake with variable deceleration
+        if (escPulseWidth < pulseZero[3]) escPulseWidth = pulseZero[3]; // Overflow bug prevention!
 
         if (pulse == 0 && escPulse == 1 && !neutralGear) {
           driveState = 1; // Driving forward
@@ -2181,7 +2181,6 @@ void esc() {
           if (escPulseWidth <= escPulseMinNeutral) escPulseWidth -= (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMinNeutral; // Initial boost
         }
-        //if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) escPulseWidth -= (driveRampRate * driveRampGain); // Faster
         if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
@@ -2208,6 +2207,7 @@ void esc() {
         escInReverse = true;
         escIsDriving = false;
         if (escPulseWidth < pulseZero[3]) escPulseWidth += brakeRampRate; // brake with variable deceleration
+        if (escPulseWidth > pulseZero[3]) escPulseWidth = pulseZero[3]; // Overflow bug prevention!
 
         if (pulse == 0 && escPulse == -1 && !neutralGear) {
           driveState = 3; // Driving backwards

@@ -45,7 +45,7 @@ const int16_t escPulseSpan = 1200; // 500 = full ESC power available, 1000 half 
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 0
 const int16_t escTakeoffPunch = 0; 
 
-// Additional reverse speed:
+// Additional reverse speed (disconnect & reconnect battery after changing this setting):
 // Usually 0. Enlarge it, if your reverse speed is too slow.
 // - Hobbywing 1060 ESC & RBR/C 370 motor & 2 speed shifting transmission = 220
 // - Hobbywing 1060 ESC & stock WPL 370 motor & 2 speed shifting transmission = 150

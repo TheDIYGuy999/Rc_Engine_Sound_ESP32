@@ -404,6 +404,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.62:
+- ESC state machine not locking up anymore, if "escBrakeSteps" is bigger than "pulseNeutral". This allows to achieve a more aggressive brake deceleration.
+
 ### New in V 6.61:
 - "'couplingSampleCount' was not declared in this scope" bug fixed
 
