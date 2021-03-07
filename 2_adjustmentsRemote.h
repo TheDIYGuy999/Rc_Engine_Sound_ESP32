@@ -1,7 +1,7 @@
 
 // Select the remote configuration you have:
 #define FLYSKY_FS_I6X // <------- Select (remove //) one of the remote configurations below
-//#define MICRO_RC
+//#define MICRO_RC // <------- Don't use this with standard remotes!
 
 
 // BOARD SETTINGS ********************************************************************************************************************

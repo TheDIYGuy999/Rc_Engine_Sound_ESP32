@@ -404,6 +404,10 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.63:
+- Trailer coupling / uncoupling sound triggering switch debounced, correct sounds should now be played every time
+- Typos in trailer sound playback section fixed
+
 ### New in V 6.62:
 - ESC state machine not locking up anymore, if "escBrakeSteps" is bigger than "pulseNeutral". This allows to achieve a more aggressive brake deceleration.
 

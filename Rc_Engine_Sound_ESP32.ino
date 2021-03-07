@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.62; // Software revision.
+const float codeVersion = 6.63; // Software revision.
 
 //
 // =======================================================================================================
@@ -34,7 +34,7 @@ const float codeVersion = 6.62; // Software revision.
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
-#define ESC_DEBUG // uncomment it to debug the ESC
+//#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
@@ -51,6 +51,7 @@ const float codeVersion = 6.62; // Software revision.
 #include "headers/curves.h" // Nonlinear throttle curve arrays
 
 // Libraries (you have to install all of them in the "Arduino sketchbook"/libraries folder)
+// !! Do NOT install the libraries in the sketch folder. This may cause weird rebooting issues !!
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- Install the newest version!
 #include <SBUS.h> // https://github.com/TheDIYGuy999/SBUS you need to install my fork of this library!
 #include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- v4.7: This one is now required as well
@@ -204,6 +205,8 @@ IBusBM iBus;    // IBUS object
 bool ibusInit;
 uint32_t maxIbusRpmPercentage = 350; // Limit required to prevent controller fron crashing @ high engine RPM
 
+// Interrupt latches
+volatile boolean couplerSwitchInteruptLatch; // this is enabled, if the coupler switch pin change interrupt is detected
 
 // Control input signals
 #define PULSE_ARRAY_SIZE 14                              // 13 channels (+ the unused CH0)
@@ -766,7 +769,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 
   // Trailer coupling sound, triggered by switch -----------------------------------------------
-#ifdef COUPLING_SOUND  
+#ifdef COUPLING_SOUND
   if (couplingTrigger) {
     if (curCouplingSample < couplingSampleCount - 1) {
       b8 = (couplingSamples[curCouplingSample] * couplingVolumePercentage / 100);
@@ -783,8 +786,8 @@ void IRAM_ATTR fixedPlaybackTimer() {
 
   // Trailer uncoupling sound, triggered by switch -----------------------------------------------
   if (uncouplingTrigger) {
-    if (curUncouplingSample < couplingSampleCount - 1) {
-      b9 = (uncouplingSamples[curCouplingSample] * couplingVolumePercentage / 100);
+    if (curUncouplingSample < uncouplingSampleCount - 1) {
+      b9 = (uncouplingSamples[curUncouplingSample] * couplingVolumePercentage / 100);
       curUncouplingSample ++;
     }
     else {
@@ -795,7 +798,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     b9 = 0;
     curUncouplingSample = 0; // ensure, next sound will start @ first sample
   }
-#endif  
+#endif
 
   // Mixing sounds together ----
   a = a1 + a2; // Horn & siren
@@ -881,12 +884,7 @@ void IRAM_ATTR readPpm() {
 //
 #if not defined THIRD_BRAKLELIGHT
 void trailerPresenceSwitchInterrupt() {
-  if (digitalRead(COUPLER_SWITCH_PIN)) {
-    couplingTrigger = true;
-  }
-  else {
-    uncouplingTrigger = true;
-  }
+  couplerSwitchInteruptLatch = true;
 }
 #endif
 //
@@ -1843,7 +1841,7 @@ void led() {
 
     case 2: // cab & roof & side lights ---------------------------------------------------------------------
       cabLight.pwm(255 - crankingDim);
-      sideLight.pwm(200 - crankingDim);
+      sideLight.pwm(sideLightsBrightness - crankingDim);
       headLightsSub(false, false, true);
       fogLight.off();
       brakeLightsSub(0); // 0 brightness, if not braking
@@ -2477,6 +2475,36 @@ void rcTrigger() {
 
 //
 // =======================================================================================================
+// TRAILER PRESENCE SWITCH
+// =======================================================================================================
+//
+#if not defined THIRD_BRAKLELIGHT
+void trailerPresenceSwitchRead() {
+
+  static unsigned long switchMillis;
+  static boolean couplerSwitchStateLatch;
+
+  if (couplerSwitchInteruptLatch) {
+    switchMillis = millis();
+    couplerSwitchInteruptLatch = false;
+    couplerSwitchStateLatch = true;
+  }
+
+  if (couplerSwitchStateLatch && millis() - switchMillis > 1) { // Debouncing delay
+    if (digitalRead(COUPLER_SWITCH_PIN)) {
+      couplingTrigger = true;
+      couplerSwitchStateLatch = false;
+    }
+    else {
+      uncouplingTrigger = true;
+      couplerSwitchStateLatch = false;
+    }
+  }
+}
+#endif
+
+//
+// =======================================================================================================
 // MAIN LOOP, RUNNING ON CORE 1
 // =======================================================================================================
 //
@@ -2506,8 +2534,12 @@ void loop() {
   // Indicator (turn signal) triggering
   triggerIndicators();
 
-  // rcTrigger (experimental)
+  // rcTrigger
   rcTrigger();
+
+  // Read trailer switch state
+  trailerPresenceSwitchRead();
+
 }
 
 //
@@ -2521,8 +2553,6 @@ void Task1code(void *pvParameters) {
 
     // DAC offset fader
     dacOffsetFade();
-
-    // Former map throttle TODO
 
     // Simulate engine mass, generate RPM signal
     engineMassSimulation();
