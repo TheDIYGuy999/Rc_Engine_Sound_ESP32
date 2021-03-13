@@ -53,9 +53,10 @@ Fully assembled, tested and working 30 pin version
 ## On the todo list:
 - Your suggestions?
 
-## Issues:
+## Known issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
-- The ESP32 does not work on macOS Big Sur 11.x, but this issue can be fixed easily as described here: [Big Sur Fix](BigSurFix.md)
+- The ESP32 does not work on macOS Big Sur 11.x, & Espressif board definition 1.04 but this issue can be fixed easily as described here: [Big Sur Fix](BigSurFix.md) (fixed with board definition 1.05)
+- Under Windows 10, there is a constant reboot issue, if Espressif board definition 1.05 is used. Use 1.04 instead!
 
 ## How to create new .h sound files:
 

@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.63; // Software revision.
+const float codeVersion = 6.64; // Software revision.
 
 //
 // =======================================================================================================
@@ -52,10 +52,10 @@ const float codeVersion = 6.63; // Software revision.
 
 // Libraries (you have to install all of them in the "Arduino sketchbook"/libraries folder)
 // !! Do NOT install the libraries in the sketch folder. This may cause weird rebooting issues !!
-#include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- Install the newest version!
-#include <SBUS.h> // https://github.com/TheDIYGuy999/SBUS you need to install my fork of this library!
-#include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- v4.7: This one is now required as well
-#include <IBusBM.h> // https://github.com/bmellink/IBusBM required for IBUS interface
+#include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
+#include <SBUS.h>      // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
+#include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
+#include <IBusBM.h>    // https://github.com/bmellink/IBusBM        <<------- required for IBUS interface
 
 #include "driver/rmt.h" // No need to install this, comes with ESP32 board definition (used for PWM signal detection)
 #include "driver/mcpwm.h" // for servo PWM output

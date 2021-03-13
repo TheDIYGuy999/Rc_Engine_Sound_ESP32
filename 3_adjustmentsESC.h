@@ -30,7 +30,7 @@ HOBBYWING 1060 is working as well, but 1080 is still better
 // Drive direction adjustment:
 //#define ESC_DIR // uncomment this, if your motor is spinning in the wrong direction
 
-// Top speed adjusment:
+// Top speed adjustment:
 // Usually 500 ( = 1000 - 2000 microseconds output or -45° to 45° servo angle) Enlarge it, if your vehicle is too fast
 // - The Hobbywing 1060 is reaching full throttle (forward) @ about 1800 Microseconds, so we need about 640 for full throttle
 // - Hobbywing 1060 ESC & RBR/C 370 motor & 2 speed shifting transmission = 1600
