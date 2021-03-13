@@ -16,7 +16,7 @@
 
 // SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)

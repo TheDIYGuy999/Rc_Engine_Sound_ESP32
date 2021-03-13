@@ -55,8 +55,8 @@ Fully assembled, tested and working 30 pin version
 
 ## Known issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
-- The ESP32 does not work on macOS Big Sur 11.x, & Espressif board definition 1.04 but this issue can be fixed easily as described here: [Big Sur Fix](BigSurFix.md) (fixed with board definition 1.05)
-- Under Windows 10, there is a constant reboot issue, if Espressif board definition 1.05 is used. Use 1.04 instead!
+- The ESP32 does not work on macOS Big Sur 11.x, but this issue can be fixed easily as described here: [Big Sur Fix](BigSurFix.md) (for v1.04)
+- Under Windows 10 & macOS, there is a crash & reboot issue, if Espressif ESP32 board definition v1.05 is used. Use v1.04 instead!
 
 ## How to create new .h sound files:
 
@@ -192,6 +192,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 
 ### Required ESP32 board definition:
 - Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+- Use v1.04, v1.05 is causing reboot issues!
 - Adjust settings according to:
 ![](pictures/settings.png)
 
@@ -249,6 +250,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 //#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
+#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
@@ -284,7 +286,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
 //#include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
-#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
+//#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
 
 // Asian SUV --------
 //#include "vehicles/LandcruiserFJ40.h" // Landcruiser Fj40 with inline 6 petrol engine
@@ -404,6 +406,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.7:
+- MAN KAT V8 Diesel German Bundeswehr military truck for Onkel_Thom
+
+### New in V 6.64:
+- Known issues added
 
 ### New in V 6.63:
 - Trailer coupling / uncoupling sound triggering switch debounced, correct sounds should now be played every time

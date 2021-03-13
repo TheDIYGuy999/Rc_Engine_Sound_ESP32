@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.64; // Software revision.
+const float codeVersion = 6.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -28,6 +28,7 @@ const float codeVersion = 6.64; // Software revision.
 #include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
 
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+// Warning: do not use Espressif ESP32 board definition v1.05, its causing crash & reboot loops! Use v1.04 instead.
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
 
 // Make sure to remove -master from your sketch folder name
@@ -51,7 +52,7 @@ const float codeVersion = 6.64; // Software revision.
 #include "headers/curves.h" // Nonlinear throttle curve arrays
 
 // Libraries (you have to install all of them in the "Arduino sketchbook"/libraries folder)
-// !! Do NOT install the libraries in the sketch folder. This may cause weird rebooting issues !!
+// !! Do NOT install the libraries in the sketch folder.
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
 #include <SBUS.h>      // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
 #include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
