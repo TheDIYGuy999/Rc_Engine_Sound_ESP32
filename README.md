@@ -407,6 +407,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.8:
+- "STEERING_RAMP_TIME" allows "scale" steering servo movements (BUS communication mode only)
+
 ### New in V 6.7:
 - MAN KAT V8 Diesel German Bundeswehr military truck for Onkel_Thom
 

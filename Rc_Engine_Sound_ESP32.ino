@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.7; // Software revision.
+const float codeVersion = 6.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -1335,7 +1335,7 @@ void failsafeRcSignals() {
 
 //
 // =======================================================================================================
-// MCPWM SERVO RC SIGNAL OUTPUT (bus communication mode only)
+// MCPWM SERVO RC SIGNAL OUTPUT (BUS communication mode only)
 // =======================================================================================================
 //
 // See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
@@ -1344,10 +1344,20 @@ void mcpwmOutput() {
 
   // Steering CH1
   uint16_t steeringServoMicros;
-  if (pulseWidth[1] < 1500) steeringServoMicros = map(pulseWidth[1], 1000, 1500, CH1L, CH1C);
-  else if (pulseWidth[1] > 1500) steeringServoMicros = map(pulseWidth[1], 1500, 2000, CH1C, CH1R);
-  else steeringServoMicros = CH1C;
-  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, steeringServoMicros);
+  static uint16_t steeringServoMicrosDelayed = CH1C;
+  static unsigned long steeringDelayMicros;
+  if (micros() - steeringDelayMicros > STEERING_RAMP_TIME) { // Adjustable steering max. ramp speed
+    steeringDelayMicros = micros();
+    if (pulseWidth[1] < 1500) steeringServoMicros = map(pulseWidth[1], 1000, 1500, CH1L, CH1C);
+    else if (pulseWidth[1] > 1500) steeringServoMicros = map(pulseWidth[1], 1500, 2000, CH1C, CH1R);
+    else steeringServoMicros = CH1C;
+    if (steeringServoMicrosDelayed < steeringServoMicros) steeringServoMicrosDelayed++;
+    if (steeringServoMicrosDelayed > steeringServoMicros) steeringServoMicrosDelayed--;
+    steeringServoMicrosDelayed = constrain(steeringServoMicrosDelayed, min(CH1L, CH1R), max(CH1L, CH1R));
+    //Serial.println(steeringServoMicros);
+    //Serial.println(steeringServoMicrosDelayed);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, steeringServoMicrosDelayed);
+  }
 
   // Shifting CH2
   static uint16_t shiftingServoMicros;
