@@ -10,7 +10,7 @@ volatile int startVolumePercentage = 140; // Adjust the start volume (usually = 
 volatile int idleVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full throttle (for rev sound as well)
-#include "sounds/Урал375idle.h" // Ural 375D
+#include "sounds/URAL375idle.h" // Ural 375D
 
 
 // Choose the motor revving sound (uncomment the one you want) --------
@@ -21,7 +21,7 @@ volatile const uint16_t revSwitchPoint = 150; // The rev sound is played instead
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-#include "sounds/Урал375rev.h" // Ural 375D
+#include "sounds/URAL375rev.h" // Ural 375D
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
@@ -30,7 +30,7 @@ volatile int jakeBrakeVolumePercentage = 160; // Adjust the max. volume (usually
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
 #ifdef JAKE_BRAKE_SOUND
-#include "sounds/Урал375jakeBrake.h" // Ural 375D
+#include "sounds/URAL375jakeBrake.h" // Ural 375D
 #endif
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
@@ -42,7 +42,7 @@ volatile int dieselKnockStartPoint = 110; // Volume will raise above this point 
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
-#include "sounds/Урал375knock.h" // Ural 375D
+#include "sounds/URAL375knock.h" // Ural 375D
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)

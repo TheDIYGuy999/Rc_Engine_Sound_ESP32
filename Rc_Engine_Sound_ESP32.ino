@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.8; // Software revision.
+const float codeVersion = 6.81; // Software revision.
 
 //
 // =======================================================================================================
@@ -2489,9 +2489,9 @@ void rcTrigger() {
 // TRAILER PRESENCE SWITCH
 // =======================================================================================================
 //
-#if not defined THIRD_BRAKLELIGHT
-void trailerPresenceSwitchRead() {
 
+void trailerPresenceSwitchRead() {
+#if not defined THIRD_BRAKLELIGHT
   static unsigned long switchMillis;
   static boolean couplerSwitchStateLatch;
 
@@ -2511,8 +2511,8 @@ void trailerPresenceSwitchRead() {
       couplerSwitchStateLatch = false;
     }
   }
-}
 #endif
+}
 
 //
 // =======================================================================================================

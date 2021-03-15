@@ -31,7 +31,7 @@
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
 //#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
-//#include "vehicles/Урал375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
+//#include "vehicles/URAL375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
 // Russian tanks -------

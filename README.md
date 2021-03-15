@@ -255,7 +255,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
 //#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
-//#include "vehicles/Урал375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
+//#include "vehicles/URAL375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
 // Russian tanks -------
@@ -407,11 +407,15 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 6.81:
+- Third brakelight bug fixed
+- Урал375 renamed to URAL375 (Windows is not able to read a mix of western and cyrillic letters)
+
 ### New in V 6.8:
 - "STEERING_RAMP_TIME" allows "scale" steering servo movements (BUS communication mode only)
 
 ### New in V 6.7:
-- MAN KAT V8 Diesel German Bundeswehr military truck for Onkel_Thom
+- MAN KAT V8 Diesel German Bundeswehr military truck for Onkel_Tom
 
 ### New in V 6.64:
 - Known issues added
