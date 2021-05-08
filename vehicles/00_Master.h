@@ -79,6 +79,7 @@ volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound v
 
 // Choose the jake brake sound (uncomment the one you want) --------
 #define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
+#define JAKEBRAKE_ENGINE_SLOWDOWN // Use jake brake to slow down engine while releasing throttle in neutral or during upshifting while applying throttle
 volatile int jakeBrakeVolumePercentage = 140; // Adjust the max. volume (usually = 150%)
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
@@ -170,15 +171,25 @@ volatile int hornVolumePercentage = 130; // Adjust the horn volume (usually = 10
 //#include "sounds/FireTruckAirHorn.h" // US fire truck (incl. loop)
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 100%)
+volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
 //#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
 //#include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
-#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+//#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
+//#include "sounds/brasil(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/in_the_summertime(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/JEEP+HORN+2(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/la_carica(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/la_cucaracha(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/marseillaise(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/river_kwai(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
+#include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)

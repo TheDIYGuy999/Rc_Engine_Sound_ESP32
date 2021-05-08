@@ -72,8 +72,8 @@ float curveLinear[][2] = {
 // Credit: http://interface.khm.de/index.php/lab/interfaces-advanced/nonlinear-mapping/
 
 uint32_t reMap(float pts[][2], uint32_t input) {
-  uint32_t rr;
-  float bb, mm;
+  uint32_t rr = 0;
+  float mm = 0;
 
   for (uint8_t nn = 0; nn < 12; nn++) {
     if (input >= pts[nn][0] && input <= pts[nn + 1][0]) {

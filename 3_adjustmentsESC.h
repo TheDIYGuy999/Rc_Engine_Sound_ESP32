@@ -15,7 +15,7 @@ Uncommented settings are left on factory preset
 10: 4
 11: 4
 12: 5
-13: 4
+13: 5 (16KHz = less whining)
 14: 1 (be careful here, this will change the BEC voltage!!)
 15: 1 (change it, important)
 
@@ -36,13 +36,14 @@ HOBBYWING 1060 is working as well, but 1080 is still better
 // - Hobbywing 1060 ESC & RBR/C 370 motor & 2 speed shifting transmission = 1600
 // - Hobbywing 1060 ESC & stock WPL 370 motor & 2 speed shifting transmission = 650
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 1200
-const int16_t escPulseSpan = 1200; // 500 = full ESC power available, 1000 half ESC power available etc. 
+const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. 
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.
 // - Hobbywing 1060 ESC & RBR/C 370 motor & 2 speed shifting transmission = 80
 // - Hobbywing 1060 ESC & stock WPL 370 motor & 2 speed shifting transmission = 10
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 0
+// - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 150
 const int16_t escTakeoffPunch = 0; 
 
 // Additional reverse speed (disconnect & reconnect battery after changing this setting):
@@ -50,4 +51,5 @@ const int16_t escTakeoffPunch = 0;
 // - Hobbywing 1060 ESC & RBR/C 370 motor & 2 speed shifting transmission = 220
 // - Hobbywing 1060 ESC & stock WPL 370 motor & 2 speed shifting transmission = 150
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 0
+// - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 80
 const int16_t escReversePlus = 0;

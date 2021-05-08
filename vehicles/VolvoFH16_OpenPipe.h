@@ -1,4 +1,5 @@
-// Vehicle specific settings for sound, lights, ESC, transmission. This master file is containing all available sounds
+// Vehicle specific settings for sound, lights, ESC, transmission.
+// See: https://www.youtube.com/watch?v=MU1iwzl33Zw&list=LL&index=4
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
@@ -9,7 +10,7 @@ volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 
 volatile int idleVolumePercentage = 70; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 140; // Volume Percentage while full throttle (for rev sound as well)
-#include "sounds/FH16_750idle.h" // Volvo FH16 750
+#include "sounds/VOLVO_FH_open_pipeIdle.h" // Volvo FH
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
@@ -19,14 +20,13 @@ volatile const uint16_t revSwitchPoint = 100; // The rev sound is played instead
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-//#include "sounds/FH16_750rev2.h" // Volvo FH16 750
-#include "sounds/FH16_750rev3.h" // Volvo FH16 750  (more bass)
+#include "sounds/VOLVO_FH_open_pipeRev.h" // Volvo FH
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
 #define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
 #define JAKEBRAKE_ENGINE_SLOWDOWN // Use jake brake to slow down engine while releasing throttle in neutral or during upshifting while applying throttle
-volatile int jakeBrakeVolumePercentage = 400; // Adjust the max. volume (usually = 150%)
+volatile int jakeBrakeVolumePercentage = 300; // Adjust the max. volume (usually = 150%)
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
 #ifdef JAKE_BRAKE_SOUND
@@ -43,12 +43,11 @@ volatile int dieselKnockStartPoint = 110; // Volume will raise above this point 
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 #define R6 // R6 inline 6 engine: 6th knock pulse (of 6) will be louder (set dieselKnockInterval to 6)
-volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
-//#include "sounds/FH16_750knock.h" // Volvo FH16 750
-#include "sounds/FH16_750knock2.h" // Volvo FH16 750  (more bass)
+volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+#include "sounds/VOLVO_FH_open_pipeKnock.h" // Volvo FH
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 70; // Adjust the turbo volume (usually = 70%)
+volatile int turboVolumePercentage = 40; // Adjust the turbo volume (usually = 70%)
 volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 

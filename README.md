@@ -51,7 +51,7 @@ Fully assembled, tested and working 30 pin version
 - TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKLELIGHT" setting in "6_adjustmentsLights.h" tab)
 
 ## On the todo list:
-- Your suggestions?
+- cornering lights
 
 ## Known issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
@@ -249,8 +249,9 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
+#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
 //#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
-#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
+//#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
@@ -278,10 +279,11 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
 //#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission (not compatible with iBus communication)
 
-// US SUV --------
+// US SUV & Pickups --------
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
 //#include "vehicles/FordPowerstroke.h" // Ford Powerstroke 7.3l V8 Diesel, 6 speed automatic (good bass speaker required)
 //#include "vehicles/RAM2500_Cummins12V.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, manual transmission
+//#include "vehicles/GMCsierra.h" // GMC Sierra V8 pickup, 3 speed automatic transmission
 
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
@@ -313,11 +315,11 @@ Note, that the default communication mode is SBUS. You need to change it as foll
 // Choose the receiver communication mode (never uncomment more than one!)
 
 // PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+// PWM mode active, if SBUS, IBUS and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -332,11 +334,11 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 // Choose the receiver communication mode (never uncomment more than one!)
 
 // PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -351,11 +353,11 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 // Choose the receiver communication mode (never uncomment more than one!)
 
 // PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -364,14 +366,14 @@ boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS sig
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 ```
 
-SBUS Invereted (if your receiver sends a non-standard SBUS signal):
+SBUS non standard signal (if your receiver sends a non-standard SBUS signal):
 ```
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 ```
 
-SBUS not inverted (default, used in most cases)
+SBUS standard signal (default, used in most cases)
 ```
-boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 ```
 
 #### IBUS (not recommended, NO FAILSAFE, if bad contact in iBUS wiring! "RX" header, 13 channels)
@@ -384,7 +386,7 @@ boolean sbusInverted = false; // true = wired to non standard (inverted) SBUS si
 
 // SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // true = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -406,6 +408,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 6.9:
+- New "JAKEBRAKE_ENGINE_SLOWDOWN" option, used in Volvo FH trucks with open pipe. If defined, the engine RPM is lowered, using the jake brake, while upshifting under full load as well as when the throttle is released quickly in neutral. You can hear it in this video: https://www.youtube.com/watch?v=MU1iwzl33Zw&list=LL&index=4
+- New volvo FH with open pipes
+- New GMC Sierra V8 Pickup with 3 speed automatic transmission
+- A lot of new horn melodies from nenno
 
 ### New in V 6.81:
 - Third brakelight bug fixed
