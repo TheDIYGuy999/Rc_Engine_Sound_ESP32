@@ -1,4 +1,4 @@
-
+ 
 // Select the remote configuration you have:
 #define FLYSKY_FS_I6X // <------- Select (remove //) one of the remote configurations below
 //#define MICRO_RC // <------- Don't use this with standard remotes!
@@ -12,11 +12,11 @@
 // Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
 // PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -49,7 +49,7 @@ boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS si
   //#define AUTO_INDICATORS // Indicators triggered automatically by steering angle or manually by controller CH6
 */
 
-// Flysky FS-i6X remote --------------------------------------------------------------------------------------------------------------
+// Flysky FS-i6X remote configuration profile -------------------------------------------------------------------------------------------
 #ifdef FLYSKY_FS_I6X
 
 // Channel assignment
@@ -116,7 +116,7 @@ const uint16_t pulseSpan = 480;
 #endif
 
 
-// "Micro RC" DIY Arduino remote -----------------------------------------------------------------------------------------------------
+// "Micro RC" DIY Arduino remote configuration profile -------------------------------------------------------------------------------------------
 #ifdef MICRO_RC
 
 // Channel assignment

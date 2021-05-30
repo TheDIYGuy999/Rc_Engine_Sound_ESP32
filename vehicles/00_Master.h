@@ -154,7 +154,7 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 #include "sounds/GenericFan.h" // Generic engine cooling fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 130; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn (no loop)
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short (incl. loop)
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (incl. loop)
@@ -162,13 +162,14 @@ volatile int hornVolumePercentage = 130; // Adjust the horn volume (usually = 10
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn (incl. loop)
 //#include "sounds/CarHorn.h" // A boring car horn (incl. loop)
 //#include "sounds/TruckHorn.h" // A generic truck horn (incl. loop)
-#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn (incl. loop, not the best)
+//#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn (incl. loop, not the best)
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
 //#include "sounds/CaboverCAThorn.h" // Cabover with CAT engine horn (incl. loop)
 //#include "sounds/MackSuperLinerHorn.h" // MACK Super Liner horn (incl. loop)
 //#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn (incl. loop)
 //#include "sounds/DixieHorn.h" // Dixie horn
 //#include "sounds/FireTruckAirHorn.h" // US fire truck (incl. loop)
+#include "sounds/StadtLuzernHorn.h" // Steam Ship Stadt Luzern Horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
@@ -190,6 +191,7 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 //#include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de
 //#include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
 #include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/DixieSiren.h" // Dixie siren
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)

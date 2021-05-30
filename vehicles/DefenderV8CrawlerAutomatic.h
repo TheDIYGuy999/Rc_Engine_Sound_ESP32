@@ -37,13 +37,14 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 100; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 700; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
-volatile int dieselKnockStartPoint = 250; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockStartPoint = 300; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 //#include "sounds/DefenderV8Knock.h" // Land Rover Defender V8 knock
 //#include "sounds/DefenderV8PureSoundKnock.h" // Land Rover Defender V8 crawler
 #include "sounds/DefenderV8PureSoundKnock4.h" // Land Rover Defender V8 crawler
@@ -139,7 +140,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 80; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)

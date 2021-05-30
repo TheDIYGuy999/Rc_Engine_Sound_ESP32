@@ -13,7 +13,11 @@
 #if NumberOfAutomaticGears == 6
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 48, 32, 22, 15, 12, 10}; // Allison 3200 EVS (10, 54, 26, 22, 15, 12, 10)
 #elif NumberOfAutomaticGears == 4
+#ifndef OVERDRIVE
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 44, 23, 14, 10}; // GM Turbo HydraMatic 700-R4
+#else
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10, 7}; // Overdrive (lower RPM) in 4th gear
+#endif
 #elif NumberOfAutomaticGears == 3
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo HydraMatic 400
 #endif

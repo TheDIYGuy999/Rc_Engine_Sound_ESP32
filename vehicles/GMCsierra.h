@@ -7,14 +7,14 @@ volatile int startVolumePercentage = 90; // Adjust the start volume (usually = 1
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineIdleVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!) 60
 volatile int fullThrottleVolumePercentage = 170; // Volume Percentage while full throttle (for rev sound as well)
 #include "sounds/GMCSierraPickupIdle.h" // GMC Sierra V8 Pickup
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
 volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
-volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineRevVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!) 60
 volatile const uint16_t revSwitchPoint = 10; // The rev sound is played instead of the idle sound above this point
 volatile const uint16_t idleEndPoint = 300; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
@@ -33,7 +33,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 150; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 160; // Adjust the Diesel knock volume (usually = 200 - 600%) 150
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (usually number of cylinders)
 volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)

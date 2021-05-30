@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 6.9; // Software revision.
+const float codeVersion = 7.0; // Software revision.
 
 //
 // =======================================================================================================
@@ -27,9 +27,10 @@ const float codeVersion = 6.9; // Software revision.
 #include "5_adjustmentsShaker.h"        // <<------- Shaker related adjustments
 #include "6_adjustmentsLights.h"        // <<------- Lights related adjustments
 #include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
+#include "8_adjustmentsSound.h"         // <<------- Sound related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
+//#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
@@ -269,6 +270,7 @@ volatile uint16_t throttleDependentVolume = 0;           // engine volume accord
 volatile uint16_t throttleDependentRevVolume = 0;        // engine rev volume according to throttle position
 volatile uint16_t rpmDependentJakeBrakeVolume = 0;       // Engine rpm dependent jake brake volume
 volatile uint16_t throttleDependentKnockVolume = 0;      // engine Diesel knock volume according to throttle position
+volatile uint16_t rpmDependentKnockVolume = 0;           // engine Diesel knock volume according to engine RPM
 volatile uint16_t throttleDependentTurboVolume = 0;      // turbo volume according to rpm
 volatile uint16_t throttleDependentFanVolume = 0;        // cooling fan volume according to rpm
 volatile uint16_t throttleDependentChargerVolume = 0;    // cooling fan volume according to rpm
@@ -350,19 +352,19 @@ volatile uint32_t fixedTimerTicks = maxSampleInterval;
 
 void IRAM_ATTR variablePlaybackTimer() {
 
-  static uint32_t attenuatorMillis;
-  static uint32_t curEngineSample;              // Index of currently loaded engine sample
-  static uint32_t curRevSample;                 // Index of currently loaded engine rev sample
-  static uint32_t curTurboSample;               // Index of currently loaded turbo sample
-  static uint32_t curFanSample;                 // Index of currently loaded fan sample
-  static uint32_t curChargerSample;             // Index of currently loaded charger sample
-  static uint32_t curStartSample;               // Index of currently loaded start sample
-  static uint32_t curJakeBrakeSample;           // Index of currently loaded jake brake sample
-  static uint32_t lastDieselKnockSample;        // Index of last Diesel knock sample
-  static uint16_t attenuator;                   // Used for volume adjustment during engine switch off
-  static uint16_t speedPercentage;              // slows the engine down during shutdown
-  static int32_t a, a1, a2, a3, b, c, d, e;     // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sound
-  uint8_t a1Multi;                              // Volume multipliers
+  static uint32_t attenuatorMillis = 0;
+  static uint32_t curEngineSample = 0;              // Index of currently loaded engine sample
+  static uint32_t curRevSample = 0;                 // Index of currently loaded engine rev sample
+  static uint32_t curTurboSample = 0;               // Index of currently loaded turbo sample
+  static uint32_t curFanSample = 0;                 // Index of currently loaded fan sample
+  static uint32_t curChargerSample = 0;             // Index of currently loaded charger sample
+  static uint32_t curStartSample = 0;               // Index of currently loaded start sample
+  static uint32_t curJakeBrakeSample = 0;           // Index of currently loaded jake brake sample
+  static uint32_t lastDieselKnockSample = 0;        // Index of last Diesel knock sample
+  static uint16_t attenuator = 0;                   // Used for volume adjustment during engine switch off
+  static uint16_t speedPercentage = 0;              // slows the engine down during shutdown
+  static int32_t a, a1, a2, a3, b, c, d, e = 0;     // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sound
+  uint8_t a1Multi = 0;                              // Volume multipliers
 
   //portENTER_CRITICAL_ISR(&variableTimerMux);
 
@@ -548,6 +550,8 @@ void IRAM_ATTR variablePlaybackTimer() {
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
   dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5)) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
+  //dacWrite(DAC1, constrain(a + 128, 0, 255));
 
   //portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -560,22 +564,23 @@ void IRAM_ATTR variablePlaybackTimer() {
 
 void IRAM_ATTR fixedPlaybackTimer() {
 
-  static uint32_t curHornSample;                           // Index of currently loaded horn sample
-  static uint32_t curSirenSample;                          // Index of currently loaded siren sample
-  static uint32_t curSound1Sample;                         // Index of currently loaded sound1 sample
-  static uint32_t curReversingSample;                      // Index of currently loaded reversing beep sample
-  static uint32_t curIndicatorSample;                      // Index of currently loaded indicator tick sample
-  static uint32_t curWastegateSample;                      // Index of currently loaded wastegate sample
-  static uint32_t curBrakeSample;                          // Index of currently loaded brake sound sample
-  static uint32_t curParkingBrakeSample;                   // Index of currently loaded brake sound sample
-  static uint32_t curShiftingSample;                       // Index of currently loaded shifting sample
-  static uint32_t curDieselKnockSample;                    // Index of currently loaded Diesel knock sample
-  static uint32_t curCouplingSample;                       // Index of currently loaded trailer coupling sample
-  static uint32_t curUncouplingSample;                     // Index of currently loaded trailer uncoupling sample
-  static int32_t a, a1, a2;                                // Input signals "a" for mixer
-  static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9;// Input signals "b" for mixer
-  static boolean knockSilent;                              // This knock will be more silent
-  static uint8_t curKnockCylinder;                         // Index of currently ignited zylinder
+  static uint32_t curHornSample = 0;                           // Index of currently loaded horn sample
+  static uint32_t curSirenSample = 0;                          // Index of currently loaded siren sample
+  static uint32_t curSound1Sample = 0;                         // Index of currently loaded sound1 sample
+  static uint32_t curReversingSample = 0;                      // Index of currently loaded reversing beep sample
+  static uint32_t curIndicatorSample = 0;                      // Index of currently loaded indicator tick sample
+  static uint32_t curWastegateSample = 0;                      // Index of currently loaded wastegate sample
+  static uint32_t curBrakeSample = 0;                          // Index of currently loaded brake sound sample
+  static uint32_t curParkingBrakeSample = 0;                   // Index of currently loaded brake sound sample
+  static uint32_t curShiftingSample = 0;                       // Index of currently loaded shifting sample
+  static uint32_t curDieselKnockSample = 0;                    // Index of currently loaded Diesel knock sample
+  static uint32_t curCouplingSample = 0;                       // Index of currently loaded trailer coupling sample
+  static uint32_t curUncouplingSample = 0;                     // Index of currently loaded trailer uncoupling sample
+  static int32_t a, a1, a2 = 0;                                // Input signals "a" for mixer
+  static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = 0;// Input signals "b" for mixer
+  static boolean knockSilent = 0;                              // This knock will be more silent
+  static boolean knockMedium = 0;                              // This knock will be medium
+  static uint8_t curKnockCylinder = 0;                         // Index of currently ignited zylinder
 
   //portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -735,7 +740,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curShiftingSample = 0; // ensure, next sound will start @ first sample
   }
 
-  // Diesel ignition "knock" played in fixed sample rate section, because we don't want changing pitch! ------
+  // Diesel ignition "knock" is played in fixed sample rate section, because we don't want changing pitch! ------
   if (dieselKnockTriggerFirst) {
     dieselKnockTriggerFirst = false;
     curKnockCylinder = 0;
@@ -753,6 +758,19 @@ void IRAM_ATTR fixedPlaybackTimer() {
   else knockSilent = true;
 #endif
 
+#ifdef V8_MEDIUM // (former ADAPTIVE_KNOCK_VOLUME, rename it in your config file!)
+  // This is EXPERIMENTAL!! TODO
+  if (curKnockCylinder == 5 || curKnockCylinder == 1) knockMedium = false;
+  else knockMedium = true;
+#endif
+
+#ifdef V8_468 // (Chevy 468, containing 16 ignition pulses)
+  // 1th, 5th, 9th and 13th are the loudest
+  // Ignition sequence: 1 - 8 - 4* - 3 - 6 - 5 - 7* - 2
+  if (curKnockCylinder == 1 || curKnockCylinder == 5 || curKnockCylinder == 9 || curKnockCylinder == 13) knockSilent = false;
+  else knockSilent = true;
+#endif
+
 #ifdef V2
   // V2 engine: 1st and 2nd knock pulses (of 4) will be louder
   if (curKnockCylinder == 1 || curKnockCylinder == 2) knockSilent = false;
@@ -766,9 +784,14 @@ void IRAM_ATTR fixedPlaybackTimer() {
 #endif
 
   if (curDieselKnockSample < knockSampleCount) {
+#ifdef RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
+    b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100 * rpmDependentKnockVolume / 100);
+#else // Just depending on throttle
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
+#endif
     curDieselKnockSample ++;
-    if (knockSilent) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // changing knock volume according to engine type and cylinder!
+    if (knockSilent && ! knockMedium) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 100; // changing knock volume according to engine type and cylinder!
+    if (knockMedium) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 75;
   }
 
   // Trailer coupling sound, triggered by switch -----------------------------------------------
@@ -810,6 +833,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   // DAC output (groups a + b mixed together) ****************************************************************************
 
   dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10)) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //dacWrite(DAC2, 0);
 
   //portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -1484,6 +1508,10 @@ void mapThrottle() {
   if (!escIsBraking && engineRunning && (currentThrottleFaded > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottleFaded, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
   else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
 
+  // Calculate RPM dependent Diesel knock volume
+  if (currentRpm > 400) rpmDependentKnockVolume = map(currentRpm, 400, 500, 5, 100);
+  else rpmDependentKnockVolume = 5;
+
   // Calculate engine rpm dependent turbo volume
   if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
   else throttleDependentTurboVolume = turboIdleVolumePercentage;
@@ -1629,7 +1657,7 @@ void engineMassSimulation() {
   if (!wastegateTrigger) blowoffMillis = millis();
   blowoffTrigger = ((gearUpShiftingInProgress || neutralGear) && millis() - blowoffMillis > 20 && millis() - blowoffMillis < 250 );
 #endif
-  
+
   lastThrottle = currentThrottle;
 }
 
@@ -1678,7 +1706,6 @@ uint8_t dipDim;
 uint8_t xenonIgnitionFlash;
 static unsigned long xenonMillis;
 uint32_t indicatorFade = 300; // 300 is the fading time, simulating an incandescent bulb
-uint8_t rearlightDimmedBrightness = 30;
 
 // Brake light sub function ---------------------------------
 void brakeLightsSub(int8_t brightness) {
@@ -1687,8 +1714,8 @@ void brakeLightsSub(int8_t brightness) {
     brakeLight.pwm(255 - crankingDim); // Brakelight on
   }
   else {
-    tailLight.pwm(constrain(brightness - (crankingDim / 2), 0, 255)); // Taillights (reduced brightness)
-    brakeLight.pwm(constrain(brightness - (crankingDim / 2), 0, 255)); // Brakelight (reduced brightness)
+    tailLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255)); // Taillights (reduced brightness)
+    brakeLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255)); // Brakelight (reduced brightness)
   }
 }
 
@@ -1742,7 +1769,7 @@ void led() {
   if (headLightsFlasherOn || headLightsHighBeamOn) dipDim = 10; else dipDim = 170; // High / low beam and headlight flasher (SBUS CH5)
 
   // Reversing light ----
-  if ((engineRunning || engineStart) && escInReverse) reversingLight.pwm(130 - crankingDim);
+  if ((engineRunning || engineStart) && escInReverse) reversingLight.pwm(reversingLightBrightness - crankingDim);
   else reversingLight.off();
 
   // Beacons (blue light) ----
@@ -1853,6 +1880,9 @@ void led() {
       break;
 
     case 1: // cab lights ---------------------------------------------------------------------
+#ifdef NO_CABLIGHTS
+      lightsState = 2; // Skip cablights
+#endif
       cabLight.pwm(255 - crankingDim);
       sideLight.off();
       headLightsSub(false, false, false);
@@ -1861,15 +1891,15 @@ void led() {
 
     case 2: // cab & roof & side lights ---------------------------------------------------------------------
       cabLight.pwm(255 - crankingDim);
-      sideLight.pwm(sideLightsBrightness - crankingDim);
+      sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
       headLightsSub(false, false, true);
       fogLight.off();
-      brakeLightsSub(0); // 0 brightness, if not braking
+      brakeLightsSub(rearlightParkingBrightness); // () = brightness, if not braking
       break;
 
     case 3: // roof & side & head lights ---------------------------------------------------------------------
       cabLight.off();
-      sideLight.pwm(sideLightsBrightness - crankingDim);
+      sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
       headLightsSub(true, false, true);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
@@ -1879,14 +1909,17 @@ void led() {
       lightsState = 5; // Skip foglights
 #endif
       cabLight.off();
-      sideLight.pwm(sideLightsBrightness - crankingDim);
+      sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
       headLightsSub(true, true, true);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
 
     case 5: // cab & roof & side & head & fog lights ---------------------------------------------------------------------
+#ifdef NO_CABLIGHTS
+      lightsState = 0; // Skip cablights
+#endif
       cabLight.pwm(255 - crankingDim);
-      sideLight.pwm(sideLightsBrightness - crankingDim);
+      sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
       headLightsSub(true, true, true);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
@@ -2025,7 +2058,7 @@ void automaticGearSelector() {
     if (escInReverse) { // Reverse (only one gear)
       selectedAutomaticGear = 0;
     }
-    else { // Forward
+    else { // Forward (multiple gears)
 
       // Adaptive shift points
       if (millis() - lastDownShiftingMillis > 500 && currentRpm >= upShiftPoint && engineLoad < 5) { // 500ms locking timer!
@@ -2090,6 +2123,8 @@ void esc() {
   if (selectedGear == 2) escRampTime = escRampTimeSecondGear; // about 50
   if (selectedGear == 3) escRampTime = escRampTimeThirdGear; // about 75
 #endif
+
+  if ((automatic || doubleClutch) && escInReverse) escRampTime = escRampTime * 100 / automaticReverseAccelerationPercentage; // faster acceleration in automatic reverse, EXPERIMENTAL, TODO!
 
   if (millis() - escMillis > escRampTime) { // About very 20 - 75ms
     escMillis = millis();
@@ -2426,9 +2461,17 @@ void rcTrigger() {
   jakeBrakeRequest = functionR100d.momentary(pulseWidth[5], 2000) && currentRpm > jakeBrakeMinRpm;
 #endif
 
-  // Volume high / low, if vehicle standing still and dual rate @100%
+  // Volume adjustment, if vehicle standing still and dual rate @100%
+  static bool volumeStateLock;
+  static uint8_t volumeIndex = 0;
   if (driveState == 0) {
-    if (functionR100d.toggleLong(pulseWidth[5], 2000)) masterVolume = 75; else masterVolume = 120; // Change volume between indoor and outdoor mode
+    //if (functionR100d.toggleLong(pulseWidth[5], 2000)) masterVolume = masterVolumePercentage[1]; else masterVolume = masterVolumePercentage[0]; // Change volume between indoor and outdoor mode
+    if (functionR100d.toggleLong(pulseWidth[5], 2000) != volumeStateLock) {
+      if (volumeIndex < numberOfVolumeSteps  - 1) volumeIndex ++; // Switch volume steps
+      else volumeIndex = 0;
+      volumeStateLock = ! volumeStateLock;
+    }
+    masterVolume = masterVolumePercentage[volumeIndex]; // Write volume
   }
 
   // Engine on / off, if dual rate @75% and long in position -----

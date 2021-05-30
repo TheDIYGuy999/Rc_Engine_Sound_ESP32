@@ -135,7 +135,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 80; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)

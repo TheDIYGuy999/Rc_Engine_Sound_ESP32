@@ -51,7 +51,8 @@ Fully assembled, tested and working 30 pin version
 - TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKLELIGHT" setting in "6_adjustmentsLights.h" tab)
 
 ## On the todo list:
-- cornering lights
+- cornering lights (on the beacon outputs)
+- Hazards switching on, if engine off in AUTO_LIGHTS mode
 
 ## Known issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
@@ -408,6 +409,16 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 7.0:
+- In "6_adjustmentsLights.h" tab: NO_CABLIGHTS" will skip the cablights step in the light control sequence, if defined. Use it, if your vehicle does not have cab lights. More light brightness options
+- New "8_adjustmentsSound.h" tab for global sound options
+- Vehicle specific configurations in "7_adjustmentsServos.h" allow to store servo endpoints for multiple vehicles. Useful, if the sound controller is used as an SBUS decoder.
+- New Chevy 468 big block V8
+- New Land Rover V8 with open pipes
+- Adjustable reverse speed for automatic transmissions: "automaticReverseAccelerationPercentage"
+- New "OVERDRIVE" option in "4_adjustmentsTransmission.h" allows to lower the engine RPM in 4th automatic gear
+- BlinkLeds.ino sketch for LED test in /tools
 
 ### New in V 6.9:
 - New "JAKEBRAKE_ENGINE_SLOWDOWN" option, used in Volvo FH trucks with open pipe. If defined, the engine RPM is lowered, using the jake brake, while upshifting under full load as well as when the throttle is released quickly in neutral. You can hear it in this video: https://www.youtube.com/watch?v=MU1iwzl33Zw&list=LL&index=4

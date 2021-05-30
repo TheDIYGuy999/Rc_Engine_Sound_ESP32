@@ -6,7 +6,7 @@ volatile int startVolumePercentage = 90; // Adjust the start volume (usually = 1
 #include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 70; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int idleVolumePercentage = 75; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 150; // Volume Percentage while full throttle (for rev sound as well)
 #include "sounds/DefenderV8Idle.h" // Land Rover Defender V8 (Volume 100%, 40%, Turbo 0%, 0, Fan 0, 0, 250, No Wastegate, CEP 100, TSM 2, Knock volume 500, 0%, interval 2, 50, automatic = true)
@@ -14,7 +14,7 @@ volatile int fullThrottleVolumePercentage = 150; // Volume Percentage while full
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
 volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
-volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineRevVolumePercentage = 80; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 const uint16_t revSwitchPoint = 10; // The rev sound is played instead of the idle sound above this point
 const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
@@ -34,13 +34,14 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 150; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 1000; // Adjust the Diesel knock volume (usually = 200 - 600%) 150
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
-volatile int dieselKnockInterval = 4; // Idle sample length divided by this number (1 - 20, depending on sound files)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 100; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 #include "sounds/DefenderV8Knock.h" // Land Rover Defender V8 knock
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
@@ -127,14 +128,14 @@ const boolean INDICATOR_DIR = true; // adjust indicator direction with true or f
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
 // Choose the light options --------
-//#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
+#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
 
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 80; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
