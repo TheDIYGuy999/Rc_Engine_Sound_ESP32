@@ -410,6 +410,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 7.1:
+- Servo output for shifting transmission now usable in combination with simulated automatic transmission. Use it as an off road reducer, don't shift it while driving fast or @ high engine RPM!
+
 ### New in V 7.0:
 - In "6_adjustmentsLights.h" tab: NO_CABLIGHTS" will skip the cablights step in the light control sequence, if defined. Use it, if your vehicle does not have cab lights. More light brightness options
 - New "8_adjustmentsSound.h" tab for global sound options

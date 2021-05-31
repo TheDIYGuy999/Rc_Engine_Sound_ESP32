@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.0; // Software revision.
+const float codeVersion = 7.1; // Software revision.
 
 //
 // =======================================================================================================
@@ -1473,7 +1473,7 @@ void mapThrottle() {
   // Auto throttle --------------------------------------------------------------------------
 
   // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
-  if (!escIsBraking && escIsDriving && shiftingAutoThrottle) {
+  if (!escIsBraking && escIsDriving && shiftingAutoThrottle && !automatic && !doubleClutch) {
     if (gearUpShiftingInProgress) currentThrottle = 0; // No throttle
     if (gearDownShiftingInProgress) currentThrottle = 500; // Full throttle
     currentThrottle = constrain (currentThrottle, 0, 500);
@@ -1966,8 +1966,8 @@ void gearboxDetection() {
 
 #else // only active, if not in TRACKED_MODE -------------------------------------------------------------
   // if automatic transmission, always 2nd gear
-  if (automatic || doubleClutch) pulseWidth[2] = 1500;
-
+  if (automatic || doubleClutch) selectedGear = 2;
+  
 #ifndef VIRTUAL_16_SPEED_SEQUENTIAL // 3 gears, directly selected by 3 position switch ----
   // Gear detection
   if (pulseWidth[2] > 1700) selectedGear = 3;
@@ -2190,14 +2190,14 @@ void esc() {
         }
         if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
 
-        if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
+        if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
           escPulseWidth -= currentSpeed / 4; // Synchronize engine speed
 #endif
           gearUpShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseZero[3], pulseMax[3]);
         }
-        if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
+        if (gearDownShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // increasing RPM, if shifting down transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
           escPulseWidth += 50; // Synchronize engine speed
 #endif
@@ -2236,14 +2236,14 @@ void esc() {
         }
         if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
 
-        if (gearUpShiftingPulse && shiftingAutoThrottle) { // lowering RPM, if shifting up transmission
+        if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
           escPulseWidth += currentSpeed / 4; // Synchronize engine speed
 #endif
           gearUpShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseMin[3], pulseZero[3]);
         }
-        if (gearDownShiftingPulse && shiftingAutoThrottle) { // increasing RPM, if shifting down transmission
+        if (gearDownShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // increasing RPM, if shifting down transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
           escPulseWidth -= 50; // Synchronize engine speed
 #endif
