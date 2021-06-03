@@ -18,7 +18,7 @@
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
 //#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
-//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
+//#include "vehicles/UnimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 //#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
@@ -84,4 +84,4 @@
 //#include "vehicles/MesserschmittBf109.h" // Messerschmitt BF 109 WW2 German V12 plane
 
 // Generic Diesels --------
-//#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission, optimised for smaller speakers
+//#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission (optimised for smaller speakers)

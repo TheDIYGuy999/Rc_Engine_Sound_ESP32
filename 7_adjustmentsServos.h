@@ -7,8 +7,8 @@
  */
 
  // Select the vehicle configuration you have:
-//#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
-#define SERVOS_DEFAULT
+#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
+//#define SERVOS_LANDY
 
 // Default servo configuration profile -------------------------------------------------------------------------------------------
 #ifdef SERVOS_DEFAULT
@@ -24,7 +24,7 @@ const uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 transmission gear 1
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 1000; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
 
 #endif
 

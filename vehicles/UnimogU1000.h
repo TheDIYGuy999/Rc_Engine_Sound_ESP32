@@ -28,12 +28,13 @@ volatile const uint16_t idleVolumeProportionPercentage = 80; // The idle sound v
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
-//#define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
-volatile int jakeBrakeVolumePercentage = 140; // Adjust the max. volume (usually = 150%)
+#define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
+volatile int jakeBrakeVolumePercentage = 180; // Adjust the max. volume (usually = 150%)
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
 #ifdef JAKE_BRAKE_SOUND
-#include "sounds/JakeBrake.h" // CAT V8 Jake Brake sound
+//#include "sounds/JakeBrake.h" // CAT V8 Jake Brake sound
+#include "sounds/UnimogU1000TurboJakeBrake.h" // Unimog U1000 Turbo
 #endif
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,

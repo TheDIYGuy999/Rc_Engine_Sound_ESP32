@@ -70,8 +70,9 @@ volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm d
 volatile int fanStartPoint = 50; // Volume will raise above this point (250 for Tatra 813)
 //#define GEARBOX_WHINING // Disables sound, if gearbox in neutral. Fan noise is used to simulate gearbox whining (set fanStartPoint above clutchEngagingPoint)
 //#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
-#include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)
+//#include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)
 //#include "sounds/Tatra813FanNewSlow.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
+#include "sounds/FanDummy.h"
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 100%)

@@ -10,7 +10,16 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.1; // Software revision.
+const float codeVersion = 7.2; // Software revision.
+
+//
+// =======================================================================================================
+// ERROR CODES (INDICATOR LIGHTS)
+// =======================================================================================================
+//
+/* Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
+ * Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated (check channel trim settings)
+ */
 
 //
 // =======================================================================================================
@@ -180,7 +189,7 @@ rcTrigger indicatorRTrigger(100);
 #define RMT_RX_CLK_DIV (80000000/RMT_TICK_PER_US/1000000)
 // time before receiver goes idle (longer pulses will be ignored)
 #define RMT_RX_MAX_US 3500
-uint32_t maxPwmRpmPercentage = 400; // Limit required to prevent controller fron crashing @ high engine RPM
+uint32_t maxPwmRpmPercentage = 400; // Limit required to prevent controller from crashing @ high engine RPM
 
 // PPM signal processing variables
 #define NUM_OF_PPM_CHL 8 // The number of channels inside our PPM signal (8 is the maximum!)
@@ -192,7 +201,7 @@ volatile byte average  = NUM_OF_PPM_AVG;
 volatile boolean ready = false;
 volatile unsigned long timelast;
 unsigned long timelastloop;
-uint32_t maxPpmRpmPercentage = 390; // Limit required to prevent controller fron crashing @ high engine RPM
+uint32_t maxPpmRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
 // SBUS signal processing variables
 SBUS sBus(Serial2); // SBUS object on Serial 2 port
@@ -201,12 +210,12 @@ uint16_t SBUSchannels[16];
 bool SBUSfailSafe;
 bool SBUSlostFrame;
 bool sbusInit;
-uint32_t maxSbusRpmPercentage = 390; // Limit required to prevent controller fron crashing @ high engine RPM
+uint32_t maxSbusRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
 // IBUS signal processing variables
 IBusBM iBus;    // IBUS object
 bool ibusInit;
-uint32_t maxIbusRpmPercentage = 350; // Limit required to prevent controller fron crashing @ high engine RPM
+uint32_t maxIbusRpmPercentage = 340; // Limit required to prevent controller from crashing @ high engine RPM (was 350, but sometimes crashing)
 
 // Interrupt latches
 volatile boolean couplerSwitchInteruptLatch; // this is enabled, if the coupler switch pin change interrupt is detected
@@ -229,6 +238,7 @@ uint16_t pulseLimit = 1100;                              // pulseZero +/- this v
 uint16_t pulseMinValid = 950;                            // The minimum valid pulsewidth
 uint16_t pulseMaxValid = 2050;                           // The maximum valid pulsewidth
 bool autoZeroDone;                                       // Auto zero offset calibration done
+#define NONE 16                                          // The non existing "Dummy" channel number (usually 16) TODO
 
 volatile boolean failSafe = false;                       // Triggered in emergency situations like: throttle signal lost etc.
 
@@ -992,6 +1002,8 @@ void setup() {
   Serial.begin(115200); // USB serial (for DEBUG)
 
   // Communication setup --------------------------------------------
+  indicatorL.on();
+  indicatorR.on();
 #if defined SBUS_COMMUNICATION // SBUS ----
   if (MAX_RPM_PERCENTAGE > maxSbusRpmPercentage) MAX_RPM_PERCENTAGE = maxSbusRpmPercentage; // Limit RPM range
   sBus.begin(COMMAND_RX, COMMAND_TX, sbusInverted); // begin SBUS communication with compatible receivers
@@ -1070,17 +1082,19 @@ void setup() {
 
   // Read RC signals for the first time (used for offset calculations)
 #if defined SBUS_COMMUNICATION
-  Serial.println("Initializing SBUS...");
+  sbusInit = false;
+  Serial.println("Initializing SBUS, check transmitter & receiver (sbusInverted true / false OK?)...");
   while (!sbusInit) {
     readSbusCommands(); // SBUS communication (pin 36)
   }
-  Serial.println("done!");
+  Serial.println("SBUS initialization done!");
 #elif defined IBUS_COMMUNICATION
-  Serial.println("Initializing IBUS...");
+  ibusInit = false;
+  Serial.println("Initializing IBUS, check transmitter & receiver...");
   while (!ibusInit) {
     readIbusCommands(); // IBUS communication (pin 36)
   }
-  Serial.println("done!");
+  Serial.println("IBUS initialization done!");
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
 #else
@@ -1090,7 +1104,7 @@ void setup() {
 
   // Calculate RC input signal ranges for all channels
   for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) {
-    pulseZero[i] = 1500; // 1500 is the center position. Auto centering is now done in "processRawChannels()"
+    pulseZero[i] = 1500; // Always 1500. This is the center position. Auto centering is now done in "processRawChannels()"
 
     // Input signals
     pulseMaxNeutral[i] = pulseZero[i] + pulseNeutral;
@@ -1195,6 +1209,8 @@ void readSbusCommands() {
     lastSbusFailsafe = millis();
   }
 
+  //SBUSchannels[NONE - 1] = 991; // The NONE channel needs to be on neutral (991 = 1500ms) TODO
+
   // Proportional channels (in Microseconds)
   pulseWidthRaw[1] = map(SBUSchannels[STEERING - 1], 172, 1811, 1000, 2000); // CH1 steering
   pulseWidthRaw[2] = map(SBUSchannels[GEARBOX - 1], 172, 1811, 1000, 2000); // CH2 3 position switch for gearbox (left throttle in tracked mode)
@@ -1217,11 +1233,13 @@ void readSbusCommands() {
   }
   else failSafe = false;
 
-  // Normalize, auto zero and reverse channels
-  processRawChannels();
+  if (sbusInit) { // TODO, experimental!
+    // Normalize, auto zero and reverse channels
+    processRawChannels();
 
-  // Failsafe for RC signals
-  failsafeRcSignals();
+    // Failsafe for RC signals
+    failsafeRcSignals();
+  }
 }
 
 //
@@ -1270,8 +1288,10 @@ void readIbusCommands() {
   pulseWidthRaw[12] = iBus.readChannel(INDICATOR_LEFT - 1); // CH12
   pulseWidthRaw[13] = iBus.readChannel(INDICATOR_RIGHT - 1); // CH13
 
-  // Normalize, auto zero and reverse channels
-  processRawChannels();
+  if (ibusInit) {
+    // Normalize, auto zero and reverse channels
+    processRawChannels();
+  }
 }
 
 //
@@ -1282,34 +1302,61 @@ void readIbusCommands() {
 
 void processRawChannels() {
 
+  static unsigned long lastOutOfRangeMillis;
+  static int channel;
+
 #ifdef TRACKED_MODE // If tracked mode: enable CH2 auto zero adjustment as well, if it is enabled for CH3
   if (channelAutoZero[3]) channelAutoZero[2] = true;
 #endif
 
-  for (int i = 1; i < PULSE_ARRAY_SIZE; i++) {
+  if (millis() - lastOutOfRangeMillis > 500) {
+    for (int i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
 
-    // Take channel raw data, reverse them, if required and store them
-    if (channelReversed[i]) pulseWidth[i] = map(pulseWidthRaw[i], 0, 3000, 3000, 0); // Reversed
-    else pulseWidth[i] = pulseWidthRaw[i]; // Not reversed
+      // Position valid for auto calibration? Must be between 1400 and 1600 microseconds
+      if (channelAutoZero[i] && !autoZeroDone && (pulseWidthRaw[i] > 1600 || pulseWidthRaw[i] < 1400)) {
+        channel = i;
+        Serial.print("CH ");
+        Serial.print(channel);
+        Serial.println(" signal out of auto calibration range, check transmitter & receiver");
+        channelZero();
+        lastOutOfRangeMillis = millis();
+        i--;
+        return;
+      }
 
-    // Auto zero offset adjustment (only within certain absolute range)
-    if (channelAutoZero[i] && !autoZeroDone && pulseWidth[i] > pulseMinValid && pulseWidth[i] < pulseMaxValid) pulseOffset[i] = 1500 - pulseWidth[i];
+      // Take channel raw data, reverse them, if required and store them
+      if (channelReversed[i]) pulseWidth[i] = map(pulseWidthRaw[i], 0, 3000, 3000, 0); // Reversed
+      else pulseWidth[i] = pulseWidthRaw[i]; // Not reversed
 
-    // Compensate pulsewidth with auto zero offset
-    pulseWidth[i] += pulseOffset[i];
-    if (!autoZeroDone) { // Print offsets, if switching on the controller
-      Serial.println(i);
-      Serial.println(pulseOffset[i]);
+      // Calculate zero offset (only within certain absolute range)
+      if (channelAutoZero[i] && !autoZeroDone && pulseWidth[i] > pulseMinValid && pulseWidth[i] < pulseMaxValid) pulseOffset[i] = 1500 - pulseWidth[i];
+
+      // Center channel, if out of range! TODO, experimental
+      if (pulseWidth[i] > pulseMaxValid || pulseWidth[i] < pulseMinValid) pulseWidth[i] = pulseZero[i];
+
+      // Compensate pulsewidth with auto zero offset
+      pulseWidth[i] += pulseOffset[i];
+      if (!autoZeroDone) { // Print offsets, if switching on the controller
+        Serial.print("Offset CH ");
+        Serial.print(i);
+        Serial.print(" [microseconds]: ");
+        Serial.println(pulseOffset[i]);
+      }
+
+      // Set auto zero done flag
+      if (i == PULSE_ARRAY_SIZE - 1) autoZeroDone = true;
     }
+  }
 
-    // Set auto zero done flag
-    if (i == PULSE_ARRAY_SIZE - 1) autoZeroDone = true;
+  if (!autoZeroDone) { // Indicators are showing the number of channels, which are out of auto calibration range
+    indicatorL.flash(140, 150, 500, channel);
+    indicatorR.flash(140, 150, 500, channel);
   }
 
   // Print input signal debug infos
   static unsigned long printChannelMillis;
 #ifdef CHANNEL_DEBUG // can slow down the playback loop!
-  if (millis() - printChannelMillis > 1000) { // Every 1000ms
+  if (millis() - printChannelMillis > 1000 && autoZeroDone) { // Every 1000ms
     printChannelMillis = millis();
 
     Serial.println("Channels [microseconds]:");
@@ -1326,6 +1373,7 @@ void processRawChannels() {
     Serial.println(pulseWidth[11]);
     Serial.println(pulseWidth[12]);
     Serial.println(pulseWidth[13]);
+    Serial.println("Throttle:");
     Serial.println(currentThrottle);
     Serial.println("States:");
     Serial.println(mode1);
@@ -1338,10 +1386,18 @@ void processRawChannels() {
     Serial.println(SBUSfailSafe);
     Serial.println(SBUSlostFrame);
     Serial.println(failSafe);
+    Serial.println("Misc:");
     Serial.println(MAX_RPM_PERCENTAGE);
     Serial.println("");
   }
 #endif
+}
+
+// Sub function for channel centering ----
+void channelZero() {
+  for (int i = 1; i < PULSE_ARRAY_SIZE; i++) {
+    pulseWidth[i] = 1500;
+  }
 }
 
 //
@@ -1882,15 +1938,18 @@ void led() {
     case 1: // cab lights ---------------------------------------------------------------------
 #ifdef NO_CABLIGHTS
       lightsState = 2; // Skip cablights
-#endif
+#else
       cabLight.pwm(255 - crankingDim);
+#endif
       sideLight.off();
       headLightsSub(false, false, false);
       brakeLightsSub(0); // 0 brightness, if not braking
       break;
 
     case 2: // cab & roof & side lights ---------------------------------------------------------------------
+#ifndef NO_CABLIGHTS
       cabLight.pwm(255 - crankingDim);
+#endif
       sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
       headLightsSub(false, false, true);
       fogLight.off();
@@ -1967,7 +2026,7 @@ void gearboxDetection() {
 #else // only active, if not in TRACKED_MODE -------------------------------------------------------------
   // if automatic transmission, always 2nd gear
   if (automatic || doubleClutch) selectedGear = 2;
-  
+
 #ifndef VIRTUAL_16_SPEED_SEQUENTIAL // 3 gears, directly selected by 3 position switch ----
   // Gear detection
   if (pulseWidth[2] > 1700) selectedGear = 3;
@@ -2627,7 +2686,7 @@ void Task1code(void *pvParameters) {
     engineOnOff();
 
     // LED control
-    led();
+    if (autoZeroDone) led();
 
     // Shaker control
     shaker();

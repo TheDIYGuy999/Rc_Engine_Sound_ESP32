@@ -56,7 +56,8 @@ volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine r
 volatile int chargerVolumePercentage = 0; // Adjust the supercharger volume (usually = 70%)
 volatile int chargerIdleVolumePercentage = 10; // the supercharger volume will be engine rpm dependent (usually = 10%)
 volatile int chargerStartPoint = 10; // Volume will raise above this point ( usually 10)
-#include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!
+//#include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!
+#include "sounds/SuperchargerDummy.h"
 
 // Adjust the additional turbo wastegate  / blowoff valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
 volatile int wastegateVolumePercentage = 0; // Adjust the wastegate volume (usually = 70%, up to 250%)
@@ -70,8 +71,9 @@ volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm d
 volatile int fanStartPoint = 250; // Volume will raise above this point (250 for Tatra 813)
 //#define GEARBOX_WHINING // Disables sound, if gearbox in neutral. Fan noise is used to simulate gearbox whining (set fanStartPoint above clutchEngagingPoint)
 //#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
-#include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)
+//#include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)
 //#include "sounds/Tatra813FanNewSlow.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
+#include "sounds/FanDummy.h"
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)

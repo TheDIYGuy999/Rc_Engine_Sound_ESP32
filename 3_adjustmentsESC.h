@@ -22,6 +22,7 @@ Uncommented settings are left on factory preset
 Motor: 540 size, 35 turns, stock pinion
 
 HOBBYWING 1060 is working as well, but 1080 is still better
+AS-12/6RW EASY from Modellbau-Regler.de is recommended for smaller vehicles (WPL, MN Model etc.)
 
 */
 

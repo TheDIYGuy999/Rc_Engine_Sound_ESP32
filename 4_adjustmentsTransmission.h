@@ -11,11 +11,11 @@
 //#define VIRTUAL_16_SPEED_SEQUENTIAL // This is still experimental!
 
 //#define TRANSMISSION_NEUTRAL Allows to put the transmission in neutral. This can't be used, if the "Mode 1" button is used for other stuff!
-#define TRANSMISSION_NEUTRAL
+//#define TRANSMISSION_NEUTRAL
 
 //#define MODE1_SHIFTING The 2 speed transmission is shifted by the "Mode 1" button instead of the 3 position switch (Micro RC remote only).
 // This is often used in WPL vehicles with 2 speed transmission, used as off road reducer
-//#define MODE1_SHIFTING
+#define MODE1_SHIFTING
 
 uint16_t maxClutchSlippingRpm = 300; // The clutch will never slip above this limit! (about 300) 500 for vehicles like locomotives
 // and the Kirovets tractor with hydrostatic or electric drive! Mainly required for "VIRTUAL_3_SPEED" mode

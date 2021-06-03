@@ -238,11 +238,12 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/MackSuperLiner.h" // MACK Super Liner
 //#include "vehicles/M35.h"// AM General M35 "deuce and a half" military truck, turbocharged R6 universal fuel engine
 //#include "vehicles/US_Firetruck.h"// US firetruck with CAT3408 V8 and Allison 6 speed automatic (horn & siren loop capable)
+//#include "vehicles/FreightlinerCummins350.h" // Freightliner Cabover with Cummins 350 R6 Diesel
 
 // EU trucks --------
 //#include "vehicles/Tatra813.h" // Tatra 813 8x8 V12 Diesel military truck (old version for comparison, don't use it)
 //#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
-//#include "vehicles/UmimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
+//#include "vehicles/UnimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 //#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
@@ -250,7 +251,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
-#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
+//#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
 //#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 //#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
 
@@ -272,6 +273,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 // US cars --------
 //#include "vehicles/ChevyNovaCoupeV8.h" // 1975 Chevy Nova Coupe V8
 //#include "vehicles/1965FordMustangV8.h"// 1965 Ford Mustang V8 (TODO rework rev, too fast?)
+//#include "vehicles/Chevy468.h" // Chevy 468 big block V8 (needs rework!)
 
 // EU cars --------
 //#include "vehicles/VwBeetle.h" // VW Käfer / Beetle
@@ -284,10 +286,13 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
 //#include "vehicles/FordPowerstroke.h" // Ford Powerstroke 7.3l V8 Diesel, 6 speed automatic (good bass speaker required)
 //#include "vehicles/RAM2500_Cummins12V.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, manual transmission
+//#include "vehicles/RAM2500_Cummins12Vautomatic.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, automatic transmission
 //#include "vehicles/GMCsierra.h" // GMC Sierra V8 pickup, 3 speed automatic transmission
+//#include "vehicles/ChevyNovaCoupeV8_P407.h" // 1975 Chevy Nova Coupe V8, special version for HG-P407, 3 speed automatic transmission
 
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
+//#include "vehicles/DefenderV8OpenPipeAutomatic.h" // Land Rover Defender 90 V8 automatic, open pipes (optimised for smaller speakers)
 //#include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
 //#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
 
@@ -295,6 +300,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/LandcruiserFJ40.h" // Landcruiser Fj40 with inline 6 petrol engine
 //#include "vehicles/LandcruiserFJ40Diesel.h" // Landcruiser Fj40 with inline 6 12H Turbo Diesel engine
 //#include "vehicles/LandcruiserFJ40Diesel2.h" // Landcruiser Fj40 with inline 6 12H Turbo Diesel engine
+//#include "vehicles/HiluxDiesel.h" // Hilux Diesel with inline 6 12H Turbo Diesel engine (for HG-P407)
 
 // US locomotives --------
 //#include "vehicles/UnionPacific2002.h" // Union Pacific 2002 SD70M locomotive with enormous, low revving 16 cylinder Diesel
@@ -303,7 +309,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/MesserschmittBf109.h" // Messerschmitt BF 109 WW2 German V12 plane
 
 // Generic Diesels --------
-//#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission, optimised for smaller speakers
+//#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission (optimised for smaller speakers)
 ```
 
 ### Interface type (communication mode) selection:
@@ -409,6 +415,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 7.2:
+- "NO_CABLIGHTS" bug fixed"
+- US_Firetruck memory problem fixed
+- Channel auto zero calibration reworked. See serial monitor, if you have issues. Never use "channelAutoZero = true" for unconnected channels or channels without spring centering!
+- Indicators used as a debugger: the amount of blinks shows you the channel, which is not in neutral position (outside of 1400 - 1600 microseconds, check channel trim settings). Indicators constantly on means, that no SBUS signal is detected (check "sbusInverted" true / false in "2_adjustmentsRemote.h").
+- Unimog U1000 with engine brake for Hermann
 
 ### New in V 7.1:
 - Servo output for shifting transmission now usable in combination with simulated automatic transmission. Use it as an off road reducer, don't shift it while driving fast or @ high engine RPM!
