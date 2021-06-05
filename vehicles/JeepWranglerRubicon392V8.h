@@ -2,25 +2,25 @@
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
-volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 100%)
-//#include "sounds/JeepGrandCherokeeTrackhawkStart.h" // Jeep Grand Cherokee Trackhawk start
-#include "sounds/carCranking.h" // Generic car cranking
+volatile int startVolumePercentage = 300; // Adjust the start volume (usually = 100%)
+//#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
+#include "sounds/JeepWranglerRubicon392V8Start.h" // Jeep Wrangler Rubicon HEMI V8
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 70; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full throttle (for rev sound as well)
-#include "sounds/JeepGrandCherokeeTrackhawkIdle.h" // Jeep Grand Cherokee Trackhawk idle (speaker with good bass required)
+volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int fullThrottleVolumePercentage = 170; // Volume Percentage while full throttle (for rev sound as well)
+#include "sounds/JeepWranglerRubicon392V8Idle.h" // Jeep Wrangler Rubicon HEMI V8
 
 // Choose the motor revving sound (uncomment the one you want) --------
-//#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
-volatile int engineRevVolumePercentage = 30; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-const uint16_t revSwitchPoint = 250; // The rev sound is played instead of the idle sound above this point
-const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
+#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
+volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound) 100
+volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile const uint16_t revSwitchPoint = 10; // The rev sound is played instead of the idle sound above this point
+volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
+volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-//#include "sounds/ScaniaV8Rev.h" // Scania V8
-#include "sounds/ScaniaV8Rev2.h" // Scania V8
+#include "sounds/JeepWranglerRubicon392V8Rev.h" // Jeep Wrangler Rubicon HEMI V8
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
@@ -34,17 +34,17 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%) 500
 volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
-volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
-volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (usually number of cylinders)
+volatile int dieselKnockStartPoint = 400; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250) 350
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
+//#define V8_MEDIUM // V8 there will be "meduim loud" (1.33 * dieselKnockAdaptiveVolumePercentage) knocks EXPERIMENTAL, not good results!
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-volatile int dieselKnockAdaptiveVolumePercentage = 80; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
-//#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
-//#include "sounds/JeepGrandCherokeeTrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock
-#include "sounds/TrackhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock, the more aggressive one!
-//#include "sounds/demonhawkKnock.h" // Jeep Grand Cherokee Trackhawk knock, 1100HP tuned
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 30
+//#include "sounds/DieselKnockDummy.h" // No knock
+#include "sounds/JeepWranglerRubicon392V8Knock.h" // Jeep Wrangler Rubicon HEMI V8
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)
@@ -52,22 +52,22 @@ volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine r
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
 // Adjust the additional supercharger sound (set "chargerVolumePercentage" to "0", if you don't want it) --------
-volatile int chargerVolumePercentage = 90; // Adjust the supercharger volume (usually = 70%)
+volatile int chargerVolumePercentage = 0; // Adjust the supercharger volume (usually = 70%)
 volatile int chargerIdleVolumePercentage = 10; // the supercharger volume will be engine rpm dependent (usually = 10%)
 volatile int chargerStartPoint = 10; // Volume will raise above this point ( usually 10)
-#include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!
+//#include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!
+#include "sounds/SuperchargerDummy.h"
 
 // Adjust the additional turbo wastegate  / blowoff valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
-volatile int wastegateVolumePercentage = 10; // Adjust the wastegate volume (usually = 70%, up to 250%)
+volatile int wastegateVolumePercentage = 0; // Adjust the wastegate volume (usually = 70%, up to 250%)
 volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, after rapid throttle drop with engaged clutch
 #include "sounds/WastegateDummy.h"
-//#include "sounds/UnimogU1000TurboWastegate.h"
-//#include "sounds/ScaniaR730V8TurboWastegate.h"
+//#include "sounds/DefenderTd5wastegate.h" // Land Rover Defender Td5 5 cylinder Diesel
 
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------
 volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%)
 volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm dependent (usually = 10%)
-volatile int fanStartPoint = 50; // Volume will raise above this point (250 for Tatra 813)
+volatile int fanStartPoint = 250; // Volume will raise above this point (250 for Tatra 813)
 //#define GEARBOX_WHINING // Disables sound, if gearbox in neutral. Fan noise is used to simulate gearbox whining (set fanStartPoint above clutchEngagingPoint)
 //#include "sounds/Tatra813Fan.h" // Tatra 813 8x8 V12 Diesel Cooling Fan
 //#include "sounds/Tatra813FanNew.h" // Tatra 813 8x8 V12 Diesel Cooling Fan (use this)
@@ -75,7 +75,7 @@ volatile int fanStartPoint = 50; // Volume will raise above this point (250 for 
 #include "sounds/FanDummy.h"
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 #include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
@@ -88,13 +88,14 @@ volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 10
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
-#include "sounds/sirenDummy.h" // If you don't want siren sound
+//#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
 //#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
+#include "sounds/DixieSiren.h" // Dixie siren
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
@@ -110,17 +111,14 @@ volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usu
 //#include "sounds/ParkingBrake.h" // Parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
-volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usually = 200%)
+volatile int shiftingVolumePercentage = 100; // Adjust the shifting volume (usually = 200%)
 #include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 //#include "sounds/AirShifting.h" // Pneumatic shifting sound
 //#include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
 
 // Choose the additional "sound1" (uncomment the one you want) --------
 volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually = 100%)
-//#include "sounds/EMDLocomotiveBell.h" // American EMD locomotive bell
 //#include "sounds/007JamesBond.h" // James Bond melody
-//#include "sounds/M2Fire.h" // M2 salve
-//#include "sounds/GlenCanyon.h" // Glen Canyon country song for truckers ;-)
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
@@ -128,7 +126,6 @@ volatile int reversingVolumePercentage = 0; // Adjust the reversing sound volume
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
-#define LED_INDICATORS // LED based indicators will switch on and off immediately
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
@@ -144,7 +141,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 80; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
-const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
+const uint8_t escBrakeSteps = 50; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
@@ -158,10 +155,10 @@ uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this 
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 300; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 400; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
-const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t acc = 3; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
 const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
 
 // Vehicle type ----------------------------------------------------------------------------------------------------

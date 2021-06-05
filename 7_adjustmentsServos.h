@@ -4,8 +4,19 @@
  * This allows to use as super compact "bus-only" receiver
  * Set the endpoints here in 1000 - 2000 microseconds (equal to -45 to 45° servo angle)
  * !! WARNING: Don't connect a receiver to the "CH1 - CH6" headers, if BUS communication is selected. Ihis will short them out!!
+ * 
+ * Uncommenting "#define SERVO_DEBUG" in the main tab allows to calibrate the servo positions easily:
+ * 1. select the "SERVOS_DEFAULT" servo configuration
+ * 2. upload the sketch
+ * 3. connect the servo you want to calibrate to the steeting channel CH2 on the sound controller
+ * 4. turn your steering wheel until you cave the position you want
+ * 5. write down the microseconds reading, which is displayed in the Arduino IDE serial monitor
+ * 6. do it for every position
+ * 7. make a servo configuration profile, using these values
+ * 8. select this profile and upload the sketch
+ * 9. that's it!
  */
-
+ 
  // Select the vehicle configuration you have:
 #define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 //#define SERVOS_LANDY

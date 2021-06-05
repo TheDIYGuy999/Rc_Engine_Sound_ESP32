@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.2; // Software revision.
+const float codeVersion = 7.3; // Software revision.
 
 //
 // =======================================================================================================
@@ -18,8 +18,8 @@ const float codeVersion = 7.2; // Software revision.
 // =======================================================================================================
 //
 /* Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
- * Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated (check channel trim settings)
- */
+   Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated (check channel trim settings)
+*/
 
 //
 // =======================================================================================================
@@ -44,6 +44,7 @@ const float codeVersion = 7.2; // Software revision.
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
+//#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
 
 // TODO = Things to clean up!
 
@@ -1354,8 +1355,8 @@ void processRawChannels() {
   }
 
   // Print input signal debug infos
-  static unsigned long printChannelMillis;
 #ifdef CHANNEL_DEBUG // can slow down the playback loop!
+  static unsigned long printChannelMillis;
   if (millis() - printChannelMillis > 1000 && autoZeroDone) { // Every 1000ms
     printChannelMillis = millis();
 
@@ -1457,7 +1458,36 @@ void mcpwmOutput() {
   if (unlock5thWheel) couplerServoMicros = CH4R;
   else couplerServoMicros = CH4L;
   mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, couplerServoMicros);
+
+  // Print servo signal debug infos
+  static unsigned long printServoMillis;
+#ifdef SERVO_DEBUG // can slow down the playback loop!
+  if (millis() - printServoMillis > 1000) { // Every 1000ms
+    printServoMillis = millis();
+
+    Serial.println("Servo Positions: [microseconds], [degrees]");
+
+    Serial.print("CH1 (steering):  ");
+    Serial.print(steeringServoMicrosDelayed);
+    Serial.print(", ");
+    Serial.println((steeringServoMicrosDelayed - 500) / 11.111 - 90);
+
+    Serial.print("CH2 (shifting):  ");
+    Serial.print(shiftingServoMicros);
+    Serial.print(", ");
+    Serial.println((shiftingServoMicros - 500) / 11.111 - 90);
+
+    Serial.print("CH4 (5th wheel): ");
+    Serial.print(couplerServoMicros);
+    Serial.print(", ");
+    Serial.println((couplerServoMicros - 500) / 11.111 - 90);
+
+    Serial.println("");
+  }
+#endif
 }
+
+
 
 //
 // =======================================================================================================
@@ -1587,7 +1617,9 @@ void mapThrottle() {
 
   // Calculate engine load (used for torque converter slip simulation)
   engineLoad = currentThrottle - currentRpm;
-  if (engineLoad < 0 || escIsBraking) engineLoad = 0; // Range is 0 - 500
+
+
+  if (engineLoad < 0 || escIsBraking) engineLoad = 0; // Range is 0 - 180
   if (engineLoad > 180) engineLoad = 180;
 }
 
@@ -1633,8 +1665,8 @@ void engineMassSimulation() {
     // automatic transmission ----
     if (automatic) {
       // Torque converter slip calculation
-      if (selectedAutomaticGear < 2) converterSlip = engineLoad * 2; // more slip in first and reverse gear
-      else converterSlip = engineLoad;
+      if (selectedAutomaticGear < 2) converterSlip = engineLoad * torqueconverterSlipPercentage / 100 * 2; // more slip in first and reverse gear
+      else converterSlip = engineLoad * torqueconverterSlipPercentage / 100;
 
       if (!neutralGear) targetRpm = currentSpeed * gearRatio[selectedAutomaticGear] / 10 + converterSlip; // Compute engine RPM
       else targetRpm = reMap(curveLinear, currentThrottle);
@@ -2183,7 +2215,10 @@ void esc() {
   if (selectedGear == 3) escRampTime = escRampTimeThirdGear; // about 75
 #endif
 
-  if ((automatic || doubleClutch) && escInReverse) escRampTime = escRampTime * 100 / automaticReverseAccelerationPercentage; // faster acceleration in automatic reverse, EXPERIMENTAL, TODO!
+  if (automatic || doubleClutch) {
+    escRampTime = escRampTimeSecondGear; // always use 2nd gear acceleration for automatic transmissions
+    if (escInReverse) escRampTime = escRampTime * 100 / automaticReverseAccelerationPercentage; // faster acceleration in automatic reverse, EXPERIMENTAL, TODO!
+  }
 
   if (millis() - escMillis > escRampTime) { // About very 20 - 75ms
     escMillis = millis();

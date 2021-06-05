@@ -272,7 +272,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 // US cars --------
 //#include "vehicles/ChevyNovaCoupeV8.h" // 1975 Chevy Nova Coupe V8
-//#include "vehicles/1965FordMustangV8.h"// 1965 Ford Mustang V8 (TODO rework rev, too fast?)
+//#include "vehicles/1965FordMustangV8.h"// 1965 Ford Mustang V8
 //#include "vehicles/Chevy468.h" // Chevy 468 big block V8 (needs rework!)
 
 // EU cars --------
@@ -280,7 +280,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/JaguarXJS.h" // Jaguar XJS V12, manual transmission
 //#include "vehicles/JaguarXJSautomatic.h" // Jaguar XJS V12, automatic transmission
 //#include "vehicles/MGBGtV8.h" // MGB GT V8, manual transmission
-//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission (not compatible with iBus communication)
+//#include "vehicles/LaFerrari.h" // Ferrari LaFerrari, V12, 6 speed double clutch transmission
 
 // US SUV & Pickups --------
 //#include "vehicles/JeepGrandCherokeeTrackhawk.h" // Jeep Grand Cherokee Trackhawk V8 monster SUV with supercharger, 6 speed automatic
@@ -289,6 +289,8 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/RAM2500_Cummins12Vautomatic.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, automatic transmission
 //#include "vehicles/GMCsierra.h" // GMC Sierra V8 pickup, 3 speed automatic transmission
 //#include "vehicles/ChevyNovaCoupeV8_P407.h" // 1975 Chevy Nova Coupe V8, special version for HG-P407, 3 speed automatic transmission
+//#include "vehicles/JeepWranglerRubicon392V8.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (not the best)
+#include "vehicles/JeepWranglerRubicon392V8_2.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (insane bass!)
 
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
@@ -416,8 +418,15 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 7.3:
+- New Jeep Wrangler 392 HEMI V8 (bombastic with a good bass speaker!)
+- Optimised V8 vehicles, using the new "RPM_DEPENDENT_KNOCK" (in vehicle file) option. This makes the engine sound way more realistic and aggressive @ high RPM. Ideal for "muffler deleted" vehicles.
+- New "SERVO_DEBUG" option makes the servo calibration process easier. See "7_adjustmentsServos.h" tab"
+- "VIRTUAL_3_SPEED" not interfering with automatic transmissions anymore
+- "OVERDRIVE" option for 6 speed automatic transmission as well, not just for 4 speed. It's recommendet to leave it turned on, unless you have a double clutch vehicle.
+
 ### New in V 7.2:
-- "NO_CABLIGHTS" bug fixed"
+- "NO_CABLIGHTS" bug fixed
 - US_Firetruck memory problem fixed
 - Channel auto zero calibration reworked. See serial monitor, if you have issues. Never use "channelAutoZero = true" for unconnected channels or channels without spring centering!
 - Indicators used as a debugger: the amount of blinks shows you the channel, which is not in neutral position (outside of 1400 - 1600 microseconds, check channel trim settings). Indicators constantly on means, that no SBUS signal is detected (check "sbusInverted" true / false in "2_adjustmentsRemote.h").

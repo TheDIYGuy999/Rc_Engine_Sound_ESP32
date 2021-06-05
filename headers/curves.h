@@ -11,15 +11,27 @@
 
 //Reverse, 1st, 2nd, 3rd, 4th gear etc. (adjust reverse to match your ESC reverse speed)
 #if NumberOfAutomaticGears == 6
-int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 48, 32, 22, 15, 12, 10}; // Allison 3200 EVS (10, 54, 26, 22, 15, 12, 10)
-#elif NumberOfAutomaticGears == 4
+uint8_t torqueconverterSlipPercentage = 100;
 #ifndef OVERDRIVE
-int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 44, 23, 14, 10}; // GM Turbo HydraMatic 700-R4
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 37, 29, 22, 17, 13, 10}; // x1.30 (Allison 3200 EVS (10, 54, 26, 22, 15, 12, 10) has too much spread)
 #else
-int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10, 7}; // Overdrive (lower RPM) in 4th gear
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 33, 25, 19, 14, 11, 8}; // Overdrive (lower RPM) in top gear. x1.33. OK, but fast shifting
 #endif
+
+#elif NumberOfAutomaticGears == 4
+uint8_t torqueconverterSlipPercentage = 100;
+#ifndef OVERDRIVE
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 43, 23, 14, 10}; // GM Turbo HydraMatic 700-R4
+#else
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 30, 16, 10, 7}; // Overdrive (lower RPM) in 4th gear
+#endif
+
 #elif NumberOfAutomaticGears == 3
+uint8_t torqueconverterSlipPercentage = 100;
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo HydraMatic 400
+
+#else
+uint8_t torqueconverterSlipPercentage = 100;
 #endif
 
 
@@ -27,7 +39,7 @@ int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo Hy
 // Use it, if your vecicle does't have a real shifting transmission and you still want to shift
 // your gears manually, using the 3 position switch
 #if defined VIRTUAL_3_SPEED
-int32_t virtualManualGearRatio[4] = {10, 23, 14, 10}; // unused, 1st, 2nd, 3rd gear 32, 17, 10
+int32_t virtualManualGearRatio[4] = {10, 23, 14, 10}; // unused, 1st, 2nd, 3rd gear 23, 14, 10
 #endif
 
 // Virtual 16 speed sequential transmission gear ratios (times 10!, for example 15 means 1.5) ----------------
