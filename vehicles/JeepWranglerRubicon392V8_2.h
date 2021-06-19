@@ -2,7 +2,7 @@
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
-volatile int startVolumePercentage = 120; // Adjust the start volume (usually = 100%)
+volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 100%)
 //#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
 #include "sounds/JeepWranglerRubicon392V8_2Start3.h" // Jeep Wrangler Rubicon HEMI V8
 
@@ -139,7 +139,7 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 80; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeSecondGear = 60; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
 const uint8_t escBrakeSteps = 50; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)

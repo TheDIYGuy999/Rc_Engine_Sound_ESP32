@@ -36,9 +36,10 @@ AS-12/6RW EASY from Modellbau-Regler.de is recommended for smaller vehicles (WPL
 // - The Hobbywing 1060 is reaching full throttle (forward) @ about 1800 Microseconds, so we need about 640 for full throttle
 // - Hobbywing 1060 ESC & RBR/C 370 motor & 2 speed shifting transmission = 1600
 // - Hobbywing 1060 ESC & stock WPL 370 motor & 2 speed shifting transmission = 650
+// - Hobbywing 1040 ESC & stock 20T 540 motor in RGT EX86100 = 640
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 1200
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
-const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. 
+const int16_t escPulseSpan = 640; // 500 = full ESC power available, 1000 half ESC power available etc. 
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.

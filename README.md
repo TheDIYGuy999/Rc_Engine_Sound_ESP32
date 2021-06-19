@@ -418,6 +418,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 7.4:
+- In "2_adjustmentsRemote.h": New remote profile for Flysky GT5 / Reely GT6 EVO / Absima CR6P (thanks to BlackbirdXL1 for making this profile)
+- In "2_adjustmentsRemote.h": New remote profile for MT-305. This remote comes with the RGT EX86100 crawler
+- "NO_SIREN" option. Siren is not triggered in this case
+- "maxPwmRpmPercentage" lowered from 400 to 380 to prevent controller from random crashing in PWM mlode
+- Microseconds channel signal range limited to 1000 - 2000. Required for RGT MT-305 @ full throttle dual rate
+
 ### New in V 7.3:
 - New Jeep Wrangler 392 HEMI V8 (bombastic with a good bass speaker!)
 - Optimised V8 vehicles, using the new "RPM_DEPENDENT_KNOCK" (in vehicle file) option. This makes the engine sound way more realistic and aggressive @ high RPM. Ideal for "muffler deleted" vehicles.

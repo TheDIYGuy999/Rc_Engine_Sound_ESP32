@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.3; // Software revision.
+const float codeVersion = 7.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -190,7 +190,7 @@ rcTrigger indicatorRTrigger(100);
 #define RMT_RX_CLK_DIV (80000000/RMT_TICK_PER_US/1000000)
 // time before receiver goes idle (longer pulses will be ignored)
 #define RMT_RX_MAX_US 3500
-uint32_t maxPwmRpmPercentage = 400; // Limit required to prevent controller from crashing @ high engine RPM
+uint32_t maxPwmRpmPercentage = 380; // Limit required to prevent controller from crashing @ high engine RPM
 
 // PPM signal processing variables
 #define NUM_OF_PPM_CHL 8 // The number of channels inside our PPM signal (8 is the maximum!)
@@ -236,8 +236,8 @@ uint16_t pulseMinLimit[PULSE_ARRAY_SIZE];
 
 uint16_t pulseZero[PULSE_ARRAY_SIZE];                    // Usually 1500 (The mid point of 1000 - 2000 Microseconds)
 uint16_t pulseLimit = 1100;                              // pulseZero +/- this value (1100)
-uint16_t pulseMinValid = 950;                            // The minimum valid pulsewidth
-uint16_t pulseMaxValid = 2050;                           // The maximum valid pulsewidth
+uint16_t pulseMinValid = 700;                            // The minimum valid pulsewidth (was 950)
+uint16_t pulseMaxValid = 2300;                           // The maximum valid pulsewidth (was 2050)
 bool autoZeroDone;                                       // Auto zero offset calibration done
 #define NONE 16                                          // The non existing "Dummy" channel number (usually 16) TODO
 
@@ -1335,6 +1335,10 @@ void processRawChannels() {
       // Center channel, if out of range! TODO, experimental
       if (pulseWidth[i] > pulseMaxValid || pulseWidth[i] < pulseMinValid) pulseWidth[i] = pulseZero[i];
 
+      // Limit channel, if out of range! TODO, experimental (required for RGT  MT-350 @ max. throttle dual rate)
+      if (pulseWidth[i] > 2000) pulseWidth[i] = 2000;
+      if (pulseWidth[i] < 1000) pulseWidth[i] = 1000;
+
       // Compensate pulsewidth with auto zero offset
       pulseWidth[i] += pulseOffset[i];
       if (!autoZeroDone) { // Print offsets, if switching on the controller
@@ -1562,7 +1566,7 @@ void mapThrottle() {
   if (!escIsBraking && escIsDriving && shiftingAutoThrottle && !automatic && !doubleClutch) {
     if (gearUpShiftingInProgress) currentThrottle = 0; // No throttle
     if (gearDownShiftingInProgress) currentThrottle = 500; // Full throttle
-    currentThrottle = constrain (currentThrottle, 0, 500);
+    currentThrottle = constrain (currentThrottle, 0, 500); // Limit throttle range
   }
 
   // Volume calculations --------------------------------------------------------------------------
@@ -2156,7 +2160,7 @@ void automaticGearSelector() {
         selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
         lastUpShiftingMillis = millis();
       }
-      if (millis() - lastUpShiftingMillis > 1000 && selectedAutomaticGear > 1 && (currentRpm <= downShiftPoint || engineLoad > 100)) { // 1000ms locking timer!
+      if (millis() - lastUpShiftingMillis > 600 && selectedAutomaticGear > 1 && (currentRpm <= downShiftPoint || engineLoad > 100)) { // 600ms locking timer! TODO was 1000
         selectedAutomaticGear --; // Downshifting incl. kickdown
         lastDownShiftingMillis = millis();
       }
@@ -2431,6 +2435,7 @@ void triggerHorn() {
     hornTrigger = false;
   }
 
+#ifndef NO_SIREN
   // detect siren trigger ( impulse length < 1100us) ----------
   if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) {
     sirenTrigger = true;
@@ -2439,6 +2444,7 @@ void triggerHorn() {
   else {
     sirenTrigger = false;
   }
+#endif  
 
   // detect bluelight trigger ( impulse length < 1300us) ----------
   if ((pulseWidth[4] < 1300 && pulseWidth[4] > pulseMinLimit[4]) || sirenLatch) {
