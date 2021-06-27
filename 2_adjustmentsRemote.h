@@ -2,8 +2,8 @@
 // Select the remote configuration profile you have:
 //#define FLYSKY_FS_I6X // <------- Select (remove //) one of the remote configurations below
 //#define FLYSKY_GT5 // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
-#define RGT_EX86100 // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
-//#define MICRO_RC // <------- Don't use this with standard remotes!
+//#define RGT_EX86100 // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
+#define MICRO_RC // <------- Don't use this with standard remotes!
 
 // BOARD SETTINGS *****************************************************************************************************************************
 // Choose the board version
@@ -16,7 +16,7 @@
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
@@ -24,6 +24,11 @@ boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS s
 
 // PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+
+// CHANNEL LINEARITY SETTINGS  ****************************************************************************************************************
+
+ //#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
+ //#define EXPONENTIAL_STEERING // Exponential steering curve. More steering accuracy around center position
 
 // CONFIGURATION PROFILES *********************************************************************************************************************
 /*

@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.4; // Software revision.
+const float codeVersion = 7.5; // Software revision.
 
 //
 // =======================================================================================================
@@ -18,7 +18,8 @@ const float codeVersion = 7.4; // Software revision.
 // =======================================================================================================
 //
 /* Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
-   Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated (check channel trim settings)
+   Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated
+   (check channel trim settings)
 */
 
 //
@@ -108,6 +109,7 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 
 #define STEERING_PIN 13 // CH1 output for steering servo (bus communication only)
 #define SHIFTING_PIN 12 // CH2 output for shifting servo (bus communication only)
+#define WINCH_PIN 14 // CH3 output for winch servo (bus communication only)
 #define COUPLER_PIN 27 // CH4 output for coupler (5th. wheel) servo (bus communication only)
 
 #ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
@@ -224,6 +226,7 @@ volatile boolean couplerSwitchInteruptLatch; // this is enabled, if the coupler 
 // Control input signals
 #define PULSE_ARRAY_SIZE 14                              // 13 channels (+ the unused CH0)
 uint16_t pulseWidthRaw[PULSE_ARRAY_SIZE];                // Current RC signal RAW pulse width [X] = channel number
+uint16_t pulseWidthRaw2[PULSE_ARRAY_SIZE];               // Current RC signal RAW pulse width with linearity compensation [X] = channel number
 uint16_t pulseWidth[PULSE_ARRAY_SIZE];                   // Current RC signal pulse width [X] = channel number
 int16_t pulseOffset[PULSE_ARRAY_SIZE];                   // Offset for auto zero adjustment
 
@@ -250,6 +253,10 @@ boolean hazard;
 boolean left;
 boolean right;
 boolean unlock5thWheel;
+boolean winchPull;
+boolean winchRelease;
+
+boolean winchEnabled;
 
 // Sound
 volatile boolean engineOn = false;                       // Signal for engine on / off
@@ -937,6 +944,7 @@ void setupMcpwm() {
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN);    //Set steering as PWM0A
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN);    //Set shifting as PWM0B
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1A, COUPLER_PIN);    //Set coupling as PWM1A
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1B, WINCH_PIN);    //Set winch as PWM1B
 
   // 2. configure MCPWM parameters
   mcpwm_config_t pwm_config;
@@ -1325,9 +1333,33 @@ void processRawChannels() {
         return;
       }
 
+      // Exponential throttle compensation ------------------
+#ifdef EXPONENTIAL_THROTTLE
+      if (i == 3) { // Throttle CH only
+        pulseWidthRaw2[i] = reMap(curveExponentialThrottle, pulseWidthRaw[i]);
+      }
+      else {
+        pulseWidthRaw2[i] = pulseWidthRaw[i];
+      }
+#else
+      pulseWidthRaw2[i] = pulseWidthRaw[i];
+#endif // --------------------------------------------------
+
+      // Exponential steering compensation ------------------
+#ifdef EXPONENTIAL_STEERING
+      if (i == 1) { // Throttle CH only
+        pulseWidthRaw2[i] = reMap(curveExponentialThrottle, pulseWidthRaw[i]);
+      }
+      else {
+        pulseWidthRaw2[i] = pulseWidthRaw[i];
+      }
+#else
+      pulseWidthRaw2[i] = pulseWidthRaw[i];
+#endif // --------------------------------------------------
+
       // Take channel raw data, reverse them, if required and store them
-      if (channelReversed[i]) pulseWidth[i] = map(pulseWidthRaw[i], 0, 3000, 3000, 0); // Reversed
-      else pulseWidth[i] = pulseWidthRaw[i]; // Not reversed
+      if (channelReversed[i]) pulseWidth[i] = map(pulseWidthRaw2[i], 0, 3000, 3000, 0); // Reversed
+      else pulseWidth[i] = pulseWidthRaw2[i]; // Not reversed
 
       // Calculate zero offset (only within certain absolute range)
       if (channelAutoZero[i] && !autoZeroDone && pulseWidth[i] > pulseMinValid && pulseWidth[i] < pulseMaxValid) pulseOffset[i] = 1500 - pulseWidth[i];
@@ -1457,6 +1489,20 @@ void mcpwmOutput() {
 #endif
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, shiftingServoMicros);
 
+  // Winch CH3
+  static uint16_t winchServoMicrosDesired = CH3C;
+  static uint16_t winchServoMicros = CH3C;
+  static unsigned long winchDelayMicros;
+  if (micros() - winchDelayMicros > 12000) {
+    winchDelayMicros = micros();
+    if (winchPull) winchServoMicrosDesired = CH3L;
+    else if (winchRelease) winchServoMicrosDesired = CH3R;
+    else winchServoMicrosDesired = CH3C;
+    if (winchServoMicros < winchServoMicrosDesired) winchServoMicros ++;
+    if (winchServoMicros > winchServoMicrosDesired) winchServoMicros --;
+  }
+  mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
+
   // Trailer coupler (5th wheel) CH4
   static uint16_t couplerServoMicros;
   if (unlock5thWheel) couplerServoMicros = CH4R;
@@ -1480,6 +1526,11 @@ void mcpwmOutput() {
     Serial.print(shiftingServoMicros);
     Serial.print(", ");
     Serial.println((shiftingServoMicros - 500) / 11.111 - 90);
+
+    Serial.print("CH3 (winch): ");
+    Serial.print(winchServoMicros);
+    Serial.print(", ");
+    Serial.println((winchServoMicros - 500) / 11.111 - 90);
 
     Serial.print("CH4 (5th wheel): ");
     Serial.print(couplerServoMicros);
@@ -1542,6 +1593,7 @@ void mapThrottle() {
 #endif
 
 #else // Normal mode --------------------------------------------------------------------------- 
+
   // check if the pulsewidth looks like a servo pulse
   if (pulseWidth[3] > pulseMinLimit[3] && pulseWidth[3] < pulseMaxLimit[3]) {
     if (pulseWidth[3] < pulseMin[3]) pulseWidth[3] = pulseMin[3]; // Constrain the value
@@ -2195,6 +2247,7 @@ void esc() {
 #if not defined TRACKED_MODE // No ESC control in TRACKED_MODE
 
   static int32_t escPulseWidth = 1500;
+  static int32_t escPulseWidthOut = 1500;
   static uint32_t escSignal;
   static unsigned long escMillis;
   static unsigned long lastStateTime;
@@ -2256,6 +2309,8 @@ void esc() {
       Serial.println(escPulseMax);
       Serial.println(brakeRampRate);
       Serial.println(currentRpm);
+      Serial.println(escPulseWidth);
+      Serial.println(escPulseWidthOut);
       Serial.println(currentSpeed);
       Serial.println(speedLimit);
       Serial.println("");
@@ -2380,12 +2435,19 @@ void esc() {
     }
     else driveRampGain = 1;
 
+    // ESC linearity compensation ---------------------
+#ifdef QUICRUN_FUSION
+    escPulseWidthOut = reMap(curveQuicrunFusion, escPulseWidth);
+#else
+    escPulseWidthOut = escPulseWidth;
+#endif // -----------------------------------------
+
 
     // ESC control
 #ifndef ESC_DIR
-    escSignal = map(escPulseWidth, escPulseMin, escPulseMax, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534, not reversed)
+    escSignal = map(escPulseWidthOut, escPulseMin, escPulseMax, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534, not reversed)
 #else
-    escSignal = map(escPulseWidth, escPulseMax, escPulseMin, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534, reversed)
+    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534, reversed)
 #endif
     escOut.pwm(escSignal);
 
@@ -2420,38 +2482,54 @@ unsigned long loopDuration() {
 
 //
 // =======================================================================================================
-// HORN, BLUELIGHT & SIREN TRIGGERING BY CH4 (POT)
+// HORN, BLUELIGHT & SIREN TRIGGERING BY CH4 (POT), WINCH CONTROL
 // =======================================================================================================
 //
 
 void triggerHorn() {
 
-  // detect horn trigger ( impulse length > 1900us) -------------
-  if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) {
-    hornTrigger = true;
-    hornLatch = true;
-  }
-  else {
-    hornTrigger = false;
-  }
+  if (!winchEnabled) { // Horn & siren control mode *************************
+    winchPull = false;
+    winchRelease = false;
+
+    // detect horn trigger ( impulse length > 1900us) -------------
+    if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) {
+      hornTrigger = true;
+      hornLatch = true;
+    }
+    else {
+      hornTrigger = false;
+    }
 
 #ifndef NO_SIREN
-  // detect siren trigger ( impulse length < 1100us) ----------
-  if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) {
-    sirenTrigger = true;
-    sirenLatch = true;
-  }
-  else {
-    sirenTrigger = false;
-  }
-#endif  
+    // detect siren trigger ( impulse length < 1100us) ----------
+    if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) {
+      sirenTrigger = true;
+      sirenLatch = true;
+    }
+    else {
+      sirenTrigger = false;
+    }
+#endif
 
-  // detect bluelight trigger ( impulse length < 1300us) ----------
-  if ((pulseWidth[4] < 1300 && pulseWidth[4] > pulseMinLimit[4]) || sirenLatch) {
-    blueLightTrigger = true;
+    // detect bluelight trigger ( impulse length < 1300us) ----------
+    if ((pulseWidth[4] < 1300 && pulseWidth[4] > pulseMinLimit[4]) || sirenLatch) {
+      blueLightTrigger = true;
+    }
+    else {
+      blueLightTrigger = false;
+    }
+
   }
-  else {
-    blueLightTrigger = false;
+  else { // Winch control mode **********************************************
+    // pull winch ( impulse length > 1900us) -------------
+    if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) winchPull = true;
+    else winchPull = false;
+
+    // release winch ( impulse length < 1100us) -------------
+    if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) winchRelease = true;
+    else winchRelease = false;
+
   }
 }
 
@@ -2613,7 +2691,12 @@ void rcTrigger() {
   neutralGear = mode1; // Transmission neutral
 #endif
   mode2 = mode2Trigger.onOff(pulseWidth[9], 1800, 1200); // CH9 (MODE2)
+#ifndef MODE2_WINCH // Sound 1 mode
   if (mode2) sound1trigger = true; //Trigger sound 1 (It is reset after playback is done
+#else // Winch mode
+  if (mode2) winchEnabled = true;
+  else winchEnabled = false;
+#endif
 
   // Momentary buttons ******************************************************************
   // Engine on / off momentary button CH10 -----

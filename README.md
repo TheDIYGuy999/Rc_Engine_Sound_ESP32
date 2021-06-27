@@ -49,6 +49,9 @@ Fully assembled, tested and working 30 pin version
 - BUS decoder for steering servo and shifting servo (connect servos to CH1 & CH2) pins
 - Trailer coupler (5th wheel) servo can be connected to the CH4 pins (not in PWM communication mode)
 - TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKLELIGHT" setting in "6_adjustmentsLights.h" tab)
+- Support for non linear throttle and steering curves (for more accurate control around center position). Use "EXPONENTIAL_THROTTLE" & "EXPONENTIAL_STEERING" in "2_adjustmentsRemote.h"
+- Support for HOBBYWING Quicrun Fusion Motor / ESC combo. Use "#define QUICRUN_FUSION" in "3_adjustmentsESC.h"
+- support for winch, connected to CH3 (BUS communication mode only). Use "#define MODE2_WINCH" in "7_adjustmentsServo.h" The mode 2 button is then used to switch between horn / siren sontrol and winch control via CH4. The winch is controlled by an old RC servo driver board. The speed and neutral settings are done using "CH3L", CH3C" and CH3R" positions.
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
@@ -417,6 +420,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 7.5:
+- Support for non linear throttle and steering curves (for more accurate control around center position). Use "EXPONENTIAL_THROTTLE" & "EXPONENTIAL_STEERING" in "2_adjustmentsRemote.h"
+- Support for HOBBYWING Quicrun Fusion Motor / ESC combo. Use "#define QUICRUN_FUSION" in "3_adjustmentsESC.h"
+- support for winch, connected to CH3 (BUS communication mode only). Use "#define MODE2_WINCH" in "7_adjustmentsServo.h" The mode 2 button is then used to switch between horn / siren sontrol and winch control via CH4. The winch is controlled by an old RC servo driver board. The speed and neutral settings are done using "CH3L", CH3C" and CH3R" positions.
 
 ### New in V 7.4:
 - In "2_adjustmentsRemote.h": New remote profile for Flysky GT5 / Reely GT6 EVO / Absima CR6P (thanks to BlackbirdXL1 for making this profile)
