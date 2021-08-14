@@ -421,6 +421,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 7.6:
+- Actros sound optimised. More bass.
+- More light options in "6_adjustmentsLights.h". Xenon etc. This is more convenient than inside the vehicle files.
+- Servo output compiling error solved
+- Support for rotating beacons control in "7_adjustmentsServos.h": #define CH3_BEACON. connect this beacon to CH3 (BUS mode only): https://www.ebay.ch/itm/303979210629
+- New "headlightParkingBrightness" option in "6_adjustmentsLights.h" allows to use the headlights as parking lights.
+
 ### New in V 7.5:
 - Support for non linear throttle and steering curves (for more accurate control around center position). Use "EXPONENTIAL_THROTTLE" & "EXPONENTIAL_STEERING" in "2_adjustmentsRemote.h"
 - Support for HOBBYWING Quicrun Fusion Motor / ESC combo. Use "#define QUICRUN_FUSION" in "3_adjustmentsESC.h"

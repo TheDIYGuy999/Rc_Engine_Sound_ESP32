@@ -194,6 +194,8 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 //#include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
 #include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
 //#include "sounds/DixieSiren.h" // Dixie siren
+//#include "sounds/SwissPsalm.h" // Swiss national anthem
+//#include "sounds/Alphorn.h" // Alphorn
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)

@@ -19,7 +19,8 @@ volatile const uint16_t revSwitchPoint = 100; // The rev sound is played instead
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-#include "sounds/Actros1863rev.h" // Actros 1863
+//#include "sounds/Actros1863rev.h" // Actros 1863
+#include "sounds/Actros1863rev2.h" // Actros 1863 (more bass)
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
@@ -85,7 +86,7 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 100%)
+volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
 //#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
@@ -97,9 +98,12 @@ volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 
 //#include "sounds/la_cucaracha(1).h" // sound from nenno @ rc-modellbau-portal.de
 //#include "sounds/marseillaise(1).h" // sound from nenno @ rc-modellbau-portal.de
 //#include "sounds/river_kwai(1).h" // sound from nenno @ rc-modellbau-portal.de
-#include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de --
 //#include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
 //#include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
+#include "sounds/DixieSiren.h" // Dixie siren
+//#include "sounds/SwissPsalm.h" // Swiss national anthem
+//#include "sounds/Alphorn.h" // Alphorn
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)

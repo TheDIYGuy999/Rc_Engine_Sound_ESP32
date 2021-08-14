@@ -10,7 +10,7 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.5; // Software revision.
+const float codeVersion = 7.6; // Software revision.
 
 //
 // =======================================================================================================
@@ -1163,7 +1163,7 @@ void readPwmSignals() {
   // nothing is done here, the PWM signals are now read, using the
   // "static void IRAM_ATTR rmt_isr_handler(void* arg)" interrupt function
 
-  // NOTE: There is no channel mapping in this mode! Just plug in the wires in the order as defined in "channelsetup.h"
+  // NOTE: There is no channel mapping in this mode! Just plug in the wires in the order as defined in "2_adjustmentsRemote.h"
   // for example: sound controller channel 2 (GEARBOX) connects to receiver channel 6
 
   // Normalize, auto zero and reverse channels
@@ -1176,7 +1176,7 @@ void readPwmSignals() {
 
 //
 // =======================================================================================================
-// READ PPM MULTI CHANNEL COMMMANDS (change the channel order in "remoteSetup.h", if needed)
+// READ PPM MULTI CHANNEL COMMMANDS (change the channel order in "2_adjustmentsRemote.h", if needed)
 // =======================================================================================================
 //
 
@@ -1203,7 +1203,7 @@ void readPpmCommands() {
 
 //
 // =======================================================================================================
-// READ SBUS SIGNALS (change the channel order in "remoteSetup.h", if needed)
+// READ SBUS SIGNALS (change the channel order in "2_adjustmentsRemote.h", if needed)
 // =======================================================================================================
 //
 
@@ -1253,7 +1253,7 @@ void readSbusCommands() {
 
 //
 // =======================================================================================================
-// READ IBUS SIGNALS (change the channel order in "remoteSetup.h", if needed).
+// READ IBUS SIGNALS (change the channel order in "2_adjustmentsRemote.h", if needed).
 // =======================================================================================================
 //
 
@@ -1451,6 +1451,48 @@ void failsafeRcSignals() {
 
 //
 // =======================================================================================================
+// ROTATING BEACON CONTROL (BUS communication mode only)
+// =======================================================================================================
+//
+
+bool beaconControl(uint8_t pulses) {
+
+  /* Beacons: "RC DIY LED Rotating Beacon Light Flash For 1/10 Truck Crawler Toy"
+   *  from: https://www.ebay.ch/itm/303979210629
+   *  States (every servo signal change from 1000 to 2000us will switch to the next state):
+   *  0 rotating beacon slow
+   *  1 Rotating beacon slow
+   *  2 4x flash
+   *  3 endless flash
+   *  4 off
+   *  
+   */  
+
+  static unsigned long pulseMillis;
+  static unsigned long pulseWidth = CH3L;
+  static uint8_t i;
+
+  if (millis() - pulseMillis > 40) { // Every 40ms (this is the required minimum)
+    pulseMillis = millis();
+    if (pulseWidth == CH3L) {
+      pulseWidth = CH3R;
+    }
+    else {
+      pulseWidth = CH3L;
+      i++;
+    }
+    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, pulseWidth);
+  }
+  
+  if (i >= pulses) {
+    i = 0;
+    return true;
+  }
+  else return false;
+}
+
+//
+// =======================================================================================================
 // MCPWM SERVO RC SIGNAL OUTPUT (BUS communication mode only)
 // =======================================================================================================
 //
@@ -1458,7 +1500,7 @@ void failsafeRcSignals() {
 
 void mcpwmOutput() {
 
-  // Steering CH1
+  // Steering CH1 **********************
   uint16_t steeringServoMicros;
   static uint16_t steeringServoMicrosDelayed = CH1C;
   static unsigned long steeringDelayMicros;
@@ -1475,7 +1517,7 @@ void mcpwmOutput() {
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, steeringServoMicrosDelayed);
   }
 
-  // Shifting CH2
+  // Shifting CH2 **********************
   static uint16_t shiftingServoMicros;
 #if not defined MODE1_SHIFTING
   if (selectedGear == 1) shiftingServoMicros = CH2L;
@@ -1489,7 +1531,8 @@ void mcpwmOutput() {
 #endif
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, shiftingServoMicros);
 
-  // Winch CH3
+  // Winch CH3 **********************
+#if defined MODE2_WINCH
   static uint16_t winchServoMicrosDesired = CH3C;
   static uint16_t winchServoMicros = CH3C;
   static unsigned long winchDelayMicros;
@@ -1502,14 +1545,43 @@ void mcpwmOutput() {
     if (winchServoMicros > winchServoMicrosDesired) winchServoMicros --;
   }
   mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
+#endif
 
-  // Trailer coupler (5th wheel) CH4
+  // Beacon CH3 **********************
+#if defined CH3_BEACON
+
+  // Init (5 pulses are required to shut beacons off after power on)
+  static bool blueLightInit;
+  if (!blueLightInit) {
+    if (beaconControl(5)) blueLightInit = true;
+  }
+
+  // Switching modes
+  static uint16_t beaconServoMicros;
+  static bool lockRotating, lockOff;
+  if (blueLightInit) {
+    if (blueLightTrigger && !lockRotating) { // Rotating mode on (1 pulse)
+      if (beaconControl(1)) {
+        lockRotating = true;
+        lockOff = false;
+      }
+    }
+    if (!blueLightTrigger && !lockOff && lockRotating) { // Off (4 pulses)
+      if (beaconControl(4)) {
+        lockOff = true;
+        lockRotating = false;
+      }
+    }
+  }
+#endif
+
+  // Trailer coupler (5th wheel) CH4 **********************
   static uint16_t couplerServoMicros;
   if (unlock5thWheel) couplerServoMicros = CH4R;
   else couplerServoMicros = CH4L;
   mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, couplerServoMicros);
 
-  // Print servo signal debug infos
+  // Print servo signal debug infos **********************
   static unsigned long printServoMillis;
 #ifdef SERVO_DEBUG // can slow down the playback loop!
   if (millis() - printServoMillis > 1000) { // Every 1000ms
@@ -1527,10 +1599,19 @@ void mcpwmOutput() {
     Serial.print(", ");
     Serial.println((shiftingServoMicros - 500) / 11.111 - 90);
 
+#if defined MODE2_WINCH
     Serial.print("CH3 (winch): ");
     Serial.print(winchServoMicros);
     Serial.print(", ");
     Serial.println((winchServoMicros - 500) / 11.111 - 90);
+#endif
+
+#if defined CH3_BEACON
+    Serial.print("CH3 (beacon): ");
+    Serial.print(beaconServoMicros);
+    Serial.print(", ");
+    Serial.println((beaconServoMicros - 500) / 11.111 - 90);
+#endif
 
     Serial.print("CH4 (5th wheel): ");
     Serial.print(couplerServoMicros);
@@ -1864,7 +1945,7 @@ void brakeLightsSub(int8_t brightness) {
 }
 
 // Headlights sub function ---------------------------------
-void headLightsSub(bool head, bool fog, bool roof) {
+void headLightsSub(bool head, bool fog, bool roof, bool park) {
 
 #ifdef XENON_LIGHTS // Optional xenon ignition flash
   if (millis() - xenonMillis > 50) xenonIgnitionFlash = 0; else xenonIgnitionFlash = 170; // bulb is brighter for 50ms
@@ -1872,9 +1953,15 @@ void headLightsSub(bool head, bool fog, bool roof) {
 
 #ifdef SEPARATE_FULL_BEAM // separate full beam bulb, wired to "rooflight" pin ----
   // Headlights (low beam bulb)
-  if (!head) {
+  if (!head && !park) {
     headLight.off();
     xenonMillis = millis();
+    if (!headLightsFlasherOn) headLightsHighBeamOn = false;
+  }
+  else if (park) { // Parking lights
+    headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
+    xenonMillis = millis();
+    if (!headLightsFlasherOn) headLightsHighBeamOn = false;
   }
   else { //ON
     headLight.pwm(constrain(255 - crankingDim - 170 + xenonIgnitionFlash, 0, 255));
@@ -1884,8 +1971,13 @@ void headLightsSub(bool head, bool fog, bool roof) {
 
 #else // Bulbs wired as labeled on the board ----
   // Headlights
-  if (!head) { // OFF, but flasher active
+  if (!head && !park) { // OFF or flasher
     if (!headLightsFlasherOn) headLight.off(); else headLight.on();
+    xenonMillis = millis();
+    headLightsHighBeamOn = false;
+  }
+  else if (park) { // Parking lights
+    if (!headLightsFlasherOn) headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255)) else headLight.on();
     xenonMillis = millis();
     headLightsHighBeamOn = false;
   }
@@ -2019,7 +2111,7 @@ void led() {
     case 0: // lights off ---------------------------------------------------------------------
       cabLight.off();
       sideLight.off();
-      headLightsSub(false, false, false);
+      headLightsSub(false, false, false, false);
       brakeLightsSub(0); // 0 brightness, if not braking
       break;
 
@@ -2027,19 +2119,19 @@ void led() {
 #ifdef NO_CABLIGHTS
       lightsState = 2; // Skip cablights
 #else
-      cabLight.pwm(255 - crankingDim);
+      cabLight.pwm(cabLightsBrightness - crankingDim);
 #endif
       sideLight.off();
-      headLightsSub(false, false, false);
+      headLightsSub(false, false, false, false);
       brakeLightsSub(0); // 0 brightness, if not braking
       break;
 
     case 2: // cab & roof & side lights ---------------------------------------------------------------------
 #ifndef NO_CABLIGHTS
-      cabLight.pwm(255 - crankingDim);
+      cabLight.pwm(cabLightsBrightness - crankingDim);
 #endif
       sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
-      headLightsSub(false, false, true);
+      headLightsSub(false, false, true, true);
       fogLight.off();
       brakeLightsSub(rearlightParkingBrightness); // () = brightness, if not braking
       break;
@@ -2047,7 +2139,7 @@ void led() {
     case 3: // roof & side & head lights ---------------------------------------------------------------------
       cabLight.off();
       sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
-      headLightsSub(true, false, true);
+      headLightsSub(true, false, true, false);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
 
@@ -2057,7 +2149,7 @@ void led() {
 #endif
       cabLight.off();
       sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
-      headLightsSub(true, true, true);
+      headLightsSub(true, true, true, false);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
 
@@ -2065,9 +2157,9 @@ void led() {
 #ifdef NO_CABLIGHTS
       lightsState = 0; // Skip cablights
 #endif
-      cabLight.pwm(255 - crankingDim);
+      cabLight.pwm(cabLightsBrightness - crankingDim);
       sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
-      headLightsSub(true, true, true);
+      headLightsSub(true, true, true, false);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
 
