@@ -51,7 +51,9 @@ Fully assembled, tested and working 30 pin version
 - TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKLELIGHT" setting in "6_adjustmentsLights.h" tab)
 - Support for non linear throttle and steering curves (for more accurate control around center position). Use "EXPONENTIAL_THROTTLE" & "EXPONENTIAL_STEERING" in "2_adjustmentsRemote.h"
 - Support for HOBBYWING Quicrun Fusion Motor / ESC combo. Use "#define QUICRUN_FUSION" in "3_adjustmentsESC.h"
-- support for winch, connected to CH3 (BUS communication mode only). Use "#define MODE2_WINCH" in "7_adjustmentsServo.h" The mode 2 button is then used to switch between horn / siren sontrol and winch control via CH4. The winch is controlled by an old RC servo driver board. The speed and neutral settings are done using "CH3L", CH3C" and CH3R" positions.
+- Support for winch, connected to CH3 (BUS communication mode only). Use "#define MODE2_WINCH" in "7_adjustmentsServo.h" The mode 2 button is then used to switch between horn / siren sontrol and winch control via CH4. The winch is controlled by an old RC servo driver board. The speed and neutral settings are done using "CH3L", CH3C" and CH3R" positions.
+- Support for LCD dashboard
+- Support for 2812 Neopixel LED (GPIO0)
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
@@ -176,6 +178,10 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - All LED (except the ones, which are connected to the TAMIYA trailer connector) need a series resistor
 - Calculate the reqired resistor according to: http://ledcalc.com (supply voltage = 5V)
 - It is not recommended to wire LED in parallel, sharing the series resistor
+- Support for WS2812 Neopixel LED (details and wiring see "6_adjustmentsLights.h")
+
+### LCD dashboard
+- See "9_adjustmentsDashboard.h"
 
 ### Shaker
 - The shaker is used for engine vibration simulation. The speed can be adjusted in the vehicle configuration and will vary depending on the engine state and rpm
@@ -251,7 +257,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 //#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
-//#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
+#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 //#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
@@ -269,6 +275,9 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 // Tractors -------
 //#include "vehicles/KirovetsK700.h" // Russian Kirovets K700 monster tractor. Extreme turbo sound!
+
+// Excavators -------
+//#include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator
 
 // US motorcycles --------
 //#include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
@@ -293,7 +302,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/GMCsierra.h" // GMC Sierra V8 pickup, 3 speed automatic transmission
 //#include "vehicles/ChevyNovaCoupeV8_P407.h" // 1975 Chevy Nova Coupe V8, special version for HG-P407, 3 speed automatic transmission
 //#include "vehicles/JeepWranglerRubicon392V8.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (not the best)
-#include "vehicles/JeepWranglerRubicon392V8_2.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (insane bass!)
+//#include "vehicles/JeepWranglerRubicon392V8_2.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (insane bass!)
 
 // EU SUV --------
 //#include "vehicles/DefenderV8Automatic.h" // Land Rover Defender 90 V8 automatic (very nice V8 with lots of bass)
@@ -323,18 +332,21 @@ Note, that the default communication mode is SBUS. You need to change it as foll
 
 #### PWM (classic RC signals on "CH1" - "CH4", "35" & "PPM" headers, the most common interface)
 ```
-// COMMUNICATION SETTINGS **********************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
+/// COMMUNICATION SETTINGS  ********************************************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
-// PWM mode active, if SBUS, IBUS and PPM are disabled (// in front of #define)
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
 
 // PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
@@ -342,37 +354,43 @@ boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS si
 
 #### PPM (multiple channels pulse pause modulation, wired to "RX" header, 8 channels)
 ```
-// COMMUNICATION SETTINGS **********************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
+// COMMUNICATION SETTINGS  ********************************************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
 
 // PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 #define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 ```
 
-#### SBUS (recommended, default setting, wired to "SBUS" header, 13 channels)
+#### SBUS (recommended, default setting, wired to "RX" header, 13 channels)
 ```
-// COMMUNICATION SETTINGS **********************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
+// COMMUNICATION SETTINGS  ********************************************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
 
 // PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
@@ -390,21 +408,56 @@ boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS si
 
 #### IBUS (not recommended, NO FAILSAFE, if bad contact in iBUS wiring! "RX" header, 13 channels)
 ```
-// COMMUNICATION SETTINGS **********************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!)
+/// COMMUNICATION SETTINGS  ********************************************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
-// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
 //#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
+
 // PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+```
+
+#### SUMD (For Graupner remotes "RX" header, 12 channels)
+```
+// COMMUNICATION SETTINGS  ********************************************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
+
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
+
+// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
+
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
+
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+```
+
+SBUS non standard signal (if your receiver sends a non-standard SBUS signal):
+```
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+```
+
+SBUS standard signal (default, used in most cases)
+```
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
 ```
 
 ## Adjusting things in "vehicles/yourVehiclePreset.h":
@@ -421,11 +474,16 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 7.7:
+- Support for 0.96 inch 80x160 st7735 LCD dashboard (details and wiring see "9_adjustmentsDashboard.h", thanks to Gamadril)
+- Support for 2812 Neopixel LED (details and wiring see "6_adjustmentsLights.h", thanks to Gamadril)
+- Support for Graupner SUMD protocol (thanks to Gamadril)
+
 ### New in V 7.6:
 - Actros sound optimised. More bass.
 - More light options in "6_adjustmentsLights.h". Xenon etc. This is more convenient than inside the vehicle files.
 - Servo output compiling error solved
-- Support for rotating beacons control in "7_adjustmentsServos.h": #define CH3_BEACON. connect this beacon to CH3 (BUS mode only): https://www.ebay.ch/itm/303979210629
+- Support for rotating beacons control in "7_adjustmentsServos.h": #define CH3_BEACON. Connect this beacon to CH3 (BUS mode only): https://www.ebay.ch/itm/303979210629
 - New "headlightParkingBrightness" option in "6_adjustmentsLights.h" allows to use the headlights as parking lights.
 
 ### New in V 7.5:

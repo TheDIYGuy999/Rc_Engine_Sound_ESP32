@@ -8,9 +8,11 @@
    Original converter code by bitluni (send him a high five, if you like the code)
 
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
+
+   Dashboard, Neopixel and SUMD support by: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.6; // Software revision.
+const float codeVersion = 7.7; // Software revision.
 
 //
 // =======================================================================================================
@@ -38,6 +40,7 @@ const float codeVersion = 7.6; // Software revision.
 #include "6_adjustmentsLights.h"        // <<------- Lights related adjustments
 #include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
 #include "8_adjustmentsSound.h"         // <<------- Sound related adjustments
+#include "9_adjustmentsDashboard.h"     // <<------- Dashboard related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
@@ -64,8 +67,15 @@ const float codeVersion = 7.6; // Software revision.
 #include <SBUS.h>      // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
 #include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
 #include <IBusBM.h>    // https://github.com/bmellink/IBusBM        <<------- required for IBUS interface
+#include <TFT_eSPI.h>  // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard
+#include <FastLED.h>   // https://github.com/FastLED/FastLED        <<------- required for Neopixel support
 
-#include "driver/rmt.h" // No need to install this, comes with ESP32 board definition (used for PWM signal detection)
+// Plugins (included, but not programmed by TheDIYGuy999)
+#include "src/dashboard.h" // For LCD dashboard. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+#include "src/SUMD.h" // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+
+// No need to install these, they come with the ESP32 board definition
+#include "driver/rmt.h" // for PWM signal detection
 #include "driver/mcpwm.h" // for servo PWM output
 
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -129,6 +139,8 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 #define BEACON_LIGHT1_PIN 21 // Blue beacons light
 #define CABLIGHT_PIN 22 // Cabin lights
 
+#define RGB_LEDS_PIN 0 // Pin is used for WS2812 LED control
+
 #if defined THIRD_BRAKLELIGHT
 #define BRAKELIGHT_PIN 32 // Upper brake lights
 #else
@@ -155,9 +167,10 @@ statusLED roofLight(false);
 statusLED sideLight(false);
 statusLED beaconLight1(false);
 statusLED beaconLight2(false);
+statusLED shakerMotor(false);
 statusLED cabLight(false);
 statusLED brakeLight(false);
-statusLED shakerMotor(false);
+
 statusLED escOut(false);
 
 // rcTrigger objects -----
@@ -182,6 +195,13 @@ rcTrigger momentary1Trigger(100);
 rcTrigger hazardsTrigger(100);
 rcTrigger indicatorLTrigger(100);
 rcTrigger indicatorRTrigger(100);
+
+// Dashboard
+Dashboard dashboard;
+
+// Neopixel
+#define RGB_LEDS_COUNT 1
+CRGB rgbLEDs[RGB_LEDS_COUNT];
 
 // Global variables **********************************************************************
 
@@ -214,6 +234,16 @@ bool SBUSfailSafe;
 bool SBUSlostFrame;
 bool sbusInit;
 uint32_t maxSbusRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
+
+// SUMD signal processing variables
+HardwareSerial serial(2);
+SUMD sumd(serial); // SUMD object on Serial 2 port
+// channel, fail safe, and lost frames data
+uint16_t SUMDchannels[16]; // only 12 are usable!
+bool SUMD_failsafe;
+bool SUMD_frame_lost;
+bool SUMD_init;
+uint32_t maxSumdRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
 // IBUS signal processing variables
 IBusBM iBus;    // IBUS object
@@ -304,7 +334,15 @@ int16_t currentThrottleFaded = 0;                        // faded throttle for v
 const int16_t maxRpm = 500;                              // always 500
 const int16_t minRpm = 0;                                // always 0
 int32_t currentRpm = 0;                                  // 0 - 500 (signed required!)
-volatile uint8_t engineState = 0;                        // 0 = off, 1 = starting, 2 = running, 3 = stopping
+volatile uint8_t engineState = 0;                        // Engine state
+enum EngineState                                         // Engine state enum
+{
+  OFF,
+  STARTING,
+  RUNNING,
+  STOPPING,
+  PARKING_BRAKE
+};
 int16_t engineLoad = 0;                                  // 0 - 500
 volatile uint16_t engineSampleRate = 0;                  // Engine sample rate
 int32_t speedLimit = maxRpm;                             // The speed limit, depending on selected virtual gear
@@ -337,9 +375,10 @@ int8_t lightsState = 0;                                  // for lights state mac
 volatile boolean lightsOn = false;                       // Lights on
 volatile boolean headLightsFlasherOn = false;            // Headlights flasher impulse (Lichthupe)
 volatile boolean headLightsHighBeamOn = false;           // Headlights high beam (Fernlicht)
-volatile boolean blueLightTrigger = false;               // Bluelight on 8Blaulicht)
+volatile boolean blueLightTrigger = false;               // Bluelight on (Blaulicht)
 boolean indicatorLon = false;                            // Left indicator (Blinker links)
-boolean indicatorRon = false;                            // Right indicator 8Blinker rechts)
+boolean indicatorRon = false;                            // Right indicator (Blinker rechts)
+boolean fogLightOn = false;                              // Fog light is on
 boolean cannonFlash = false;                             // Flashing cannon fire
 
 // Our main tasks
@@ -388,18 +427,18 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   switch (engineState) {
 
-    case 0: // Engine off -----------------------------------------------------------------------
+    case OFF: // Engine off -----------------------------------------------------------------------
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       a = 0; // volume = zero
       if (engineOn) {
-        engineState = 1;
+        engineState = STARTING;
         engineStart = true;
       }
       break;
 
-    case 1: // Engine start --------------------------------------------------------------------
+    case STARTING: // Engine start --------------------------------------------------------------------
       variableTimerTicks = 4000000 / startSampleRate; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -409,14 +448,14 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
       else {
         curStartSample = 0;
-        engineState = 2;
+        engineState = RUNNING;
         engineStart = false;
         engineRunning = true;
         airBrakeTrigger = true;
       }
       break;
 
-    case 2: // Engine running ------------------------------------------------------------------
+    case RUNNING: // Engine running ------------------------------------------------------------------
 
       // Engine idle & revving sounds (mixed together according to engine rpm, new in v5.0)
       variableTimerTicks = engineSampleRate;  // our variable idle sampling rate!
@@ -522,13 +561,13 @@ void IRAM_ATTR variablePlaybackTimer() {
       if (!engineOn) {
         speedPercentage = 100;
         attenuator = 1;
-        engineState = 3;
+        engineState = STOPPING;
         engineStop = true;
         engineRunning = false;
       }
       break;
 
-    case 3: // Engine stop --------------------------------------------------------------------
+    case STOPPING: // Engine stop --------------------------------------------------------------------
       variableTimerTicks = 4000000 / sampleRate * speedPercentage / 100; // our fixed sampling rate
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
@@ -551,15 +590,15 @@ void IRAM_ATTR variablePlaybackTimer() {
         a = 0;
         speedPercentage = 100;
         parkingBrakeTrigger = true;
-        engineState = 4;
+        engineState = PARKING_BRAKE;
         engineStop = false;
       }
       break;
 
-    case 4: // parking brake bleeding air sound after engine is off ----------------------------
+    case PARKING_BRAKE: // parking brake bleeding air sound after engine is off ----------------------------
 
       if (!parkingBrakeTrigger) {
-        engineState = 0;
+        engineState = OFF;
       }
       break;
 
@@ -994,18 +1033,31 @@ void setup() {
   fogLight.begin(FOGLIGHT_PIN, 5, 20000); // Timer 5, 20kHz
   reversingLight.begin(REVERSING_LIGHT_PIN, 6, 20000); // Timer 6, 20kHz
   roofLight.begin(ROOFLIGHT_PIN, 7, 20000); // Timer 7, 20kHz
-  sideLight.begin(SIDELIGHT_PIN, 8, 20000); // Timer 8, 20kHz
 
+#if not defined SPI_DASHBOARD
+  sideLight.begin(SIDELIGHT_PIN, 8, 20000); // Timer 8, 20kHz
   beaconLight1.begin(BEACON_LIGHT1_PIN, 9, 20000); // Timer 9, 20kHz
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 20000); // Timer 10, 20kHz
+#endif
+
 #if defined THIRD_BRAKLELIGHT
   brakeLight.begin(BRAKELIGHT_PIN, 11, 20000); // Timer 11, 20kHz
 #endif
   cabLight.begin(CABLIGHT_PIN, 12, 20000); // Timer 12, 20kHz
 
+#if not defined SPI_DASHBOARD
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
+#endif
 
   escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit <-- ESC running @ 50Hz
+
+#if defined SPI_DASHBOARD
+  // Dashboard setup
+  dashboard.init();
+#endif
+
+  // Neopixel setup
+  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, RGB_LEDS_COUNT);
 
   // Serial setup
   Serial.begin(115200); // USB serial (for DEBUG)
@@ -1013,6 +1065,7 @@ void setup() {
   // Communication setup --------------------------------------------
   indicatorL.on();
   indicatorR.on();
+
 #if defined SBUS_COMMUNICATION // SBUS ----
   if (MAX_RPM_PERCENTAGE > maxSbusRpmPercentage) MAX_RPM_PERCENTAGE = maxSbusRpmPercentage; // Limit RPM range
   sBus.begin(COMMAND_RX, COMMAND_TX, sbusInverted); // begin SBUS communication with compatible receivers
@@ -1026,6 +1079,12 @@ void setup() {
 #elif defined PPM_COMMUNICATION // PPM ----
   if (MAX_RPM_PERCENTAGE > maxPpmRpmPercentage) MAX_RPM_PERCENTAGE = maxPpmRpmPercentage; // Limit RPM range
   attachInterrupt(digitalPinToInterrupt(PPM_PIN), readPpm, RISING); // begin PPM communication with compatible receivers
+  setupMcpwm(); // mcpwm servo output setup
+
+#elif defined SUMD_COMMUNICATION // Graupner SUMD ----
+  // SUMD communication
+  if (MAX_RPM_PERCENTAGE > maxSumdRpmPercentage) MAX_RPM_PERCENTAGE = maxSumdRpmPercentage; // Limit RPM range
+  sumd.begin(COMMAND_RX); // begin SUMD communication with compatible receivers
   setupMcpwm(); // mcpwm servo output setup
 
 #else
@@ -1097,6 +1156,7 @@ void setup() {
     readSbusCommands(); // SBUS communication (pin 36)
   }
   Serial.println("SBUS initialization done!");
+  
 #elif defined IBUS_COMMUNICATION
   ibusInit = false;
   Serial.println("Initializing IBUS, check transmitter & receiver...");
@@ -1104,6 +1164,16 @@ void setup() {
     readIbusCommands(); // IBUS communication (pin 36)
   }
   Serial.println("IBUS initialization done!");
+  
+#elif defined SUMD_COMMUNICATION
+  SUMD_init = false;
+  Serial.println("Initializing SUMD, check transmitter & receiver...");
+  while (!SUMD_init)
+  {
+    readSumdCommands();
+  }
+  Serial.println("SUMD initialization done!");
+  
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
 #else
@@ -1305,6 +1375,53 @@ void readIbusCommands() {
 
 //
 // =======================================================================================================
+// READ SUMD SIGNALS (change the channel order in "2_adjustmentsRemote.h", if needed).
+// =======================================================================================================
+//
+void readSumdCommands() {
+#if defined SUMD_COMMUNICATION
+  // Signals are coming in via Graupner SUMD protocol
+
+  // look for a good SUMD packet from the receiver
+  if (sumd.read(SUMDchannels, &SUMD_failsafe, &SUMD_frame_lost) == 0)
+  {
+    SUMD_init = true;
+  }
+
+  // Proportional channels (in Microseconds)
+  pulseWidthRaw[1] = map(SUMDchannels[STEERING - 1], 1100, 1900, 1000, 2000);    // CH1 steering
+  pulseWidthRaw[2] = map(SUMDchannels[GEARBOX - 1], 1100, 1900, 1000, 2000);     // CH2 3 position switch for gearbox (left throttle in tracked mode)
+  pulseWidthRaw[3] = map(SUMDchannels[THROTTLE - 1], 1100, 1900, 1000, 2000);    // CH3 throttle & brake
+  pulseWidthRaw[4] = map(SUMDchannels[HORN - 1], 1100, 1900, 1000, 2000);        // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+  pulseWidthRaw[5] = map(SUMDchannels[FUNCTION_R - 1], 1100, 1900, 1000, 2000);  // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+  pulseWidthRaw[6] = map(SUMDchannels[FUNCTION_L - 1], 1100, 1900, 1000, 2000);  // CH6 indicators, hazards
+  pulseWidthRaw[7] = map(SUMDchannels[POT2 - 1], 1100, 1900, 1000, 2000);        // CH7 pot 2
+  pulseWidthRaw[8] = map(SUMDchannels[MODE1 - 1], 1100, 1900, 1000, 2000);       // CH8 mode 1 switch
+  pulseWidthRaw[9] = map(SUMDchannels[MODE2 - 1], 1100, 1900, 1000, 2000);       // CH9 mode 2 switch
+  pulseWidthRaw[10] = map(SUMDchannels[MOMENTARY1 - 1], 1100, 1900, 1000, 2000); // CH10
+  pulseWidthRaw[11] = map(SUMDchannels[HAZARDS - 1], 1100, 1900, 1000, 2000);    // CH11
+
+  // Failsafe triggering
+  if (SUMD_failsafe)
+  {
+    failSafe = true; // in most cases the rx buffer is not processed fast enough so old data is overwritten
+  }
+  else
+    failSafe = false;
+
+  if (SUMD_init)
+  { // TODO, experimental!
+    // Normalize, auto zero and reverse channels
+    processRawChannels();
+
+    // Failsafe for RC signals
+    failsafeRcSignals();
+  }
+#endif  
+}
+
+//
+// =======================================================================================================
 // PROZESS CHANNELS (Normalize, auto zero and reverse)
 // =======================================================================================================
 //
@@ -1458,15 +1575,15 @@ void failsafeRcSignals() {
 bool beaconControl(uint8_t pulses) {
 
   /* Beacons: "RC DIY LED Rotating Beacon Light Flash For 1/10 Truck Crawler Toy"
-   *  from: https://www.ebay.ch/itm/303979210629
-   *  States (every servo signal change from 1000 to 2000us will switch to the next state):
-   *  0 rotating beacon slow
-   *  1 Rotating beacon slow
-   *  2 4x flash
-   *  3 endless flash
-   *  4 off
-   *  
-   */  
+      from: https://www.ebay.ch/itm/303979210629
+      States (every servo signal change from 1000 to 2000us will switch to the next state):
+      0 rotating beacon slow
+      1 Rotating beacon slow
+      2 4x flash
+      3 endless flash
+      4 off
+
+  */
 
   static unsigned long pulseMillis;
   static unsigned long pulseWidth = CH3L;
@@ -1483,7 +1600,7 @@ bool beaconControl(uint8_t pulses) {
     }
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, pulseWidth);
   }
-  
+
   if (i >= pulses) {
     i = 0;
     return true;
@@ -1844,7 +1961,7 @@ void engineMassSimulation() {
 
 
     // Accelerate engine
-    if (targetRpm > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == 2 && engineRunning) {
+    if (targetRpm > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == RUNNING && engineRunning) {
       if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
         if (!gearDownShiftingInProgress) currentRpm += acc;
         else currentRpm += acc / 2; // less aggressive rpm rise while downshifting
@@ -1907,16 +2024,20 @@ void engineOnOff() {
   }
 #endif
 
+#ifdef AUTO_LIGHTS
   if (millis() - idleDelayMillis > 10000) {
     lightsOn = false; // after delay, switch light off
   }
+#endif
 
   // Engine start detection
   if (currentThrottle > 100 && !airBrakeTrigger) {
     //#ifdef AUTO_ENGINE_ON_OFF
     engineOn = true;
     //#endif
+#ifdef AUTO_LIGHTS
     lightsOn = true;
+#endif
   }
 }
 
@@ -1946,6 +2067,8 @@ void brakeLightsSub(int8_t brightness) {
 
 // Headlights sub function ---------------------------------
 void headLightsSub(bool head, bool fog, bool roof, bool park) {
+
+  fogLightOn = fog;
 
 #ifdef XENON_LIGHTS // Optional xenon ignition flash
   if (millis() - xenonMillis > 50) xenonIgnitionFlash = 0; else xenonIgnitionFlash = 170; // bulb is brighter for 50ms
@@ -1977,7 +2100,7 @@ void headLightsSub(bool head, bool fog, bool roof, bool park) {
     headLightsHighBeamOn = false;
   }
   else if (park) { // Parking lights
-    if (!headLightsFlasherOn) headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255)) else headLight.on();
+    if (!headLightsFlasherOn) headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255)); else headLight.on();
     xenonMillis = millis();
     headLightsHighBeamOn = false;
   }
@@ -2008,6 +2131,7 @@ void led() {
   if ((engineRunning || engineStart) && escInReverse) reversingLight.pwm(reversingLightBrightness - crankingDim);
   else reversingLight.off();
 
+#if not defined SPI_DASHBOARD
   // Beacons (blue light) ----
 #if not defined TRACKED_MODE  // Normal beacons mode 
   if (blueLightTrigger) {
@@ -2027,6 +2151,7 @@ void led() {
 #else // Beacons used for tank cannon fire simulation flash in TRACKED_MODE
   if (cannonFlash) beaconLight1.on();
   else beaconLight1.off();
+#endif
 #endif
 
 
@@ -2089,8 +2214,14 @@ void led() {
   }
 
   // Foglights ----
-  if (lightsOn && engineRunning) fogLight.pwm(200 - crankingDim);
-  else fogLight.off();
+  if (lightsOn && engineRunning) {
+    fogLight.pwm(200 - crankingDim);
+    fogLightOn = true;
+  }
+  else {
+    fogLight.off();
+    fogLightOn = false;
+  }
 
   // Roof lights ----
   if (lightsOn) roofLight.pwm(130 - crankingDim);
@@ -2111,6 +2242,7 @@ void led() {
     case 0: // lights off ---------------------------------------------------------------------
       cabLight.off();
       sideLight.off();
+      lightsOn = false;
       headLightsSub(false, false, false, false);
       brakeLightsSub(0); // 0 brightness, if not braking
       break;
@@ -2139,6 +2271,7 @@ void led() {
     case 3: // roof & side & head lights ---------------------------------------------------------------------
       cabLight.off();
       sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
+      lightsOn = true;
       headLightsSub(true, false, true, false);
       brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
       break;
@@ -2429,15 +2562,18 @@ void esc() {
         escIsBraking = false;
         escInReverse = false;
         escIsDriving = true;
+        //if (!gearUpShiftingPulse && !gearDownShiftingPulse) { // TODO!!
         if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) {
           if (escPulseWidth >= escPulseMaxNeutral) escPulseWidth += (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMaxNeutral; // Initial boost
         }
         if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
+        //}
 
         if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
           escPulseWidth -= currentSpeed / 4; // Synchronize engine speed
+          //escPulseWidth -= currentSpeed * 40 / 100; // Synchronize engine speed TODO
 #endif
           gearUpShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseZero[3], pulseMax[3]);
@@ -2445,6 +2581,7 @@ void esc() {
         if (gearDownShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // increasing RPM, if shifting down transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
           escPulseWidth += 50; // Synchronize engine speed
+          //escPulseWidth += currentSpeed;// * 40 / 100; // Synchronize engine speed TODO
 #endif
           gearDownShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseZero[3], pulseMax[3]);
@@ -2747,7 +2884,7 @@ void rcTrigger() {
   // Engine on / off, if dual rate @75% and long in position -----
 #ifndef AUTO_ENGINE_ON_OFF
   static bool engineStateLock;
-  if (driveState == 0 && (engineState == 0 || engineState == 2)) { // Only, if vehicle stopped and engine idling or off!
+  if (driveState == 0 && (engineState == OFF || engineState == RUNNING)) { // Only, if vehicle stopped and engine idling or off!
     if (functionR75d.toggleLong(pulseWidth[5], 1850) != engineStateLock) {
       engineOn = !engineOn; // This lock is required, because engine on / off needs to be able to be changed in other program sections!
       engineStateLock = !engineStateLock;
@@ -2794,7 +2931,7 @@ void rcTrigger() {
   // Engine on / off momentary button CH10 -----
 #ifndef AUTO_ENGINE_ON_OFF
   static bool engineStateLock2;
-  if (driveState == 0 && (engineState == 0 || engineState == 2)) { // Only, if vehicle stopped and engine idling or off!
+  if (driveState == 0 && (engineState == OFF || engineState == RUNNING)) { // Only, if vehicle stopped and engine idling or off!
     if (momentary1Trigger.toggleLong(pulseWidth[10], 2000) != engineStateLock2) {
       engineOn = !engineOn; // This lock is required, because engine on / off needs to be able to be changed in other program sections!
       engineStateLock2 = !engineStateLock2;
@@ -2843,6 +2980,170 @@ void trailerPresenceSwitchRead() {
 
 //
 // =======================================================================================================
+// LCD DASHBOARD BY Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+// =======================================================================================================
+//
+
+/* Bugs TODO:
+
+    Start animation too fast after engine off
+    Speed needle jump if shifting real 3 speed transmission. Better calibration needed
+*/
+
+
+bool engineStartAnimation() {
+  static bool dirUp = true;
+  static uint16_t lastFrameTime = millis();
+  static uint16_t rpm = 0;
+  static uint16_t speed = 0;
+  static uint16_t fuel = 0;
+  static uint16_t adblue = 0;
+  static int16_t currentStep = 0; // 50 in total
+
+  if (millis() - lastFrameTime > 14) {
+    dashboard.setSpeed(speed);
+    dashboard.setRPM(rpm);
+    dashboard.setFuelLevel(fuel);
+    dashboard.setAdBlueLevel(adblue);
+
+    speed += (dirUp ? 1 : -1) * (SPEED_MAX - SPEED_MIN) / 50;
+    rpm += (dirUp ? 1 : -1) * (RPM_MAX - RPM_MIN) / 50;
+    fuel += (dirUp ? 1 : -1) * (FUEL_MAX - FUEL_MIN) / 50;
+    adblue += (dirUp ? 1 : -1) * (ADBLUE_MAX - ADBLUE_MIN) / 50;
+    currentStep = currentStep + (dirUp ? 1 : -1);
+
+    lastFrameTime = millis();
+
+    if (dirUp && currentStep >= 50) {
+      speed = SPEED_MAX;
+      rpm = RPM_MAX;
+      fuel = FUEL_MAX;
+      adblue = ADBLUE_MAX;
+      currentStep = 50;
+      dirUp = false;
+    }
+    else if (!dirUp && currentStep <= 0) { // Animation finished
+      speed = 0;
+      rpm = 0;
+      fuel = 0;
+      adblue = 0;
+      currentStep = 0;
+      dirUp = true;
+      return true;
+    }
+  }
+  return false;
+}
+
+// ----------------------------------------------------------------------
+void updateDashboard() {
+  static uint16_t lastFrameTime = millis();
+  static uint16_t rpm = 0;
+  static uint16_t fuel = 0;
+  static uint16_t adblue = 0;
+  static bool startAnimationFinished = false;
+
+  static uint16_t rpmNeedle = 0;
+  static uint16_t speedNeedle = 0;
+  static uint16_t fuelNeedle = 0;
+  static uint16_t adblueNeedle = 0;
+
+  // Start animation triggering
+  if ((engineState == STARTING || engineState == RUNNING) && !startAnimationFinished) {
+    startAnimationFinished = engineStartAnimation();
+    return;
+  }
+  else if (engineState == OFF) {
+    startAnimationFinished = false;
+  }
+
+  // Calculations
+  // RPM
+  if (engineState == STARTING || engineState == RUNNING) {
+    rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
+    fuel = 90;
+    adblue = 80;
+  }
+  else {
+    rpm = currentRpm;
+    fuel = 0;
+    adblue = 0;
+  }
+
+  // Speed
+  uint16_t speed;
+
+#if defined VIRTUAL_3_SPEED or defined VIRTUAL_16_SPEED_SEQUENTIAL
+  speed = currentSpeed; // for all transmissions
+#else
+  if (!automatic) speed = currentSpeed * 100 / manualGearRatios[selectedGear - 1]; // Manual transmission
+  else speed = currentSpeed; // Automatic transmission
+#endif
+
+  speed = map(speed, 0, RPM_MAX, 0, MAX_REAL_SPEED);
+
+  if (!gearUpShiftingInProgress && !gearDownShiftingInProgress) { // avoid jumps between gear switches
+    dashboard.setSpeed(speed);
+  }
+
+  // Central display
+  if (neutralGear) {
+    dashboard.setGear(0);
+  }
+  else if (escInReverse) {
+    dashboard.setGear(-1);
+  }
+  else {
+    if (!automatic) dashboard.setGear(selectedGear); // Manual transmission
+    else dashboard.setGear(selectedAutomaticGear); // Automatic transmission
+  }
+
+  // Indicator lamps
+  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard));
+  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard));
+  dashboard.setLowBeamIndicator(lightsOn);
+  dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
+  dashboard.setFogLightIndicator(fogLightOn);
+
+  // Needles
+  if (millis() - lastFrameTime > 14) {
+
+    if (engineState == RUNNING) {
+      rpmNeedle = rpm; // No delay, if running!
+    }
+    else {
+      if (rpm > rpmNeedle) rpmNeedle++;
+      if (rpm < rpmNeedle) rpmNeedle--;
+    }
+
+    if (fuel > fuelNeedle) fuelNeedle++;
+    if (fuel < fuelNeedle) fuelNeedle--;
+
+    if (adblue > adblueNeedle) adblueNeedle++;
+    if (adblue < adblueNeedle) adblueNeedle--;
+
+    dashboard.setRPM(rpmNeedle);
+    dashboard.setFuelLevel(fuelNeedle);
+    dashboard.setAdBlueLevel(adblueNeedle);
+    lastFrameTime = millis();
+  }
+}
+
+//
+// =======================================================================================================
+// NEOPIXEL WS2812 LED MB STAR BY Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+// =======================================================================================================
+//
+
+void updateRGBLEDs() {
+  uint8_t hue = map(pulseWidthRaw[1], 1000, 2000, 0, 255);
+
+  rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+  FastLED.show();
+}
+
+//
+// =======================================================================================================
 // MAIN LOOP, RUNNING ON CORE 1
 // =======================================================================================================
 //
@@ -2852,12 +3153,19 @@ void loop() {
 #if defined SBUS_COMMUNICATION
   readSbusCommands(); // SBUS communication (pin 36)
   mcpwmOutput(); // PWM servo signal output
+  
 #elif defined IBUS_COMMUNICATION
   readIbusCommands(); // IBUS communication (pin 36)
   mcpwmOutput(); // PWM servo signal output
+  
+#elif defined SUMD_COMMUNICATION
+  readSumdCommands(); // SUMD communication (pin 36)
+  mcpwmOutput(); // PWM servo signal output
+  
 #elif defined PPM_COMMUNICATION
   readPpmCommands(); // PPM communication (pin 34)
   mcpwmOutput(); // PWM servo signal output
+  
 #else
   // measure RC signals mark space ratio
   readPwmSignals();
@@ -2876,8 +3184,19 @@ void loop() {
   rcTrigger();
 
   // Read trailer switch state
+#if not defined THIRD_BRAKLELIGHT
   trailerPresenceSwitchRead();
+#endif
 
+  // Dashboard control
+#if defined SPI_DASHBOARD
+  updateDashboard();
+#endif
+
+#if defined NEOPIXEL_LED
+  // RGB LED control
+  updateRGBLEDs();
+#endif
 }
 
 //
@@ -2904,8 +3223,10 @@ void Task1code(void *pvParameters) {
     // LED control
     if (autoZeroDone) led();
 
+#if not defined SPI_DASHBOARD
     // Shaker control
     shaker();
+#endif
 
     // Gearbox detection
     gearboxDetection();

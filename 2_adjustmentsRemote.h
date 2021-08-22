@@ -1,8 +1,9 @@
  
-// Select the remote configuration profile you have:
-//#define FLYSKY_FS_I6X // <------- Select (remove //) one of the remote configurations below
+// Select (remove //) the remote configuration profile you have:
+//#define FLYSKY_FS_I6X // <------- Flysky FS-i6x
 //#define FLYSKY_GT5 // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 //#define RGT_EX86100 // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
+//#define GRAUPNER_MZ_12 // <------- Graupner mz-12 PRO
 #define MICRO_RC // <------- Don't use this with standard remotes!
 
 // BOARD SETTINGS *****************************************************************************************************************************
@@ -21,6 +22,9 @@ boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS s
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
 
 // PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
@@ -300,6 +304,71 @@ const uint16_t pulseSpan = 500;
 
 #endif
 
+// Graupner mz-12 PRO remote configuration profile ---------------------------------------------------------------------------------------------------
+#ifdef GRAUPNER_MZ_12
+
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 4          // CH1 steering
+#define GEARBOX 5           // CH2 3 position switch for gearbox
+#define THROTTLE 1          // CH3 throttle & brake
+#define HORN 7              // CH4 horn
+#define FUNCTION_R 3        // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L 2        // CH6 indicators, hazards
+#define POT2 8              // CH7 pot 2
+#define MODE1 6             // CH8 mode 1 switch
+#define MODE2 NONE          // CH9 mode 2 switch
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS 9           // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+
+// Channels reversed or not
+boolean channelReversed[14] = {
+  false, // CH0 (unused)
+  false, // CH1
+  false, // CH2
+  false, // CH3
+  false, // CH4
+  false, // CH5
+  false, // CH6
+  false, // CH7
+  false, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[14] = {
+  false, // CH0 (unused)
+  false,  // CH1
+  false,  // CH2
+  false,  // CH3
+  false,  // CH4
+  false, // CH5
+  false, // CH6
+  false, // CH7
+  false, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+//#define AUTO_LIGHTS
+//#define AUTO_ENGINE_ON_OFF
+#define AUTO_INDICATORS
+
+#endif
 
 // "Micro RC" DIY Arduino remote configuration profile -------------------------------------------------------------------------------------------
 #ifdef MICRO_RC

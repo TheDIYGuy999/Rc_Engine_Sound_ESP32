@@ -3,10 +3,12 @@
  * Most lights settings are done in the vehicle configuration files in the /vehicles/ directory.
  * 
  */
+#define NEOPIXEL_LED // GPIO0 used for WS2812 Neopixel control, if defined! TODO, untested!
+ 
 
 // The following options may already be defined in the vehicle file. Don't uncomment them in this case or you will get a redefinition error ------
 //#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
-#define SEPARATE_FULL_BEAM // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
+//#define SEPARATE_FULL_BEAM // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
 //#define INDICATOR_SIDE_MARKERS // The indicators are used as side markers as well. This is commonly used in US trucks.
 
 // More light configurations ---------------------------------------------------------------------------------------------------------------------
