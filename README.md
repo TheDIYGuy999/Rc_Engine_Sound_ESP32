@@ -14,6 +14,15 @@ New: fully assembled, tested and working 30 pin SMD version, manufactured and pr
 Fully assembled, tested and working 30 pin version
 ![](pictures/30PinAssembled.jpg)
 
+Compact version for excavator (IBUS & sound only, supplied by 6V BEC)
+![](pictures/compact1.JPG)
+![](pictures/compact2.JPG)
+![](pictures/compact3.JPG)
+
+LCD dashboard (original by Gamadril)
+![](pictures/dashboard.JPG)
+
+
 ## Features:
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for each gear to ensure maximum realism.
 - Unique "virtual clutch" allows to rev the engine below an adjustable ESC output speed. Above, the clutch engages and ensures, that the engine sound is in synch with the wheel RPM. Sounds and behaves just great in combination with a shifting transmission!
@@ -54,6 +63,7 @@ Fully assembled, tested and working 30 pin version
 - Support for winch, connected to CH3 (BUS communication mode only). Use "#define MODE2_WINCH" in "7_adjustmentsServo.h" The mode 2 button is then used to switch between horn / siren sontrol and winch control via CH4. The winch is controlled by an old RC servo driver board. The speed and neutral settings are done using "CH3L", CH3C" and CH3R" positions.
 - Support for LCD dashboard
 - Support for 2812 Neopixel LED (GPIO0)
+- Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
@@ -277,7 +287,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/KirovetsK700.h" // Russian Kirovets K700 monster tractor. Extreme turbo sound!
 
 // Excavators -------
-//#include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator
+//#include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
 
 // US motorcycles --------
 //#include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
@@ -326,108 +336,6 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission (optimised for smaller speakers)
 ```
 
-### Interface type (communication mode) selection:
-
-Note, that the default communication mode is SBUS. You need to change it as follows, if you want to use classic RC servo signals.
-
-#### PWM (classic RC signals on "CH1" - "CH4", "35" & "PPM" headers, the most common interface)
-```
-/// COMMUNICATION SETTINGS  ********************************************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
-
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
-
-// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
-
-// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
-
-// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
-//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
-
-// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-```
-
-#### PPM (multiple channels pulse pause modulation, wired to "RX" header, 8 channels)
-```
-// COMMUNICATION SETTINGS  ********************************************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
-
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
-
-// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
-
-// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
-
-// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
-//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
-
-// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
-#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-```
-
-#### SBUS (recommended, default setting, wired to "RX" header, 13 channels)
-```
-// COMMUNICATION SETTINGS  ********************************************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
-
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
-
-// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
-
-// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
-
-// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
-//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
-
-// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-```
-
-SBUS non standard signal (if your receiver sends a non-standard SBUS signal):
-```
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
-```
-
-SBUS standard signal (default, used in most cases)
-```
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
-```
-
-#### IBUS (not recommended, NO FAILSAFE, if bad contact in iBUS wiring! "RX" header, 13 channels)
-```
-/// COMMUNICATION SETTINGS  ********************************************************************************************************************
-// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
-
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
-
-// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
-
-// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
-
-// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
-//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
-
-// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
-//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
-```
-
 #### SUMD (For Graupner remotes "RX" header, 12 channels)
 ```
 // COMMUNICATION SETTINGS  ********************************************************************************************************************
@@ -473,6 +381,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 7.8:
+- Caterpillar 323 Excavator sounds added including hydraulic and track rattling sounds
+- Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote
+- I'm using it for my KABOLITE K336. Connect RX to the IBUS SERVO connector on the KABOLITE receiver
 
 ### New in V 7.7:
 - Support for 0.96 inch 80x160 st7735 LCD dashboard (details and wiring see "9_adjustmentsDashboard.h", thanks to Gamadril)

@@ -7,13 +7,13 @@ volatile int startVolumePercentage = 140; // Adjust the start volume (usually = 
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 80; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-volatile int fullThrottleVolumePercentage = 140; // Volume Percentage while full throttle (for rev sound as well)
+volatile int engineIdleVolumePercentage = 80; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int fullThrottleVolumePercentage = 140; // Volume Percentage while full throttle (for rev sound as well) 140
 #include "sounds/Caterpillar323Idle.h" // Caterpillar 323 excavator
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 130; // Adjust the idle volume (usually = 100%, more also working, depending on sound) 130
+volatile int revVolumePercentage = 110; // Adjust the idle volume (usually = 100%, more also working, depending on sound) 130
 volatile int engineRevVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile const uint16_t revSwitchPoint = 100; // The rev sound is played instead of the idle sound above this point
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
@@ -33,7 +33,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 350; // Adjust the Diesel knock volume (usually = 200 - 600%) 130
+volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%) 350
 volatile int dieselKnockIdleVolumePercentage = 10; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 110; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
@@ -71,49 +71,26 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 #include "sounds/GenericFan.h" // Generic engine cooling fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 140; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
-//#include "sounds/CarHorn.h" // A boring car horn
+#include "sounds/CarHorn.h" // A boring car horn
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
 //#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
 //#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
-#include "sounds/Caterpillar323Hyrdaulic.h" // Caterpillar 323 excavator
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 20; // Adjust the siren volume (usually = 100%)
-//#include "sounds/sirenDummy.h" // If you don't want siren sound
-//#include "sounds/UsPoliceSiren.h" // US Police siren
-//#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
-//#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
-//#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
-//#include "sounds/siren01norskere22.h" // Norwegian siren
-//#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
-//#include "sounds/la_carica(1).h" // sound from nenno @ rc-modellbau-portal.de
-//#include "sounds/la_cucaracha(1).h" // sound from nenno @ rc-modellbau-portal.de
-//#include "sounds/marseillaise(1).h" // sound from nenno @ rc-modellbau-portal.de
-//#include "sounds/river_kwai(1).h" // sound from nenno @ rc-modellbau-portal.de
-//#include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de --
-//#include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
-//#include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
-//#include "sounds/DixieSiren.h" // Dixie siren
-//#include "sounds/SwissPsalm.h" // Swiss national anthem
-//#include "sounds/Alphorn.h" // Alphorn
-#include "sounds/Caterpillar323Hiss2.h" // Caterpillar 323 excavator
+volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
+#include "sounds/sirenDummy.h" // If you don't want siren sound
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
 #include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
-//#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
-//#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
-//#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
-//#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
-//#include "sounds/UralBrakeSqueak.h" // URAL 4320 air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
@@ -122,16 +99,10 @@ volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usu
 
 // Choose the gear shifting sound (uncomment the one you want) --------
 volatile int shiftingVolumePercentage = 100; // Adjust the shifting volume (usually = 200%)
-//#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
-//#include "sounds/AirShifting.h" // Pneumatic shifting sound
-#include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
+#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 
 // Choose the additional "sound1" (uncomment the one you want) --------
 volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually = 100%)
-//#include "sounds/EMDLocomotiveBell.h" // American EMD locomotive bell
-//#include "sounds/007JamesBond.h" // James Bond melody
-//#include "sounds/M2Fire.h" // M2 salve
-//#include "sounds/GlenCanyon.h" // Glen Canyon country song for truckers ;-)
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
@@ -152,6 +123,22 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 #include "sounds/coupling.h" // coupling
 #include "sounds/uncoupling.h" // uncoupling
 #endif
+
+// Choose excavator specific options (use #ifdef FLYSKY_FS_I6S_EXCAVATOR remote profile) ---------
+#define EXCAVATOR_MODE // The sound controller is running in ecxavator mode!
+
+// Choose the hydraulic pump sound (uncomment the one you want) --------
+volatile int hydraulicPumpVolumePercentage = 120; // Adjust the volume (usually = 120%)
+//#include "sounds/Caterpillar323Hydraulic.h" // Caterpillar 323 excavator
+#include "sounds/Caterpillar323Hydraulic2.h" // Caterpillar 323 excavator (slowed down by factor 2)
+
+// Choose the hydraulic fluid flow sound (uncomment the one you want) --------
+volatile int hydraulicFlowVolumePercentage = 120; // Adjust the volume (usually = 120%)
+#include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
+
+// Choose the track rattle sound (uncomment the one you want) --------
+volatile int trackRattleVolumePercentage = 140; // Adjust the volume (usually = 120%)
+#include "sounds/Caterpillar323TrackRattle.h" // Caterpillar 323 excavator
 
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined

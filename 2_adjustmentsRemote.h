@@ -1,10 +1,14 @@
  
 // Select (remove //) the remote configuration profile you have:
-//#define FLYSKY_FS_I6X // <------- Flysky FS-i6x
+#define FLYSKY_FS_I6X // <------- Flysky FS-i6x
+//#define FLYSKY_FS_I6S_EXCAVATOR // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
 //#define FLYSKY_GT5 // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 //#define RGT_EX86100 // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
-//#define GRAUPNER_MZ_12 // <------- Graupner mz-12 PRO
-#define MICRO_RC // <------- Don't use this with standard remotes!
+//#define GRAUPNER_MZ_12 // <------- Graupner MZ-12 PRO
+//#define MICRO_RC // <------- Don't use this with standard remotes!
+
+// For test only!
+//#define FLYSKY_FS_I6S_EXCAVATOR_TEST // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator
 
 // BOARD SETTINGS *****************************************************************************************************************************
 // Choose the board version
@@ -17,11 +21,11 @@
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
 // SUMD communication (RX header, 12 channels, For Graupner remotes) --------
 //#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
@@ -107,6 +111,142 @@ boolean channelAutoZero[14] = {
   true,  // CH6
   false, // CH7
   false, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+//#define AUTO_LIGHTS
+//#define AUTO_ENGINE_ON_OFF
+//#define AUTO_INDICATORS
+
+#endif
+
+// Flysky FS-i6S remote configuration profile (for excavators only) ---------------------------------------------------------------------------------
+#ifdef FLYSKY_FS_I6S_EXCAVATOR
+
+// NOTE: The vehicle file needs to contain #define EXCAVATOR_MODE
+
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 1          // CH1 bucket
+#define GEARBOX 2           // CH2 dipper
+#define THROTTLE 9          // CH3 3 position switch off, idle, rev. 9 (6 for test)
+#define HORN 10             // CH4 horn
+#define FUNCTION_R 3        // CH5 boom
+#define FUNCTION_L 6        // CH6 left track 6 (none for test)
+#define POT2 7              // CH7 right track
+#define MODE1 4             // CH8 swing
+#define MODE2 NONE          // CH9
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS NONE        // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+
+// Channels reversed or not
+boolean channelReversed[14] = {
+  false, // CH0 (unused)
+  false, // CH1
+  false, // CH2
+  false, // CH3
+  false, // CH4
+  true, // CH5
+  false, // CH6
+  false, // CH7
+  false, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[14] = {
+  false, // CH0 (unused)
+  true,  // CH1
+  true, // CH2
+  false,  // CH3
+  false, // CH4
+  true,  // CH5
+  true,  // CH6
+  true, // CH7
+  true, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+//#define AUTO_LIGHTS
+//#define AUTO_ENGINE_ON_OFF
+//#define AUTO_INDICATORS
+
+#endif
+
+// Flysky FS-i6S remote configuration profile (for excavators only) ---------------------------------------------------------------------------------
+#ifdef FLYSKY_FS_I6S_EXCAVATOR_TEST
+
+// NOTE: The vehicle file needs to contain #define EXCAVATOR_MODE
+
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 1          // CH1 bucket
+#define GEARBOX 2           // CH2 dipper
+#define THROTTLE 6          // CH3 3 position switch off, idle, rev. 9 (6 for test)
+#define HORN 10             // CH4 horn
+#define FUNCTION_R 3        // CH5 boom
+#define FUNCTION_L NONE        // CH6 left track 6 (none for test)
+#define POT2 NONE              // CH7 right track
+#define MODE1 4             // CH8 swing
+#define MODE2 NONE          // CH9
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS NONE        // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+
+// Channels reversed or not
+boolean channelReversed[14] = {
+  false, // CH0 (unused)
+  false, // CH1
+  false, // CH2
+  false, // CH3
+  false, // CH4
+  true, // CH5
+  false, // CH6
+  false, // CH7
+  false, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[14] = {
+  false, // CH0 (unused)
+  true,  // CH1
+  true, // CH2
+  false,  // CH3
+  false, // CH4
+  true,  // CH5
+  false,  // CH6
+  false, // CH7
+  true, // CH8
   false, // CH9
   false, // CH10
   false, // CH11

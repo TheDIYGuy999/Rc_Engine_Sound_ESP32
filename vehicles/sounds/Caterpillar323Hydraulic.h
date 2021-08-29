@@ -1,9 +1,6 @@
-const unsigned int hornSampleRate = 22050;
-const unsigned int hornSampleCount = 966;
-#define HORN_LOOP
-const unsigned int hornLoopBegin = 0; // Adjust start of loop manually
-const unsigned int hornLoopEnd = 966; // Adjust end of loop manually
-const signed char hornSamples[] = {//0
+const unsigned int hydraulicPumpSampleRate = 22050;
+const unsigned int hydraulicPumpSampleCount = 966;
+const signed char hydraulicPumpSamples[] = {//0
 0, 3, 11, 22, 34, 43, 46, 46, 41, 33, 23, 11, -5, -15, -22, -26, //16
 -28, -28, -28, -29, -31, -33, -36, -38, -39, -38, -35, -31, -26, -19, -13, -8, //32
 -4, -2, -2, -4, -7, -12, -15, -20, -26, -27, -23, -16, -8, 3, 22, 36, //48

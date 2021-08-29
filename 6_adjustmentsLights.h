@@ -3,7 +3,7 @@
  * Most lights settings are done in the vehicle configuration files in the /vehicles/ directory.
  * 
  */
-#define NEOPIXEL_LED // GPIO0 used for WS2812 Neopixel control, if defined! TODO, untested!
+//#define NEOPIXEL_LED // GPIO0 used for WS2812 Neopixel control, if defined! TODO, untested!
  
 
 // The following options may already be defined in the vehicle file. Don't uncomment them in this case or you will get a redefinition error ------

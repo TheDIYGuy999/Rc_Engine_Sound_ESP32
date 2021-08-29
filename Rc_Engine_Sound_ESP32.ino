@@ -9,10 +9,10 @@
 
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 
-   Dashboard, Neopixel and SUMD support by: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+   Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.7; // Software revision.
+const float codeVersion = 7.8; // Software revision.
 
 //
 // =======================================================================================================
@@ -43,7 +43,7 @@ const float codeVersion = 7.7; // Software revision.
 #include "9_adjustmentsDashboard.h"     // <<------- Dashboard related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-//#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
+#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
@@ -323,6 +323,12 @@ volatile uint16_t throttleDependentTurboVolume = 0;      // turbo volume accordi
 volatile uint16_t throttleDependentFanVolume = 0;        // cooling fan volume according to rpm
 volatile uint16_t throttleDependentChargerVolume = 0;    // cooling fan volume according to rpm
 volatile uint16_t rpmDependentWastegateVolume = 0;       // wastegate volume according to rpm
+// for excavator mode:
+volatile uint16_t hydraulicPumpVolume = 0;               // hydraulic pump volume
+volatile uint16_t hydraulicFlowVolume = 0;               // hydraulic flow volume
+volatile uint16_t trackRattleVolume = 0;                 // track rattling volume
+volatile uint16_t hydraulicDependentKnockVolume = 100;   // engine Diesel knock volume according to hydraulic load
+
 volatile int16_t masterVolume = 100;                     // Master volume percentage
 volatile uint8_t dacOffset = 0;  // 128, but needs to be ramped up slowly to prevent popping noise, if switched on
 
@@ -417,10 +423,12 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t curChargerSample = 0;             // Index of currently loaded charger sample
   static uint32_t curStartSample = 0;               // Index of currently loaded start sample
   static uint32_t curJakeBrakeSample = 0;           // Index of currently loaded jake brake sample
+  static uint32_t curHydraulicPumpSample = 0;       // Index of currently loaded hydraulic pump sample
   static uint32_t lastDieselKnockSample = 0;        // Index of last Diesel knock sample
   static uint16_t attenuator = 0;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage = 0;              // slows the engine down during shutdown
   static int32_t a, a1, a2, a3, b, c, d, e = 0;     // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sound
+  static int32_t f = 0;                             // Input signals for mixer: f = hydraulic pump
   uint8_t a1Multi = 0;                              // Volume multipliers
 
   //portENTER_CRITICAL_ISR(&variableTimerMux);
@@ -558,6 +566,17 @@ void IRAM_ATTR variablePlaybackTimer() {
         curChargerSample = 0;
       }
 
+      // Hydraulic pump sound -----------------------
+#if defined EXCAVATOR_MODE
+      if (curHydraulicPumpSample < hydraulicPumpSampleCount - 1) {
+        f = (hydraulicPumpSamples[curHydraulicPumpSample] * hydraulicPumpVolumePercentage / 100 * hydraulicPumpVolume / 100);
+        curHydraulicPumpSample ++;
+      }
+      else {
+        curHydraulicPumpSample = 0;
+      }
+#endif
+
       if (!engineOn) {
         speedPercentage = 100;
         attenuator = 1;
@@ -606,7 +625,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5)) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5)) + f * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
   //dacWrite(DAC1, constrain(a + 128, 0, 255));
 
@@ -633,8 +652,11 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curDieselKnockSample = 0;                    // Index of currently loaded Diesel knock sample
   static uint32_t curCouplingSample = 0;                       // Index of currently loaded trailer coupling sample
   static uint32_t curUncouplingSample = 0;                     // Index of currently loaded trailer uncoupling sample
+  static uint32_t curHydraulicFlowSample = 0;                  // Index of currently loaded hydraulic flow sample
+  static uint32_t curTrackRattleSample = 0;                    // Index of currently loaded track rattle sample
   static int32_t a, a1, a2 = 0;                                // Input signals "a" for mixer
   static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = 0;// Input signals "b" for mixer
+  static int32_t c, c1, c2 = 0;                                // Input signals "c" for mixer
   static boolean knockSilent = 0;                              // This knock will be more silent
   static boolean knockMedium = 0;                              // This knock will be medium
   static uint8_t curKnockCylinder = 0;                         // Index of currently ignited zylinder
@@ -841,8 +863,10 @@ void IRAM_ATTR fixedPlaybackTimer() {
 #endif
 
   if (curDieselKnockSample < knockSampleCount) {
-#ifdef RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
+#if defined RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100 * rpmDependentKnockVolume / 100);
+#elif defined EXCAVATOR_MODE // knock volume also depending on hydraulic load
+    b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100 * hydraulicDependentKnockVolume / 100);
 #else // Just depending on throttle
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
 #endif
@@ -851,6 +875,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     if (knockMedium) b7 = b7 * dieselKnockAdaptiveVolumePercentage / 75;
   }
 
+#if not defined EXCAVATOR_MODE
   // Trailer coupling sound, triggered by switch -----------------------------------------------
 #ifdef COUPLING_SOUND
   if (couplingTrigger) {
@@ -882,14 +907,40 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curUncouplingSample = 0; // ensure, next sound will start @ first sample
   }
 #endif
+#endif
+
+  // Group "c" (excavator sounds) **********************************************************************
+
+#if defined EXCAVATOR_MODE
+
+  // Hydraulic fluid flow sound -----------------------
+  if (curHydraulicFlowSample < hydraulicFlowSampleCount - 1) {
+    c1 = (hydraulicFlowSamples[curHydraulicFlowSample] * hydraulicFlowVolumePercentage / 100 * hydraulicFlowVolume / 100);
+    curHydraulicFlowSample ++;
+  }
+  else {
+    curHydraulicFlowSample = 0;
+  }
+
+  // Track rattle sound -----------------------
+  if (curTrackRattleSample < trackRattleSampleCount - 1) {
+    c2 = (trackRattleSamples[curTrackRattleSample] * trackRattleVolumePercentage / 100 * trackRattleVolume / 100);
+    curTrackRattleSample ++;
+  }
+  else {
+    curTrackRattleSample = 0;
+  }
+#endif
 
   // Mixing sounds together ----
   a = a1 + a2; // Horn & siren
   b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8 + b9; // Other sounds
+  c = c1 + c2; // Excavator sounds
 
   // DAC output (groups a + b mixed together) ****************************************************************************
 
-  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10)) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //dacWrite(DAC2, constrain( c * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC2, 0);
 
   //portEXIT_CRITICAL_ISR(&fixedTimerMux);
@@ -1156,7 +1207,7 @@ void setup() {
     readSbusCommands(); // SBUS communication (pin 36)
   }
   Serial.println("SBUS initialization done!");
-  
+
 #elif defined IBUS_COMMUNICATION
   ibusInit = false;
   Serial.println("Initializing IBUS, check transmitter & receiver...");
@@ -1164,7 +1215,7 @@ void setup() {
     readIbusCommands(); // IBUS communication (pin 36)
   }
   Serial.println("IBUS initialization done!");
-  
+
 #elif defined SUMD_COMMUNICATION
   SUMD_init = false;
   Serial.println("Initializing SUMD, check transmitter & receiver...");
@@ -1173,7 +1224,7 @@ void setup() {
     readSumdCommands();
   }
   Serial.println("SUMD initialization done!");
-  
+
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
 #else
@@ -1417,7 +1468,7 @@ void readSumdCommands() {
     // Failsafe for RC signals
     failsafeRcSignals();
   }
-#endif  
+#endif
 }
 
 //
@@ -1790,6 +1841,28 @@ void mapThrottle() {
   }
 #endif
 
+#elif defined EXCAVATOR_MODE // Excavator mode ---------------------------------------------- 
+
+  static bool engineInit = false; // Only allow to start engine after switch was in up position
+
+  // calculate a throttle value from the pulsewidth signal (forward only)
+  if (pulseWidth[3] > pulseMaxNeutral[3]) {
+    currentThrottle = map(pulseWidth[3], pulseMaxNeutral[3], pulseMax[3], 0, 500);
+  }
+  else {
+    currentThrottle = 0;
+  }
+
+  // Engine on / off via 3 position switch
+  if (pulseWidth[3] < 1200 && currentRpm < 50) {
+    engineInit = true;
+    engineOn = false;
+  }
+  else {
+    if (engineInit) engineOn = true;
+  }
+
+
 #else // Normal mode --------------------------------------------------------------------------- 
 
   // check if the pulsewidth looks like a servo pulse
@@ -1811,13 +1884,14 @@ void mapThrottle() {
 #endif
 
   // Auto throttle --------------------------------------------------------------------------
-
+#if not defined EXCAVATOR_MODE
   // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
   if (!escIsBraking && escIsDriving && shiftingAutoThrottle && !automatic && !doubleClutch) {
     if (gearUpShiftingInProgress) currentThrottle = 0; // No throttle
     if (gearDownShiftingInProgress) currentThrottle = 500; // Full throttle
     currentThrottle = constrain (currentThrottle, 0, 500); // Limit throttle range
   }
+#endif
 
   // Volume calculations --------------------------------------------------------------------------
 
@@ -1906,12 +1980,16 @@ void engineMassSimulation() {
     if (currentThrottle > 500) currentThrottle = 500;
 
     // Virtual clutch **********************************************************************************
+#if defined EXCAVATOR_MODE // Excavator mode ---
+    clutchDisengaged = true;
+#else   // Normal mode ---
     if ((currentSpeed < clutchEngagingPoint && currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear || currentRpm < 200) {
       clutchDisengaged = true;
     }
     else {
       clutchDisengaged = false;
     }
+#endif
 
 
     // Transmissions ***********************************************************************************
@@ -2032,9 +2110,8 @@ void engineOnOff() {
 
   // Engine start detection
   if (currentThrottle > 100 && !airBrakeTrigger) {
-    //#ifdef AUTO_ENGINE_ON_OFF
     engineOn = true;
-    //#endif
+
 #ifdef AUTO_LIGHTS
     lightsOn = true;
 #endif
@@ -2717,6 +2794,8 @@ unsigned long loopDuration() {
 
 void triggerHorn() {
 
+  //#if not defined EXCAVATOR_MODE // Only used, if our vehicle is not an excavator!
+
   if (!winchEnabled) { // Horn & siren control mode *************************
     winchPull = false;
     winchRelease = false;
@@ -2730,6 +2809,7 @@ void triggerHorn() {
       hornTrigger = false;
     }
 
+#if not defined EXCAVATOR_MODE
 #ifndef NO_SIREN
     // detect siren trigger ( impulse length < 1100us) ----------
     if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) {
@@ -2739,6 +2819,7 @@ void triggerHorn() {
     else {
       sirenTrigger = false;
     }
+#endif
 #endif
 
     // detect bluelight trigger ( impulse length < 1300us) ----------
@@ -2760,6 +2841,8 @@ void triggerHorn() {
     else winchRelease = false;
 
   }
+
+  //#endif
 }
 
 //
@@ -2769,6 +2852,8 @@ void triggerHorn() {
 //
 
 void triggerIndicators() {
+
+#if not defined EXCAVATOR_MODE // Only used, if our vehicle is not an excavator!
 
   static boolean L;
   static boolean R;
@@ -2830,6 +2915,7 @@ void triggerIndicators() {
 
   if (indicatorLon || indicatorRon) hazard = false;
 
+#endif
 }
 
 //
@@ -2839,6 +2925,8 @@ void triggerIndicators() {
 //
 
 void rcTrigger() {
+
+#if not defined EXCAVATOR_MODE // Only used, if our vehicle is not an excavator!
 
   // Channel assignment see "remoteSetup.xlsx"
 
@@ -2946,7 +3034,10 @@ void rcTrigger() {
 #else
   hazard = hazardsTrigger.onOff(pulseWidth[11], 1800, 1200); // CH11 HAZARDS
 #endif
+
+#endif
 }
+
 
 //
 // =======================================================================================================
@@ -3136,10 +3227,86 @@ void updateDashboard() {
 //
 
 void updateRGBLEDs() {
-  uint8_t hue = map(pulseWidthRaw[1], 1000, 2000, 0, 255);
+  uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
 
   rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
   FastLED.show();
+}
+
+//
+// =======================================================================================================
+// EXCAVATOR CONTROL
+// =======================================================================================================
+//
+
+void excavatorControl() {
+
+  static uint32_t lastFrameTime = millis();
+  static uint16_t hydraulicPumpVolumeInternal[9];
+  static uint16_t hydraulicPumpVolumeInternalUndelayed;
+  static uint16_t hydraulicFlowVolumeInternalUndelayed;  
+  static uint16_t trackRattleVolumeInternal[9];
+  static uint16_t trackRattleVolumeInternalUndelayed;
+
+  if (millis() - lastFrameTime > 3) {
+    lastFrameTime = millis();
+
+    // Calculate zylinder speed and engine RPM dependent hydraulic pump volume ----
+    // Bucket ---
+    if (pulseWidth[1] > pulseMaxNeutral[1]) hydraulicPumpVolumeInternal[1] = map(pulseWidth[1], pulseMaxNeutral[1], pulseMax[1], 0, 100);
+    else if (pulseWidth[1] < pulseMinNeutral[1]) hydraulicPumpVolumeInternal[1] = map(pulseWidth[1], pulseMinNeutral[1], pulseMin[1], 0, 100);
+    else hydraulicPumpVolumeInternal[1] = 0;
+
+    // Dipper ---
+    if (pulseWidth[2] > pulseMaxNeutral[2]) hydraulicPumpVolumeInternal[2] = map(pulseWidth[2], pulseMaxNeutral[2], pulseMax[2], 0, 100);
+    else if (pulseWidth[2] < pulseMinNeutral[2]) hydraulicPumpVolumeInternal[2] = map(pulseWidth[2], pulseMinNeutral[2], pulseMin[2], 0, 100);
+    else hydraulicPumpVolumeInternal[2] = 0;
+
+    // Boom (upwards only) ---
+    if (pulseWidth[5] < pulseMinNeutral[5]) hydraulicPumpVolumeInternal[5] = map(pulseWidth[5], pulseMinNeutral[5], (pulseMin[5] + 200), 0, 100);
+    else hydraulicPumpVolumeInternal[5] = 0;
+
+    // Swing ---
+    if (pulseWidth[8] > pulseMaxNeutral[8]) hydraulicPumpVolumeInternal[8] = map(pulseWidth[8], pulseMaxNeutral[8], pulseMax[8], 0, 100);
+    else if (pulseWidth[8] < pulseMinNeutral[8]) hydraulicPumpVolumeInternal[8] = map(pulseWidth[8], pulseMinNeutral[8], pulseMin[8], 0, 100);
+    else hydraulicPumpVolumeInternal[8] = 0;
+
+    hydraulicPumpVolumeInternalUndelayed = constrain(hydraulicPumpVolumeInternal[1] + hydraulicPumpVolumeInternal[2] + hydraulicPumpVolumeInternal[5]
+                                           + hydraulicPumpVolumeInternal[8], 0, 100) * map(currentRpm, 0, 500, 30, 100) / 100;
+
+    if (hydraulicPumpVolumeInternalUndelayed < hydraulicPumpVolume) hydraulicPumpVolume--;
+    if (hydraulicPumpVolumeInternalUndelayed > hydraulicPumpVolume) hydraulicPumpVolume++;
+
+
+    // Calculate zylinder speed dependent hydraulic flow volume ----
+    // Boom (downwards) ---
+    if (pulseWidth[5] > pulseMaxNeutral[5]) hydraulicFlowVolumeInternalUndelayed = map(pulseWidth[5], pulseMaxNeutral[5], (pulseMax[5] - 200), 0, 100);
+    else hydraulicFlowVolumeInternalUndelayed = 0;
+
+    if (hydraulicFlowVolumeInternalUndelayed < hydraulicFlowVolume) hydraulicFlowVolume--;
+    if (hydraulicFlowVolumeInternalUndelayed > hydraulicFlowVolume) hydraulicFlowVolume++;
+
+
+    // Calculate speed dependent track rattle volume ----
+    // Left ---
+    if (pulseWidth[6] > pulseMaxNeutral[6]) trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMaxNeutral[6], pulseMax[6], 0, 100);
+    else if (pulseWidth[6] < pulseMinNeutral[6]) trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMinNeutral[6], pulseMin[6], 0, 100);
+    else trackRattleVolumeInternal[6] = 0;
+
+    // Right
+    if (pulseWidth[7] > pulseMaxNeutral[7]) trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMaxNeutral[7], pulseMax[7], 0, 100);
+    else if (pulseWidth[7] < pulseMinNeutral[7]) trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMinNeutral[7], pulseMin[7], 0, 100);
+    else trackRattleVolumeInternal[7] = 0;
+
+    if (engineRunning) trackRattleVolumeInternalUndelayed = constrain(trackRattleVolumeInternal[6] + trackRattleVolumeInternal[7], 0, 100) * map(currentRpm, 0, 500, 100, 150) / 100;
+    else trackRattleVolumeInternalUndelayed = 0;
+
+    if (trackRattleVolumeInternalUndelayed < trackRattleVolume) trackRattleVolume--;
+    if (trackRattleVolumeInternalUndelayed > trackRattleVolume) trackRattleVolume++;
+
+    // Calculate hydraulic load dependent Diesel knock (& engine) volume
+    hydraulicDependentKnockVolume = map(hydraulicPumpVolume, 0, 100, 50, 100);
+  }
 }
 
 //
@@ -3153,19 +3320,19 @@ void loop() {
 #if defined SBUS_COMMUNICATION
   readSbusCommands(); // SBUS communication (pin 36)
   mcpwmOutput(); // PWM servo signal output
-  
+
 #elif defined IBUS_COMMUNICATION
   readIbusCommands(); // IBUS communication (pin 36)
   mcpwmOutput(); // PWM servo signal output
-  
+
 #elif defined SUMD_COMMUNICATION
   readSumdCommands(); // SUMD communication (pin 36)
   mcpwmOutput(); // PWM servo signal output
-  
+
 #elif defined PPM_COMMUNICATION
   readPpmCommands(); // PPM communication (pin 34)
   mcpwmOutput(); // PWM servo signal output
-  
+
 #else
   // measure RC signals mark space ratio
   readPwmSignals();
@@ -3182,6 +3349,11 @@ void loop() {
 
   // rcTrigger
   rcTrigger();
+
+  // Excavator specific controls
+#if defined EXCAVATOR_MODE
+  excavatorControl();
+#endif
 
   // Read trailer switch state
 #if not defined THIRD_BRAKLELIGHT
