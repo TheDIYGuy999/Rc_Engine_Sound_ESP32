@@ -382,6 +382,10 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 7.9:
+- Hydraulic load dependent engine RPM drop for excavator mode
+- Bucket rattle sound, if bucket or dipper stick moved fast
+
 ### New in V 7.8:
 - Caterpillar 323 Excavator sounds added including hydraulic and track rattling sounds
 - Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote

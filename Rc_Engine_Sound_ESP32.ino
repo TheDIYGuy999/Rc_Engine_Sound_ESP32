@@ -12,7 +12,7 @@
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.8; // Software revision.
+const float codeVersion = 7.9; // Software revision.
 
 //
 // =======================================================================================================
@@ -307,6 +307,7 @@ volatile boolean sirenTrigger = false;                   // Trigger for siren  o
 volatile boolean sound1trigger = false;                  // Trigger for sound1  on / off
 volatile boolean couplingTrigger = false;                // Trigger for trailer coupling  sound
 volatile boolean uncouplingTrigger = false;              // Trigger for trailer uncoupling  sound
+volatile boolean bucketRattleTrigger = false;            // Trigger for bucket rattling  sound
 volatile boolean indicatorSoundOn = false;               // active, if indicator bulb is on
 
 // Sound latches
@@ -328,6 +329,7 @@ volatile uint16_t hydraulicPumpVolume = 0;               // hydraulic pump volum
 volatile uint16_t hydraulicFlowVolume = 0;               // hydraulic flow volume
 volatile uint16_t trackRattleVolume = 0;                 // track rattling volume
 volatile uint16_t hydraulicDependentKnockVolume = 100;   // engine Diesel knock volume according to hydraulic load
+volatile uint16_t hydraulicLoad = 0;                     // Hydraulic load dependent RPM drop
 
 volatile int16_t masterVolume = 100;                     // Master volume percentage
 volatile uint8_t dacOffset = 0;  // 128, but needs to be ramped up slowly to prevent popping noise, if switched on
@@ -654,9 +656,10 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curUncouplingSample = 0;                     // Index of currently loaded trailer uncoupling sample
   static uint32_t curHydraulicFlowSample = 0;                  // Index of currently loaded hydraulic flow sample
   static uint32_t curTrackRattleSample = 0;                    // Index of currently loaded track rattle sample
+  static uint32_t curBucketRattleSample = 0;                   // Index of currently loaded bucket rattle sample
   static int32_t a, a1, a2 = 0;                                // Input signals "a" for mixer
   static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = 0;// Input signals "b" for mixer
-  static int32_t c, c1, c2 = 0;                                // Input signals "c" for mixer
+  static int32_t c, c1, c2, c3 = 0;                            // Input signals "c" for mixer
   static boolean knockSilent = 0;                              // This knock will be more silent
   static boolean knockMedium = 0;                              // This knock will be medium
   static uint8_t curKnockCylinder = 0;                         // Index of currently ignited zylinder
@@ -930,12 +933,27 @@ void IRAM_ATTR fixedPlaybackTimer() {
   else {
     curTrackRattleSample = 0;
   }
+
+  // Track rattle sound -----------------------
+  if (bucketRattleTrigger) {
+    if (curBucketRattleSample < bucketRattleSampleCount - 1) {
+      c3 = (bucketRattleSamples[curBucketRattleSample] * bucketRattleVolumePercentage / 100);
+      curBucketRattleSample ++;
+    }
+    else {
+      bucketRattleTrigger = false;
+    }
+  }
+  else {
+    c3 = 0;
+    curBucketRattleSample = 0; // ensure, next sound will start @ first sample
+  }
 #endif
 
   // Mixing sounds together ----
   a = a1 + a2; // Horn & siren
   b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8 + b9; // Other sounds
-  c = c1 + c2; // Excavator sounds
+  c = c1 + c2 + c3; // Excavator sounds
 
   // DAC output (groups a + b mixed together) ****************************************************************************
 
@@ -1982,6 +2000,11 @@ void engineMassSimulation() {
     // Virtual clutch **********************************************************************************
 #if defined EXCAVATOR_MODE // Excavator mode ---
     clutchDisengaged = true;
+
+    targetRpm = currentThrottle - hydraulicLoad;
+    targetRpm = constrain(targetRpm, 0, 500);
+
+
 #else   // Normal mode ---
     if ((currentSpeed < clutchEngagingPoint && currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear || currentRpm < 200) {
       clutchDisengaged = true;
@@ -1989,7 +2012,6 @@ void engineMassSimulation() {
     else {
       clutchDisengaged = false;
     }
-#endif
 
 
     // Transmissions ***********************************************************************************
@@ -2031,6 +2053,7 @@ void engineMassSimulation() {
 #endif
       }
     }
+#endif
 
     // Engine RPM **************************************************************************************
 
@@ -3244,11 +3267,13 @@ void excavatorControl() {
   static uint32_t lastFrameTime = millis();
   static uint16_t hydraulicPumpVolumeInternal[9];
   static uint16_t hydraulicPumpVolumeInternalUndelayed;
-  static uint16_t hydraulicFlowVolumeInternalUndelayed;  
+  static uint16_t hydraulicFlowVolumeInternalUndelayed;
   static uint16_t trackRattleVolumeInternal[9];
   static uint16_t trackRattleVolumeInternalUndelayed;
+  static uint16_t lastBucketPulseWidth = pulseWidth[1];
+  static uint16_t lastDipperPulseWidth = pulseWidth[2];
 
-  if (millis() - lastFrameTime > 3) {
+  if (millis() - lastFrameTime > 4) { // 3
     lastFrameTime = millis();
 
     // Calculate zylinder speed and engine RPM dependent hydraulic pump volume ----
@@ -3306,6 +3331,24 @@ void excavatorControl() {
 
     // Calculate hydraulic load dependent Diesel knock (& engine) volume
     hydraulicDependentKnockVolume = map(hydraulicPumpVolume, 0, 100, 50, 100);
+
+    // Calculate hydraulic load dependent engine RMP drop
+    hydraulicLoad = map(hydraulicPumpVolume, 0, 100, 0, 40);
+
+    // Bucket rattle sound triggering
+    if (engineRunning && currentRpm > 400) {
+      // If bucket stick is moved fast
+      if (abs(pulseWidth[1] - lastBucketPulseWidth > 100)) {
+        bucketRattleTrigger = true;
+      }
+      lastBucketPulseWidth = pulseWidth[1];
+
+      // If dipper stick is moved fast
+      if (abs(pulseWidth[2] - lastDipperPulseWidth > 100)) {
+        bucketRattleTrigger = true;
+      }
+      lastDipperPulseWidth = pulseWidth[2];
+    }
   }
 }
 

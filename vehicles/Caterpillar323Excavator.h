@@ -137,8 +137,12 @@ volatile int hydraulicFlowVolumePercentage = 120; // Adjust the volume (usually 
 #include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
 
 // Choose the track rattle sound (uncomment the one you want) --------
-volatile int trackRattleVolumePercentage = 140; // Adjust the volume (usually = 120%)
+volatile int trackRattleVolumePercentage = 140; // Adjust the volume (usually = 140%)
 #include "sounds/Caterpillar323TrackRattle.h" // Caterpillar 323 excavator
+
+// Choose the bucket rattle sound (uncomment the one you want) --------
+volatile int bucketRattleVolumePercentage = 160; // Adjust the volume (usually = 120%)
+#include "sounds/Caterpillar323BucketRattle.h" // Caterpillar 323 excavator
 
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
