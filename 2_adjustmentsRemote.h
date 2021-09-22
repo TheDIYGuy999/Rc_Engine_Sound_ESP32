@@ -1,11 +1,11 @@
  
 // Select (remove //) the remote configuration profile you have:
-#define FLYSKY_FS_I6X // <------- Flysky FS-i6x
+//#define FLYSKY_FS_I6X // <------- Flysky FS-i6x
 //#define FLYSKY_FS_I6S_EXCAVATOR // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
 //#define FLYSKY_GT5 // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 //#define RGT_EX86100 // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
 //#define GRAUPNER_MZ_12 // <------- Graupner MZ-12 PRO
-//#define MICRO_RC // <------- Don't use this with standard remotes!
+#define MICRO_RC // <------- Don't use this with standard remotes!
 
 // For test only!
 //#define FLYSKY_FS_I6S_EXCAVATOR_TEST // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator
@@ -21,11 +21,11 @@
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
-//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
-#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
 // SUMD communication (RX header, 12 channels, For Graupner remotes) --------
 //#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)

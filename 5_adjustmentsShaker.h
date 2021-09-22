@@ -1,7 +1,7 @@
 // The shaker is simulating engine vibrations
 
 // Select the shaker configuration you have:
-#define GT_POWER_STOCK // <------- Select (remove //) one of the remote configurations below
+#define GT_POWER_STOCK // <------- Select (remove //) one of the shaker configurations below
 //#define GT_POWER_PLASTIC
 
 
@@ -19,7 +19,7 @@ const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max.
 const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
 #endif
 
-// GT-Power shaker with 3D printed platic weight -------------------------------------------------------------------------------------
+// GT-Power shaker with 3D printed plastic weight ------------------------------------------------------------------------------------
 // Used in:
 // - Hercules Hobby Actros
 #ifdef GT_POWER_PLASTIC

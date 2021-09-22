@@ -12,7 +12,7 @@
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 7.9; // Software revision.
+const float codeVersion = 8.0; // Software revision.
 
 //
 // =======================================================================================================
@@ -43,7 +43,7 @@ const float codeVersion = 7.9; // Software revision.
 #include "9_adjustmentsDashboard.h"     // <<------- Dashboard related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
+//#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
@@ -627,7 +627,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5)) + f * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
   //dacWrite(DAC1, constrain(a + 128, 0, 255));
 
@@ -1122,7 +1122,7 @@ void setup() {
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
-  dashboard.init();
+  dashboard.init(dashRotation);
 #endif
 
   // Neopixel setup
@@ -1862,23 +1862,31 @@ void mapThrottle() {
 #elif defined EXCAVATOR_MODE // Excavator mode ---------------------------------------------- 
 
   static bool engineInit = false; // Only allow to start engine after switch was in up position
+  static unsigned long rpmLoweringMillis;
+  static uint8_t rpmLowering;
 
   // calculate a throttle value from the pulsewidth signal (forward only)
   if (pulseWidth[3] > pulseMaxNeutral[3]) {
-    currentThrottle = map(pulseWidth[3], pulseMaxNeutral[3], pulseMax[3], 0, 500);
+    currentThrottle = map(pulseWidth[3], pulseMaxNeutral[3], pulseMax[3], 0, (500 - rpmLowering));
   }
   else {
     currentThrottle = 0;
   }
 
   // Engine on / off via 3 position switch
-  if (pulseWidth[3] < 1200 && currentRpm < 50) {
+  if (pulseWidth[3] < 1200 && currentRpm < 50) { // Off
     engineInit = true;
     engineOn = false;
+    //rpmLoweringMillis = millis();
   }
-  else {
+  else { // On
     if (engineInit) engineOn = true;
   }
+
+  // Engine RPM lowering, if hydraulic not used for 5s
+if (hydraulicLoad > 1 || pulseWidth[3] < pulseMaxNeutral[3]) rpmLoweringMillis = millis();
+if (millis() - rpmLoweringMillis > 5000) rpmLowering = 250; // Medium RPM
+else rpmLowering = 0; // Full RPM
 
 
 #else // Normal mode --------------------------------------------------------------------------- 
@@ -3292,8 +3300,8 @@ void excavatorControl() {
     else hydraulicPumpVolumeInternal[5] = 0;
 
     // Swing ---
-    if (pulseWidth[8] > pulseMaxNeutral[8]) hydraulicPumpVolumeInternal[8] = map(pulseWidth[8], pulseMaxNeutral[8], pulseMax[8], 0, 100);
-    else if (pulseWidth[8] < pulseMinNeutral[8]) hydraulicPumpVolumeInternal[8] = map(pulseWidth[8], pulseMinNeutral[8], pulseMin[8], 0, 100);
+    if (pulseWidth[8] > pulseMaxNeutral[8]) hydraulicPumpVolumeInternal[8] = map(pulseWidth[8], pulseMaxNeutral[8], (pulseMax[8] - 150), 0, 100);
+    else if (pulseWidth[8] < pulseMinNeutral[8]) hydraulicPumpVolumeInternal[8] = map(pulseWidth[8], pulseMinNeutral[8], (pulseMin[8] + 150), 0, 100);
     else hydraulicPumpVolumeInternal[8] = 0;
 
     hydraulicPumpVolumeInternalUndelayed = constrain(hydraulicPumpVolumeInternal[1] + hydraulicPumpVolumeInternal[2] + hydraulicPumpVolumeInternal[5]
@@ -3314,13 +3322,13 @@ void excavatorControl() {
 
     // Calculate speed dependent track rattle volume ----
     // Left ---
-    if (pulseWidth[6] > pulseMaxNeutral[6]) trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMaxNeutral[6], pulseMax[6], 0, 100);
-    else if (pulseWidth[6] < pulseMinNeutral[6]) trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMinNeutral[6], pulseMin[6], 0, 100);
+    if (pulseWidth[6] > pulseMaxNeutral[6]) trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMaxNeutral[6], (pulseMax[6] - 150), 0, 100);
+    else if (pulseWidth[6] < pulseMinNeutral[6]) trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMinNeutral[6], (pulseMin[6] + 150), 0, 100);
     else trackRattleVolumeInternal[6] = 0;
 
     // Right
-    if (pulseWidth[7] > pulseMaxNeutral[7]) trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMaxNeutral[7], pulseMax[7], 0, 100);
-    else if (pulseWidth[7] < pulseMinNeutral[7]) trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMinNeutral[7], pulseMin[7], 0, 100);
+    if (pulseWidth[7] > pulseMaxNeutral[7]) trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMaxNeutral[7], (pulseMax[7] - 100), 0, 100);
+    else if (pulseWidth[7] < pulseMinNeutral[7]) trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMinNeutral[7], (pulseMin[7] + 100), 0, 100);
     else trackRattleVolumeInternal[7] = 0;
 
     if (engineRunning) trackRattleVolumeInternalUndelayed = constrain(trackRattleVolumeInternal[6] + trackRattleVolumeInternal[7], 0, 100) * map(currentRpm, 0, 500, 100, 150) / 100;
@@ -3329,7 +3337,7 @@ void excavatorControl() {
     if (trackRattleVolumeInternalUndelayed < trackRattleVolume) trackRattleVolume--;
     if (trackRattleVolumeInternalUndelayed > trackRattleVolume) trackRattleVolume++;
 
-    // Calculate hydraulic load dependent Diesel knock (& engine) volume
+    // Calculate hydraulic load dependent Diesel knock volume
     hydraulicDependentKnockVolume = map(hydraulicPumpVolume, 0, 100, 50, 100);
 
     // Calculate hydraulic load dependent engine RMP drop

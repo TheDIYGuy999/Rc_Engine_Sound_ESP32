@@ -116,7 +116,7 @@ public:
      * (0,0) is the upper left corner if the connector is on the top.
      * Draws static dashboard elements and sets all values to 0.
      */
-    void init();
+    void init(uint8_t value);
     
     /**
      * Sets the state of the left turn signal.

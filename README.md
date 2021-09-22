@@ -264,10 +264,11 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/Tatra813new.h" // Tatra 813 8x8 V12 Diesel military truck
 //#include "vehicles/UnimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 //#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
+#include "vehicles/MercedesActrosV6.h" // Mercedes Actros V6 Racing Truck
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 //#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
-#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
+//#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 //#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
@@ -336,6 +337,108 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission (optimised for smaller speakers)
 ```
 
+### Interface type (communication mode) selection:
+
+Note, that the default communication mode is SBUS. You need to change it as follows, if you want to use classic RC servo signals.
+
+#### PWM (classic RC signals on "CH1" - "CH4", "35" & "PPM" headers, the most common interface)
+```
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
+
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM mode active, if SBUS, IBUS and PPM are disabled (// in front of #define)
+
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
+
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+```
+
+#### PPM (multiple channels pulse pause modulation, wired to "RX" header, 8 channels)
+```
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
+
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
+
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
+
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
+#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+```
+
+#### SBUS (recommended, default setting, wired to "SBUS" header, 13 channels)
+```
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
+
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
+
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
+//#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
+
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+```
+
+SBUS non standard signal (if your receiver sends a non-standard SBUS signal):
+```
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+```
+
+SBUS standard signal (default, used in most cases)
+```
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+```
+
+#### IBUS (not recommended, NO FAILSAFE, if bad contact in iBUS wiring! "RX" header, 13 channels)
+```
+// COMMUNICATION SETTINGS **********************************************************************************************
+// Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
+
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM mode active, if SBUS, IBUS, SERIAL and PPM are disabled (// in front of #define)
+
+// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+//#define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+
+// IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
+#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+
+// SUMD communication (RX header, 12 channels, For Graupner remotes) --------
+//#define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
+
+// PPM communication (RX header, 8 channels, working fine, but channel signals are a bit jittery) --------
+//#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
+```
+
 #### SUMD (For Graupner remotes "RX" header, 12 channels)
 ```
 // COMMUNICATION SETTINGS  ********************************************************************************************************************
@@ -358,16 +461,6 @@ boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS s
 //#define PPM_COMMUNICATION // control signals are coming in via the PPM interface (comment it out for classic PWM RC signals)
 ```
 
-SBUS non standard signal (if your receiver sends a non-standard SBUS signal):
-```
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
-```
-
-SBUS standard signal (default, used in most cases)
-```
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
-```
-
 ## Adjusting things in "vehicles/yourVehiclePreset.h":
 ### Shaker
 adjust the shaker power for the different engine states to fit your needs:
@@ -381,6 +474,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 8.0:
+- Automatic RPM lowering, if not digging for 5s in excavator mode
+- new "dashRotation" variable allows to mount the dashboard LCD upside down: 3 = normal, 1 = upside down
+- master volume bug fixed
+- new Mercedes V6 FIA racing truck sound
 
 ### New in V 7.9:
 - Hydraulic load dependent engine RPM drop for excavator mode

@@ -10,10 +10,10 @@
 
 Dashboard::Dashboard() {}
 
-void Dashboard::init()
+void Dashboard::init(uint8_t value)
 {
   _tft.init();
-  _tft.setRotation(3);
+  _tft.setRotation(value); // 3 = normal, 1 = upside down
   _tft.fillScreen(TFT_BLACK);
   drawFrame();
   setSpeed(0);
