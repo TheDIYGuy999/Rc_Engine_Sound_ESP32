@@ -245,6 +245,11 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 #include "sounds/uncoupling.h" // uncoupling
 #endif
 
+// Choose the tire squealing sound (uncomment the ones you want) --------
+//#define TIRE_SQUEAL
+volatile int tireSquealVolumePercentage = 160; // Adjust the tire squeal volume
+#include "sounds/TireSqueal2.h"
+
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
 //#define SEPARATE_FULL_BEAM // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case

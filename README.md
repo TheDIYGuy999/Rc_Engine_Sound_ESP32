@@ -475,11 +475,16 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 8.1:
+- Variable tire squeal, depending on steering angle and speed as well as during heavy braking
+- See vehicle "MercedesActrosV6.h" race truck
+- enable it with "#define TIRE_SQUEAL"
+
 ### New in V 8.0:
 - Automatic RPM lowering, if not digging for 5s in excavator mode
 - new "dashRotation" variable allows to mount the dashboard LCD upside down: 3 = normal, 1 = upside down
 - master volume bug fixed
-- new Mercedes V6 FIA racing truck sound
+- new Mercedes V6 FIA race truck sound
 
 ### New in V 7.9:
 - Hydraulic load dependent engine RPM drop for excavator mode

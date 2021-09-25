@@ -12,7 +12,7 @@
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 8.0; // Software revision.
+const float codeVersion = 8.1; // Software revision.
 
 //
 // =======================================================================================================
@@ -324,6 +324,7 @@ volatile uint16_t throttleDependentTurboVolume = 0;      // turbo volume accordi
 volatile uint16_t throttleDependentFanVolume = 0;        // cooling fan volume according to rpm
 volatile uint16_t throttleDependentChargerVolume = 0;    // cooling fan volume according to rpm
 volatile uint16_t rpmDependentWastegateVolume = 0;       // wastegate volume according to rpm
+volatile uint16_t tireSquealVolume = 0;                  // Tire squeal volume according to speed and cornering radius
 // for excavator mode:
 volatile uint16_t hydraulicPumpVolume = 0;               // hydraulic pump volume
 volatile uint16_t hydraulicFlowVolume = 0;               // hydraulic flow volume
@@ -657,9 +658,11 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curHydraulicFlowSample = 0;                  // Index of currently loaded hydraulic flow sample
   static uint32_t curTrackRattleSample = 0;                    // Index of currently loaded track rattle sample
   static uint32_t curBucketRattleSample = 0;                   // Index of currently loaded bucket rattle sample
+  static uint32_t curTireSquealSample = 0;                     // Index of currently loaded tire squeal sample
   static int32_t a, a1, a2 = 0;                                // Input signals "a" for mixer
   static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = 0;// Input signals "b" for mixer
   static int32_t c, c1, c2, c3 = 0;                            // Input signals "c" for mixer
+  static int32_t d = 0;                                        // Input signals "d" for mixer
   static boolean knockSilent = 0;                              // This knock will be more silent
   static boolean knockMedium = 0;                              // This knock will be medium
   static uint8_t curKnockCylinder = 0;                         // Index of currently ignited zylinder
@@ -950,14 +953,28 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 #endif
 
-  // Mixing sounds together ----
+// Group "d" (additional sounds) **********************************************************************
+
+#if defined TIRE_SQUEAL
+
+  // Tire squeal flow sound -----------------------
+  if (curTireSquealSample < tireSquealSampleCount - 1) {
+    d = (tireSquealSamples[curTireSquealSample] * tireSquealVolumePercentage / 100 * tireSquealVolume / 100);
+    curTireSquealSample ++;
+  }
+  else {
+    curTireSquealSample = 0;
+  }
+#endif  
+
+  // Mixing sounds together **********************************************************************
   a = a1 + a2; // Horn & siren
   b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8 + b9; // Other sounds
   c = c1 + c2 + c3; // Excavator sounds
 
-  // DAC output (groups a + b mixed together) ****************************************************************************
+  // DAC output (groups mixed together) ****************************************************************************
 
-  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC2, constrain( c * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC2, 0);
 
@@ -1972,9 +1989,29 @@ else rpmLowering = 0; // Full RPM
   // Calculate engine load (used for torque converter slip simulation)
   engineLoad = currentThrottle - currentRpm;
 
-
   if (engineLoad < 0 || escIsBraking) engineLoad = 0; // Range is 0 - 180
   if (engineLoad > 180) engineLoad = 180;
+
+
+  // Additional sounds volumes -----------------------------
+
+// Tire squealing ----
+ uint8_t steeringAngle = 0;
+ uint8_t brakeSquealVolume = 0;
+
+// Cornering squealing
+  if (pulseWidth[1] < 1500) steeringAngle = map(pulseWidth[1], 1000, 1500, 100, 0);
+    else if (pulseWidth[1] > 1500) steeringAngle = map(pulseWidth[1], 1500, 2000, 0, 100);
+    else steeringAngle = 0;
+
+    tireSquealVolume = steeringAngle * currentSpeed * currentSpeed / 125000; // Volume = steering angle * speed * speed
+
+// Brake squealing
+    if ((driveState == 2 || driveState == 4) && currentSpeed > 50 && currentThrottle > 250) {
+      tireSquealVolume += map(currentThrottle, 250, 500, 0, 100);
+    }
+
+    tireSquealVolume = constrain(tireSquealVolume, 0, 100);
 }
 
 //
@@ -1989,7 +2026,6 @@ void engineMassSimulation() {
   static int32_t  lastThrottle;
   uint16_t converterSlip;
   static unsigned long throtMillis;
-  //static unsigned long printMillis; // TODO
   static unsigned long wastegateMillis;
   static unsigned long blowoffMillis;
   uint8_t timeBase;

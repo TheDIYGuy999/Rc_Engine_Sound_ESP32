@@ -2,11 +2,11 @@
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
-volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 100%)
+volatile int startVolumePercentage = 160; // Adjust the start volume (usually = 100%)
 #include "sounds/ActrosV6Start.h" // Actros V6
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 85; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 140; // Volume Percentage while full throttle (for rev sound as well)
 //#include "sounds/ActrosV6Idle.h" // Actros V6
@@ -35,18 +35,19 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%)
+volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%)
 volatile int dieselKnockIdleVolumePercentage = 10; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 110; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 #define R6 // 6th Knock will be louder
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
 volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
 #include "sounds/ActrosV6Knock.h" // Actros V6
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 100; // Adjust the turbo volume (usually = 70%)
+volatile int turboVolumePercentage = 150; // Adjust the turbo volume (usually = 70%)
 volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
@@ -154,6 +155,11 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 #include "sounds/uncoupling.h" // uncoupling
 #endif
 
+// Choose the tire squealing sound (uncomment the ones you want) --------
+#define TIRE_SQUEAL
+volatile int tireSquealVolumePercentage = 160; // Adjust the tire squeal volume
+#include "sounds/TireSqueal2.h"
+
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
 #define SEPARATE_FULL_BEAM // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
@@ -163,23 +169,23 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 30; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeSecondGear = 30; // 50 for King Hauler (this value is always in use for automatic transmission, about 80) 30
 const uint8_t escRampTimeThirdGear = 45; // 75 for King Hauler
-const uint8_t escBrakeSteps = 40; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
+const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
 const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
-#define NumberOfAutomaticGears 3 // <<------- Select 3, 4 or 6 gears!
+#define NumberOfAutomaticGears 4 // <<------- Select 3, 4 or 6 gears!
 const boolean doubleClutch = false; // do not activate it at the same time as automatic!
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 10; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
+uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power 10
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 355; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 320; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage! 355
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
