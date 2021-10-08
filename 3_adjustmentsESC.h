@@ -69,7 +69,7 @@ AS-12/6RW EASY from Modellbau-Regler.de is recommended for smaller vehicles (WPL
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 1200
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck (top speed = 160km/h) = 900
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
-const int16_t escPulseSpan = 900; // 500 = full ESC power available, 1000 half ESC power available etc. 
+const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. 
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.

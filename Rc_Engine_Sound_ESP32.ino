@@ -12,7 +12,7 @@
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 */
 
-const float codeVersion = 8.1; // Software revision.
+const float codeVersion = 8.11; // Software revision.
 
 //
 // =======================================================================================================
@@ -72,11 +72,12 @@ const float codeVersion = 8.1; // Software revision.
 
 // Plugins (included, but not programmed by TheDIYGuy999)
 #include "src/dashboard.h" // For LCD dashboard. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
-#include "src/SUMD.h" // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+#include "src/SUMD.h"      // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 
 // No need to install these, they come with the ESP32 board definition
-#include "driver/rmt.h" // for PWM signal detection
+#include "driver/rmt.h"   // for PWM signal detection
 #include "driver/mcpwm.h" // for servo PWM output
+#include "soc/rtc_wdt.h"  // for watchdog timer
 
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 // Warning: do not use Espressif ESP32 board definition v1.05, its causing crash & reboot loops! Use v1.04 instead.
@@ -111,7 +112,7 @@ const float codeVersion = 8.1; // Software revision.
 //CH4: (horn and bluelight / siren)
 //CH5: (high / low beam, transmission neutral, jake brake etc.)
 //CH6: (indicators, hazards)
-#define PWM_CHANNELS_NUM 6 // Number of PWM signal input pins
+#define PWM_CHANNELS_NUM 6 // Number of PWM signal input pins 6
 const uint8_t PWM_CHANNELS[PWM_CHANNELS_NUM] = { 1, 2, 3, 4, 5, 6}; // Channel numbers
 const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input pin numbers
 
@@ -212,7 +213,8 @@ CRGB rgbLEDs[RGB_LEDS_COUNT];
 #define RMT_RX_CLK_DIV (80000000/RMT_TICK_PER_US/1000000)
 // time before receiver goes idle (longer pulses will be ignored)
 #define RMT_RX_MAX_US 3500
-uint32_t maxPwmRpmPercentage = 380; // Limit required to prevent controller from crashing @ high engine RPM
+volatile uint16_t pwmBuf[PWM_CHANNELS_NUM] = {0};
+uint32_t maxPwmRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
 // PPM signal processing variables
 #define NUM_OF_PPM_CHL 8 // The number of channels inside our PPM signal (8 is the maximum!)
@@ -409,6 +411,10 @@ volatile uint32_t variableTimerTicks = maxSampleInterval;
 hw_timer_t * fixedTimer = NULL;
 portMUX_TYPE fixedTimerMux = portMUX_INITIALIZER_UNLOCKED;
 volatile uint32_t fixedTimerTicks = maxSampleInterval;
+
+// Declare a mutex Semaphore Handle which we will use to manage the Serial Port.
+// It will be used to ensure only only one Task is accessing this resource at any time.
+SemaphoreHandle_t xPwmSemaphore;
 
 //
 // =======================================================================================================
@@ -953,11 +959,11 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 #endif
 
-// Group "d" (additional sounds) **********************************************************************
+  // Group "d" (additional sounds) **********************************************************************
 
 #if defined TIRE_SQUEAL
 
-  // Tire squeal flow sound -----------------------
+  // Tire squeal sound -----------------------
   if (curTireSquealSample < tireSquealSampleCount - 1) {
     d = (tireSquealSamples[curTireSquealSample] * tireSquealVolumePercentage / 100 * tireSquealVolume / 100);
     curTireSquealSample ++;
@@ -965,7 +971,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   else {
     curTireSquealSample = 0;
   }
-#endif  
+#endif
 
   // Mixing sounds together **********************************************************************
   a = a1 + a2; // Horn & siren
@@ -992,26 +998,49 @@ static void IRAM_ATTR rmt_isr_handler(void* arg) {
 
   uint32_t intr_st = RMT.int_st.val;
 
-  uint8_t i;
-  for (i = 0; i < PWM_CHANNELS_NUM; i++) {
-    uint8_t channel = PWM_CHANNELS[i];
-    uint32_t channel_mask = BIT(channel * 3 + 1);
+  static uint32_t lastFrameTime = millis();
 
-    if (!(intr_st & channel_mask)) continue;
+  if (millis() - lastFrameTime > 20) { // Only do it every 20ms (very important for system stability)
 
-    RMT.conf_ch[channel].conf1.rx_en = 0;
-    RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
-    volatile rmt_item32_t* item = RMTMEM.chan[channel].data32;
-    if (item) {
-      pulseWidthRaw[i + 1] = item->duration0;
+    // See if we can obtain or "Take" the Semaphore.
+    // If the semaphore is not available, wait 1 ticks of the Scheduler to see if it becomes free.
+    //if ( xSemaphoreTake( xPwmSemaphore, ( TickType_t ) 1 ) == pdTRUE ) // was 5 TODO
+    if ( xSemaphoreTake( xPwmSemaphore, portMAX_DELAY ) )
+    {
+      // We were able to obtain or "Take" the semaphore and can now access the shared resource.
+      // We want to have the pwmBuf variable for us alone,
+      // so we don't want it getting stolen during the middle of a conversion.
+
+
+      uint8_t i;
+      for (i = 0; i < PWM_CHANNELS_NUM; i++) {
+        uint8_t channel = PWM_CHANNELS[i];
+        uint32_t channel_mask = BIT(channel * 3 + 1);
+
+        if (!(intr_st & channel_mask)) continue;
+
+        RMT.conf_ch[channel].conf1.rx_en = 0;
+        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
+        volatile rmt_item32_t* item = RMTMEM.chan[channel].data32;
+
+        if (item) {
+          pwmBuf[i + 1] = item->duration0; // pointer -> variable
+        }
+
+        RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
+        RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
+        RMT.conf_ch[channel].conf1.rx_en = 1;
+
+        //clear RMT interrupt status.
+        RMT.int_clr.val = channel_mask;
+      }
+
+      xSemaphoreGive( xPwmSemaphore ); // Now free or "Give" the semaphore for others.
     }
-
-    RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
-    RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
-    RMT.conf_ch[channel].conf1.rx_en = 1;
-
-    //clear RMT interrupt status.
-    RMT.int_clr.val = channel_mask;
+    lastFrameTime = millis();
+  }
+  else {
+    xSemaphoreGive( xPwmSemaphore ); // Free or "Give" the semaphore for others, if not required!
   }
 }
 
@@ -1095,6 +1124,25 @@ void setup() {
   // Watchdog timers need to be disabled, if task 1 is running without delay(1)
   disableCore0WDT();
   disableCore1WDT();
+
+  // Setup RTC (Real Time Clock) watchdog
+  rtc_wdt_protect_off();         // Disable RTC WDT write protection
+  rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+  rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_SYSTEM);
+  rtc_wdt_set_time(RTC_WDT_STAGE0, 10000); // set 10s timeout
+  rtc_wdt_enable();           // Start the RTC WDT timer
+  //rtc_wdt_disable();            // Disable the RTC WDT timer
+  rtc_wdt_protect_on();         // Enable RTC WDT write protection
+
+  // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
+  // because it is sharing a resource, such as the PWM variable.
+  // Semaphores should only be used whilst the scheduler is running, but we can set it up here.
+  if ( xPwmSemaphore == NULL )  // Check to confirm that the PWM Semaphore has not already been created.
+  {
+    xPwmSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage variable access
+    if ( ( xPwmSemaphore ) != NULL )
+      xSemaphoreGive( ( xPwmSemaphore ) );  // Make the PWM variable available for use, by "Giving" the Semaphore.
+  }
 
   // Set pin modes
   for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++) {
@@ -1195,7 +1243,7 @@ void setup() {
     rmt_rx_start(rmt_channels[i].channel, 1);
   }
 
-  rmt_isr_register(rmt_isr_handler, NULL, 0, NULL); // This is our interrupt
+  rmt_isr_register(rmt_isr_handler, NULL, 0, NULL); // This is our interrupt (1 was 0)
 
 #endif // -----------------------------------------------------------
 
@@ -1315,19 +1363,43 @@ void dacOffsetFade() {
 
 void readPwmSignals() {
 
-  // measure RC signal pulsewidth:
-  // nothing is done here, the PWM signals are now read, using the
-  // "static void IRAM_ATTR rmt_isr_handler(void* arg)" interrupt function
+  static uint32_t lastFrameTime = millis();
 
-  // NOTE: There is no channel mapping in this mode! Just plug in the wires in the order as defined in "2_adjustmentsRemote.h"
-  // for example: sound controller channel 2 (GEARBOX) connects to receiver channel 6
+  if (millis() - lastFrameTime > 20) { // Only do it every 20ms
+    // measure RC signal pulsewidth:
+    // nothing is done here, the PWM signals are now read, using the
+    // "static void IRAM_ATTR rmt_isr_handler(void* arg)" interrupt function
 
-  // Normalize, auto zero and reverse channels
-  processRawChannels();
+    // NOTE: There is no channel mapping in this mode! Just plug in the wires in the order as defined in "2_adjustmentsRemote.h"
+    // for example: sound controller channel 2 (GEARBOX) connects to receiver channel 6
 
-  // Failsafe for RC signals
-  failSafe = (pulseWidthRaw[3] < 500 || pulseWidthRaw[3] > 2500);
-  failsafeRcSignals();
+    // See if we can obtain or "Take" the Semaphore.
+    // If the semaphore is not available, wait 1 ticks of the Scheduler to see if it becomes free.
+    //if ( xSemaphoreTake( xPwmSemaphore, ( TickType_t ) 1 ) == pdTRUE )
+    if ( xSemaphoreTake( xPwmSemaphore, portMAX_DELAY ) )
+    {
+      // We were able to obtain or "Take" the semaphore and can now access the shared resource.
+      // We want to have the pwmBuf variable for us alone,
+      // so we don't want it getting stolen during the middle of a conversion.
+      for (uint8_t i = 1; i < PWM_CHANNELS_NUM + 1; i++) {
+        if (pwmBuf[i] > 500 && pwmBuf[i] < 2500) pulseWidthRaw[i] = pwmBuf[i]; // Only take valid signals!
+      }
+
+      xSemaphoreGive( xPwmSemaphore ); // Now free or "Give" the semaphore for others.
+    }
+
+    // Normalize, auto zero and reverse channels
+    processRawChannels();
+
+    // Failsafe for RC signals
+    failSafe = (pulseWidthRaw[3] < 500 || pulseWidthRaw[3] > 2500);
+    failsafeRcSignals();
+
+    lastFrameTime = millis();
+  }
+  else {
+    xSemaphoreGive( xPwmSemaphore ); // Free or "Give" the semaphore for others, if not required!
+  }
 }
 
 //
@@ -1901,9 +1973,9 @@ void mapThrottle() {
   }
 
   // Engine RPM lowering, if hydraulic not used for 5s
-if (hydraulicLoad > 1 || pulseWidth[3] < pulseMaxNeutral[3]) rpmLoweringMillis = millis();
-if (millis() - rpmLoweringMillis > 5000) rpmLowering = 250; // Medium RPM
-else rpmLowering = 0; // Full RPM
+  if (hydraulicLoad > 1 || pulseWidth[3] < pulseMaxNeutral[3]) rpmLoweringMillis = millis();
+  if (millis() - rpmLoweringMillis > 5000) rpmLowering = 250; // Medium RPM
+  else rpmLowering = 0; // Full RPM
 
 
 #else // Normal mode --------------------------------------------------------------------------- 
@@ -1995,23 +2067,23 @@ else rpmLowering = 0; // Full RPM
 
   // Additional sounds volumes -----------------------------
 
-// Tire squealing ----
- uint8_t steeringAngle = 0;
- uint8_t brakeSquealVolume = 0;
+  // Tire squealing ----
+  uint8_t steeringAngle = 0;
+  uint8_t brakeSquealVolume = 0;
 
-// Cornering squealing
+  // Cornering squealing
   if (pulseWidth[1] < 1500) steeringAngle = map(pulseWidth[1], 1000, 1500, 100, 0);
-    else if (pulseWidth[1] > 1500) steeringAngle = map(pulseWidth[1], 1500, 2000, 0, 100);
-    else steeringAngle = 0;
+  else if (pulseWidth[1] > 1500) steeringAngle = map(pulseWidth[1], 1500, 2000, 0, 100);
+  else steeringAngle = 0;
 
-    tireSquealVolume = steeringAngle * currentSpeed * currentSpeed / 125000; // Volume = steering angle * speed * speed
+  tireSquealVolume = steeringAngle * currentSpeed * currentSpeed / 125000; // Volume = steering angle * speed * speed
 
-// Brake squealing
-    if ((driveState == 2 || driveState == 4) && currentSpeed > 50 && currentThrottle > 250) {
-      tireSquealVolume += map(currentThrottle, 250, 500, 0, 100);
-    }
+  // Brake squealing
+  if ((driveState == 2 || driveState == 4) && currentSpeed > 50 && currentThrottle > 250) {
+    tireSquealVolume += map(currentThrottle, 250, 500, 0, 100);
+  }
 
-    tireSquealVolume = constrain(tireSquealVolume, 0, 100);
+  tireSquealVolume = constrain(tireSquealVolume, 0, 100);
 }
 
 //
@@ -3144,14 +3216,13 @@ void trailerPresenceSwitchRead() {
 
 /* Bugs TODO:
 
-    Start animation too fast after engine off
     Speed needle jump if shifting real 3 speed transmission. Better calibration needed
 */
 
 
 bool engineStartAnimation() {
   static bool dirUp = true;
-  static uint16_t lastFrameTime = millis();
+  static uint32_t lastFrameTime = millis();
   static uint16_t rpm = 0;
   static uint16_t speed = 0;
   static uint16_t fuel = 0;
@@ -3452,10 +3523,13 @@ void loop() {
   updateDashboard();
 #endif
 
-#if defined NEOPIXEL_LED
   // RGB LED control
+#if defined NEOPIXEL_LED
   updateRGBLEDs();
 #endif
+
+  // Feeding the RTC watchtog timer is essential!
+  rtc_wdt_feed();
 }
 
 //

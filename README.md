@@ -216,23 +216,26 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - Adjust settings according to:
 ![](pictures/settings.png)
 
-### Required libraries:
+### Required libraries (you need to install ALL of them):
 - statusLED: https://github.com/TheDIYGuy999/statusLED
 - SBUS: https://github.com/TheDIYGuy999/SBUS
 - rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
-- IBUS // https://github.com/bmellink/IBusBM
+- IBUS: https://github.com/bmellink/IBusBM
+- TFT: https://github.com/Bodmer/TFT_eSPI
+- FastLED: https://github.com/FastLED/FastLED    
+
+Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
+Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
 ### Uploading the code to the board:
 - IMPORTANT: Depending on your board, you may have to press and hold the "BOOT" button, if the IDE just shows "Connecting........_____...." Release it, as soon as the upload starts.
 - On macOS Big Sur, you need to apply the following fix:  [Big Sur Fix](BigSurFix.md)
 
-Download them in the same manner as the main code above. Store the folders in your "Arduino/libraries" path.
-Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
 ## Adjusting things in "adjustmentsXyz.h":
 ### Vehicle selection:
 
-Note, that in v5.5 the former "Adjustments.h" configuration file was divided in multiple files.
+Note, that in v5.5 the former "Adjustments.h" configuration file was divided into multiple files.
 
 Uncomment (remove //) the vehicle you want in "Adjustments.h". Never uncomment more than one vehicle!
 Note, that you need to re-upload the code after you changed the settings. Otherwise it will not take effect.
@@ -474,6 +477,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+
+### New in V 8.11:
+- Serious bug fixed: PWM communication mode was broken (thanks to Cartman for reporting this issue)! -> Semaphore for multi tasking access to "pwmBuf" variable added, RTC watchdog timer changed
+- Dashboard LCD: Jumpy instruments needle start animation bug fixed
+- Tested wit Flysky FS-i6X in PWM mode and Micro RC in SBUS mode. Both including LCD dashboard.
 
 ### New in V 8.1:
 - Variable tire squeal, depending on steering angle and speed as well as during heavy braking

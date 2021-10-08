@@ -3,7 +3,7 @@
  * for the Dashboard by Gamadril :https://github.com/Gamadril/Rc_Engine_Sound_ESP32
  * 
  * Before you can use it:
- * create the folder TFT_eSPI_Setups inside your Arduino library directory
+ * create the folder TFT_eSPI_Setups inside your Arduino TFT_eSPI library directory
  * move/copy the file Setup43_ST7735_ESP32_80x160.h to TFT_eSPI_Setups directory
  * replace the line #include <User_Setup.h> in the file User_Setup_Select.h inside TFT_eSPI library folder with #include <TFT_eSPI_Setups/Setup43_ST7735_ESP32_80x160.h>
  * modify the Setup43_ST7735_ESP32_80x160.h file if you use other pins for the display connection

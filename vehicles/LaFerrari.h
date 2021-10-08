@@ -137,6 +137,11 @@ const uint16_t indicatorOn = 300; // The indicator will be switched on above +/-
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
+// Choose the tire squealing sound (uncomment the ones you want) --------
+#define TIRE_SQUEAL
+volatile int tireSquealVolumePercentage = 160; // Adjust the tire squeal volume
+#include "sounds/TireSqueal2.h"
+
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
 
