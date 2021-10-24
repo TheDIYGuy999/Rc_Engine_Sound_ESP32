@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /* SERVO OUTPUT SETTINGS ************************************************************************************************
  *  
  * The CH1 - CH6 headers are used as outputs in BUS communication mode (SBUS, IBUS, PPM)

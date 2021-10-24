@@ -4,6 +4,8 @@
 // =======================================================================================================
 //
 
+#include <Arduino.h>
+
 // Automatic transmission gear ratios (times 10!, for example 15 means 1.5) -----------------------
 // see: https://www.allisontransmission.com/docs/default-source/marketing-materials/sa7943en_-2017-vocational-model-guide_-vmg-lr9af07359281567eeb272ff0000a566aa.pdf?sfvrsn=13
 

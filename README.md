@@ -3,24 +3,25 @@ It's based on the ATmega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_
 and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
 
 Wiring and software installation instructions see further down.
+Arduino IDE or Visual Studio Code (with Platform IO extension) are supported.
 
 Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so
 
 Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
 New: fully assembled, tested and working 30 pin SMD version, manufactured and pre-assembled by https://www.pcbway.com
-![](pictures/30pinSmdVersion.jpg)
+![](documentation/pictures/30pinSmdVersion.jpg)
 
 Fully assembled, tested and working 30 pin version
-![](pictures/30PinAssembled.jpg)
+![](documentation/pictures/30PinAssembled.jpg)
 
 Compact version for excavator (IBUS & sound only, supplied by 6V BEC)
-![](pictures/compact1.JPG)
-![](pictures/compact2.JPG)
-![](pictures/compact3.JPG)
+![](documentation/pictures/compact1.JPG)
+![](documentation/pictures/compact2.JPG)
+![](documentation/pictures/compact3.JPG)
 
 LCD dashboard (original by Gamadril)
-![](pictures/dashboard.JPG)
+![](documentation/pictures/dashboard.JPG)
 
 
 ## Features:
@@ -90,7 +91,7 @@ LCD dashboard (original by Gamadril)
 
 ### Convert the .wav file with the modified converting tool (new in v5.2):
 ![](pictures/converter.png)
-- open the included "Audio2Header.html" converter in your browser
+- open the included "Audio2Header.html" converter in your browser. It is located in the "tools" folder
 - adjust the export file format (no changes required)
 - select the export file type, depending on the sound you are converting (idle, rev, horn etc.)
 - open the wav file you want to convert
@@ -112,7 +113,7 @@ LCD dashboard (original by Gamadril)
 - the new sound should now be ready
 
 ## Schematic (use PDF for current version!):
-![](pictures/schematic.png)
+![](documentation/pictures/schematic.png)
 
 ## PCB
 ### Included PCB files:
@@ -202,21 +203,22 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 ## Software:
 ### Required software for code uploading and editing:
 - Arduino IDE: https://www.arduino.cc/en/Main/Software
+- or Visual Studio Code with PlatformIO extension (recommended): https://code.visualstudio.com
 
-### Downloading and preparing the code:
+### Downloading and preparing the code with Arduino IDE:
 - Download the code from here (hit "Code > Download zip"): https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32
 - Unzip the folder, if required
 - Remove the "-master" part of the folder name
 - Install libraries and board definitions below first, restart Arduino IDE
-- Open "Rc_Engine_Sound_ESP32.ino" with a double click (Arduino IDE should start)
+- Open "scr.ino" with a double click (Arduino IDE should start)
 
-### Required ESP32 board definition:
+### Required ESP32 board definition (not required, if Visual Studio Code is used as IDE):
 - Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 - Use v1.04, v1.05 is causing reboot issues!
 - Adjust settings according to:
-![](pictures/settings.png)
+![](documentation/pictures/settings.png)
 
-### Required libraries (you need to install ALL of them):
+### Required libraries. You need to install ALL of them, if using Arduino IDE. Not required, if Visual Studio Code is used as IDE:
 - statusLED: https://github.com/TheDIYGuy999/statusLED
 - SBUS: https://github.com/TheDIYGuy999/SBUS
 - rcTrigger: https://github.com/TheDIYGuy999/rcTrigger
@@ -229,8 +231,10 @@ Install them according to: https://www.arduino.cc/en/Guide/Libraries
 
 ### Uploading the code to the board:
 - IMPORTANT: Depending on your board, you may have to press and hold the "BOOT" button, if the IDE just shows "Connecting........_____...." Release it, as soon as the upload starts.
-- On macOS Big Sur, you need to apply the following fix:  [Big Sur Fix](BigSurFix.md)
+- On macOS Big Sur, you need to apply the following fix (Arduino IDE only):  [Big Sur Fix](BigSurFix.md)
 
+### Visual Studio Code (instead of Arduino IDE) overiew:
+![](documentation/pictures/VScode.png)
 
 ## Adjusting things in "adjustmentsXyz.h":
 ### Vehicle selection:
@@ -479,8 +483,14 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ## Changelog (newest on top):
 
 
+### New in V 8.2:
+- Visual Studio Code can now be used as an Arduino IDE replacement. Libraries and board definitions are downloaded and configured automatically in this case.
+- Important: "Rc_Engine_Sound_ESP32.ino" is now named "src.ino" and located in the "src" folder. See chapter "software" above
+- Please note, that the folder structure has changed. For example the "Audio2Header.html" sound conversion tool is now located in the "tools" folder.
+- All vehicle- & sound-files are the same as before and fully compatible.
+
 ### New in V 8.11:
-- Serious bug fixed: PWM communication mode was broken (thanks to Cartman for reporting this issue)! -> Semaphore for multi tasking access to "pwmBuf" variable added, RTC watchdog timer changed
+- Serious bug fixed: PWM communication mode was broken (thanks to Benny for reporting this issue)! -> Semaphore for multi tasking access to "pwmBuf" variable added, RTC watchdog timer changed
 - Dashboard LCD: Jumpy instruments needle start animation bug fixed
 - Tested wit Flysky FS-i6X in PWM mode and Micro RC in SBUS mode. Both including LCD dashboard.
 
@@ -1019,15 +1029,15 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 - sounds way better than the ATmega 328 version, thanks to  22'050Hz sampling rate (instead of 8'000Hz)
 
 ## Prototypes:
-![](pictures/top.jpg)
+![](documentation/pictures/top.jpg)
 
-![](pictures/receiver_wiring.jpg)
+![](documentation/pictures/receiver_wiring.jpg)
 
-![](pictures/Bestueckt_oben.jpg)
+![](documentation/pictures/Bestueckt_oben.jpg)
 
-![](pictures/oben.jpg)
+![](documentation/pictures/oben.jpg)
 
-![](pictures/unten.jpg)
+![](documentation/pictures/unten.jpg)
 
 
 2019 - 2020, TheDIYGuy999

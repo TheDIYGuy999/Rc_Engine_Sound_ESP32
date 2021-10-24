@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /* General TRANSMISSION SETTINGS ************************************************************************************************
  *  
  * Most lights settings are done in the vehicle configuration files in the /vehicles/ directory.

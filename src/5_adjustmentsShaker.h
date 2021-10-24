@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 // The shaker is simulating engine vibrations
 
 // Select the shaker configuration you have:

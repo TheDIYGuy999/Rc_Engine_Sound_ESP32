@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 /* General SOUND SETTINGS ************************************************************************************************
  *  
  * Most sound settings are done in the vehicle configuration files in the /vehicles/ directory.

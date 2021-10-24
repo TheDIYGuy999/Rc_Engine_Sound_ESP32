@@ -10,9 +10,24 @@
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+
+   NEW: Visual Studio Code IDE support added (you need to install PlatformIO)
+   Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.11; // Software revision.
+const float codeVersion = 8.2; // Software revision.
+
+// This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
+#include <Arduino.h> 
+void Task1code(void *parameters);
+void readSbusCommands();
+void readIbusCommands();
+void readSumdCommands();
+void readPpmCommands();
+void readPwmSignals();
+void processRawChannels();
+void failsafeRcSignals();
+void channelZero();
 
 //
 // =======================================================================================================
@@ -58,11 +73,9 @@ const float codeVersion = 8.11; // Software revision.
 // =======================================================================================================
 //
 
-// Header files
-#include "headers/curves.h" // Nonlinear throttle curve arrays
-
 // Libraries (you have to install all of them in the "Arduino sketchbook"/libraries folder)
 // !! Do NOT install the libraries in the sketch folder.
+// No manual library download is required in Visual Studio Code IDE (see platformio.ini)
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
 #include <SBUS.h>      // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
 #include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
@@ -70,15 +83,17 @@ const float codeVersion = 8.11; // Software revision.
 #include <TFT_eSPI.h>  // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard
 #include <FastLED.h>   // https://github.com/FastLED/FastLED        <<------- required for Neopixel support
 
-// Plugins (included, but not programmed by TheDIYGuy999)
+// Additional headers
+#include "src/curves.h"    // Nonlinear throttle curve arrays
 #include "src/dashboard.h" // For LCD dashboard. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 #include "src/SUMD.h"      // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 
 // No need to install these, they come with the ESP32 board definition
-#include "driver/rmt.h"   // for PWM signal detection
-#include "driver/mcpwm.h" // for servo PWM output
-#include "soc/rtc_wdt.h"  // for watchdog timer
+#include "driver/rmt.h"    // for PWM signal detection
+#include "driver/mcpwm.h"  // for servo PWM output
+#include "soc/rtc_wdt.h"   // for watchdog timer
 
+// The following tasks are not required for Visual Studio Code IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 // Warning: do not use Espressif ESP32 board definition v1.05, its causing crash & reboot loops! Use v1.04 instead.
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
@@ -213,7 +228,7 @@ CRGB rgbLEDs[RGB_LEDS_COUNT];
 #define RMT_RX_CLK_DIV (80000000/RMT_TICK_PER_US/1000000)
 // time before receiver goes idle (longer pulses will be ignored)
 #define RMT_RX_MAX_US 3500
-volatile uint16_t pwmBuf[PWM_CHANNELS_NUM] = {0};
+volatile uint16_t pwmBuf[PWM_CHANNELS_NUM + 2] = {0};
 uint32_t maxPwmRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
 // PPM signal processing variables
@@ -3063,7 +3078,7 @@ void triggerIndicators() {
 // =======================================================================================================
 //
 
-void rcTrigger() {
+void rcTriggerRead() {
 
 #if not defined EXCAVATOR_MODE // Only used, if our vehicle is not an excavator!
 
@@ -3506,7 +3521,7 @@ void loop() {
   triggerIndicators();
 
   // rcTrigger
-  rcTrigger();
+  rcTriggerRead();
 
   // Excavator specific controls
 #if defined EXCAVATOR_MODE
