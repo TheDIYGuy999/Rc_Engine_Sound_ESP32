@@ -204,6 +204,7 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 ### Required software for code uploading and editing:
 - Arduino IDE: https://www.arduino.cc/en/Main/Software
 - or Visual Studio Code with PlatformIO extension (recommended): https://code.visualstudio.com
+- Visual Studio also requires this software (restart VS Code afterwards) in order to be able to synchronise libraries: https://git-scm.com/download
 
 ### Downloading and preparing the code with Arduino IDE:
 - Download the code from here (hit "Code > Download zip"): https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32
