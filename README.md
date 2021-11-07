@@ -65,6 +65,7 @@ LCD dashboard (original by Gamadril)
 - Support for LCD dashboard
 - Support for 2812 Neopixel LED (GPIO0)
 - Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote
+- ESP-NOW based 2.4 GHz wireless trailer control support
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
@@ -483,6 +484,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 8.3:
+- ESP-NOW based 2.4GHz wireless trailer lights control. Enable it in "10_adjustmentsTrailer.h". You can use a 2nd controller in your trailer as a slave.
+- Trailer software can be found in "trailer/wirelessTrailer" for now.
 
 ### New in V 8.2:
 - Visual Studio Code can now be used as an Arduino IDE replacement. Libraries and board definitions are downloaded and configured automatically in this case.

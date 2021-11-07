@@ -28,12 +28,12 @@
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 //#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
-#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
+//#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 //#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
-//#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
+#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
 //#include "vehicles/URAL375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 

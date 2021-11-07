@@ -137,7 +137,7 @@ float curveExponentialThrottle[][2] = {
 
 // Credit: http://interface.khm.de/index.php/lab/interfaces-advanced/nonlinear-mapping/
 
-uint32_t reMap(float pts[][2], uint32_t input) {
+uint32_t IRAM_ATTR reMap(float pts[][2], uint32_t input) {
   uint32_t rr = 0;
   float mm = 0;
 

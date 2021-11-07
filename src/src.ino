@@ -4,7 +4,7 @@
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
     ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 
-   Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/Audio2Header.html
+   Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/tools/Audio2Header.html
    Original converter code by bitluni (send him a high five, if you like the code)
 
    Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
@@ -15,10 +15,10 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.2; // Software revision.
+const float codeVersion = 8.3; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
-#include <Arduino.h> 
+#include <Arduino.h>
 void Task1code(void *parameters);
 void readSbusCommands();
 void readIbusCommands();
@@ -56,14 +56,16 @@ void channelZero();
 #include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
 #include "8_adjustmentsSound.h"         // <<------- Sound related adjustments
 #include "9_adjustmentsDashboard.h"     // <<------- Dashboard related adjustments
+#include "10_adjustmentsTrailer.h"      // <<------- Trailer related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-//#define CHANNEL_DEBUG // uncomment it for input signal debugging informations
+//#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
 //#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
+//#define CORE_DEBUG // Don't use this!
 
 // TODO = Things to clean up!
 
@@ -92,6 +94,8 @@ void channelZero();
 #include "driver/rmt.h"    // for PWM signal detection
 #include "driver/mcpwm.h"  // for servo PWM output
 #include "soc/rtc_wdt.h"   // for watchdog timer
+#include <esp_now.h>
+#include <WiFi.h>
 
 // The following tasks are not required for Visual Studio Code IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -235,7 +239,7 @@ uint32_t maxPwmRpmPercentage = 390; // Limit required to prevent controller from
 #define NUM_OF_PPM_CHL 8 // The number of channels inside our PPM signal (8 is the maximum!)
 #define NUM_OF_PPM_AVG 1 // Number of averaging passes (usually one, more will be slow)
 volatile int ppmInp[NUM_OF_PPM_CHL + 1] = {0}; // Input values
-volatile int ppmBuf[16] = {0}; // Buffered values TODO, was [NUM_OF_PPM_CHL + 1]
+volatile int ppmBuf[16] = {0};
 volatile byte counter = NUM_OF_PPM_CHL;
 volatile byte average  = NUM_OF_PPM_AVG;
 volatile boolean ready = false;
@@ -407,6 +411,28 @@ boolean indicatorRon = false;                            // Right indicator (Bli
 boolean fogLightOn = false;                              // Fog light is on
 boolean cannonFlash = false;                             // Flashing cannon fire
 
+// DEBUG stuff
+volatile uint8_t coreId = 99;
+
+// ESP NOW variables for wireless trailer communication ----------------------------
+#if defined WIRELESS_TRAILER
+
+volatile uint16_t pollRate = 20;
+
+esp_now_peer_info_t peerInfo; // This MUST be global!! Transmission is not working otherwise!
+
+typedef struct struct_message { // This is the data packet
+  uint8_t tailLight;
+  uint8_t sideLight;
+  uint8_t reversingLight;
+  uint8_t indicatorL;
+  uint8_t indicatorR;
+} struct_message;
+
+// Create a struct_message called trailerData
+struct_message trailerData;
+#endif // --------------------------------------------------------------------------
+
 // Our main tasks
 TaskHandle_t Task1;
 
@@ -427,9 +453,10 @@ hw_timer_t * fixedTimer = NULL;
 portMUX_TYPE fixedTimerMux = portMUX_INITIALIZER_UNLOCKED;
 volatile uint32_t fixedTimerTicks = maxSampleInterval;
 
-// Declare a mutex Semaphore Handle which we will use to manage the Serial Port.
+// Declare a mutex Semaphore Handles.
 // It will be used to ensure only only one Task is accessing this resource at any time.
 SemaphoreHandle_t xPwmSemaphore;
+SemaphoreHandle_t xRpmSemaphore;
 
 //
 // =======================================================================================================
@@ -438,6 +465,8 @@ SemaphoreHandle_t xPwmSemaphore;
 //
 
 void IRAM_ATTR variablePlaybackTimer() {
+
+  //coreId = xPortGetCoreID(); // Running on core 1
 
   static uint32_t attenuatorMillis = 0;
   static uint32_t curEngineSample = 0;              // Index of currently loaded engine sample
@@ -455,7 +484,7 @@ void IRAM_ATTR variablePlaybackTimer() {
   static int32_t f = 0;                             // Input signals for mixer: f = hydraulic pump
   uint8_t a1Multi = 0;                              // Volume multipliers
 
-  //portENTER_CRITICAL_ISR(&variableTimerMux);
+  //portENTER_CRITICAL_ISR(&variableTimerMux); // disables C callable interrupts (on the current core) and locks the mutex by the current core.
 
   switch (engineState) {
 
@@ -663,6 +692,8 @@ void IRAM_ATTR variablePlaybackTimer() {
 //
 
 void IRAM_ATTR fixedPlaybackTimer() {
+
+  // coreId = xPortGetCoreID(); // Running on core 1
 
   static uint32_t curHornSample = 0;                           // Index of currently loaded horn sample
   static uint32_t curSirenSample = 0;                          // Index of currently loaded siren sample
@@ -1019,7 +1050,6 @@ static void IRAM_ATTR rmt_isr_handler(void* arg) {
 
     // See if we can obtain or "Take" the Semaphore.
     // If the semaphore is not available, wait 1 ticks of the Scheduler to see if it becomes free.
-    //if ( xSemaphoreTake( xPwmSemaphore, ( TickType_t ) 1 ) == pdTRUE ) // was 5 TODO
     if ( xSemaphoreTake( xPwmSemaphore, portMAX_DELAY ) )
     {
       // We were able to obtain or "Take" the semaphore and can now access the shared resource.
@@ -1097,10 +1127,24 @@ void IRAM_ATTR readPpm() {
 // =======================================================================================================
 //
 #if not defined THIRD_BRAKLELIGHT
-void trailerPresenceSwitchInterrupt() {
+void IRAM_ATTR trailerPresenceSwitchInterrupt() {
   couplerSwitchInteruptLatch = true;
 }
 #endif
+
+//
+// =======================================================================================================
+// ESP NOW TRAILER DATA SENT CALLBACK
+// =======================================================================================================
+//
+
+// callback when data is sent
+void IRAM_ATTR OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  //Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Trailer found" : "No trailer found");
+  //pollRate = ESP_NOW_SEND_SUCCESS ? 20 : 100; // TODO
+}
+
 //
 // =======================================================================================================
 // mcpwm SETUP (1x during startup)
@@ -1130,6 +1174,47 @@ void setupMcpwm() {
 
 //
 // =======================================================================================================
+// ESP NOW SETUP FOR WIRELESS TRAILER CONTROL
+// =======================================================================================================
+//
+
+void setupEspNow() {
+#if defined WIRELESS_TRAILER
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+  WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
+  // Output my MAC address - useful for later
+  Serial.print ( "Sound controller MAC address is: ");
+  Serial.println(WiFi.macAddress());
+  // shut down wifi
+  WiFi.disconnect();
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnDataSent); // TODO, optional
+
+  // Register peer
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  // Add peer
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer");
+    return;
+  }
+
+  
+#endif
+}
+
+//
+// =======================================================================================================
 // MAIN ARDUINO SETUP (1x during startup)
 // =======================================================================================================
 //
@@ -1138,7 +1223,7 @@ void setup() {
 
   // Watchdog timers need to be disabled, if task 1 is running without delay(1)
   disableCore0WDT();
-  disableCore1WDT();
+  //disableCore1WDT(); // TODO leaving this one enabled is experimental!
 
   // Setup RTC (Real Time Clock) watchdog
   rtc_wdt_protect_off();         // Disable RTC WDT write protection
@@ -1149,6 +1234,12 @@ void setup() {
   //rtc_wdt_disable();            // Disable the RTC WDT timer
   rtc_wdt_protect_on();         // Enable RTC WDT write protection
 
+  // Serial setup
+  Serial.begin(115200); // USB serial (for DEBUG)
+
+  // ESP NOW setup
+  setupEspNow();
+
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the PWM variable.
   // Semaphores should only be used whilst the scheduler is running, but we can set it up here.
@@ -1157,6 +1248,13 @@ void setup() {
     xPwmSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage variable access
     if ( ( xPwmSemaphore ) != NULL )
       xSemaphoreGive( ( xPwmSemaphore ) );  // Make the PWM variable available for use, by "Giving" the Semaphore.
+  }
+
+  if ( xRpmSemaphore == NULL )  // Check to confirm that the RPM Semaphore has not already been created.
+  {
+    xRpmSemaphore = xSemaphoreCreateMutex();  // Create a mutex semaphore we will use to manage variable access
+    if ( ( xRpmSemaphore ) != NULL )
+      xSemaphoreGive( ( xRpmSemaphore ) );  // Make the RPM variable available for use, by "Giving" the Semaphore.
   }
 
   // Set pin modes
@@ -1208,9 +1306,6 @@ void setup() {
   // Neopixel setup
   FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, RGB_LEDS_COUNT);
 
-  // Serial setup
-  Serial.begin(115200); // USB serial (for DEBUG)
-
   // Communication setup --------------------------------------------
   indicatorL.on();
   indicatorR.on();
@@ -1258,7 +1353,7 @@ void setup() {
     rmt_rx_start(rmt_channels[i].channel, 1);
   }
 
-  rmt_isr_register(rmt_isr_handler, NULL, 0, NULL); // This is our interrupt (1 was 0)
+  rmt_isr_register(rmt_isr_handler, NULL, 0, NULL); // This is our interrupt
 
 #endif // -----------------------------------------------------------
 
@@ -1274,13 +1369,13 @@ void setup() {
   TaskHandle_t Task1;
   //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
-    Task1code,   /* Task function. */
-    "Task1",     /* name of task. */
-    100000,       /* Stack size of task (10000) */
-    NULL,        /* parameter of the task */
-    1,           /* priority of the task (1 = low, 3 = medium, 5 = highest)*/
-    &Task1,      /* Task handle to keep track of created task */
-    0);          /* pin task to core 0 */
+    Task1code,   // Task function
+    "Task1",     // name of task
+    8192,       // Stack size of task (10000)
+    NULL,        // parameter of the task
+    1,           // priority of the task (1 = low, 3 = medium, 5 = highest)
+    &Task1,      // Task handle to keep track of created task
+    0);          // pin task to core 0
 
   // Interrupt timer for variable sample rate playback
   variableTimer = timerBegin(0, 20, true);  // timer 0, MWDT clock period = 12.5 ns * TIMGn_Tx_WDT_CLK_PRESCALE -> 12.5 ns * 20 -> 250 ns = 0.25 us, countUp
@@ -1390,7 +1485,6 @@ void readPwmSignals() {
 
     // See if we can obtain or "Take" the Semaphore.
     // If the semaphore is not available, wait 1 ticks of the Scheduler to see if it becomes free.
-    //if ( xSemaphoreTake( xPwmSemaphore, ( TickType_t ) 1 ) == pdTRUE )
     if ( xSemaphoreTake( xPwmSemaphore, portMAX_DELAY ) )
     {
       // We were able to obtain or "Take" the semaphore and can now access the shared resource.
@@ -1715,6 +1809,7 @@ void processRawChannels() {
     Serial.println(failSafe);
     Serial.println("Misc:");
     Serial.println(MAX_RPM_PERCENTAGE);
+    Serial.println(loopTime);
     Serial.println("");
   }
 #endif
@@ -2103,13 +2198,15 @@ void mapThrottle() {
 
 //
 // =======================================================================================================
-// ENGINE MASS SIMULATION
+// ENGINE MASS SIMULATION (running on core 0)
 // =======================================================================================================
 //
 
 void engineMassSimulation() {
 
   static int32_t  targetRpm = 0;        // The engine RPM target
+  static int32_t _currentRpm = 0;       // Private current RPM (to prevent conflict with core 1)
+  static int32_t _currentThrottle = 0;
   static int32_t  lastThrottle;
   uint16_t converterSlip;
   static unsigned long throtMillis;
@@ -2123,21 +2220,23 @@ void engineMassSimulation() {
   timeBase = 2;
 #endif
 
+  _currentThrottle = currentThrottle;
+
   if (millis() - throtMillis > timeBase) { // Every 2 or 6ms
     throtMillis = millis();
 
-    if (currentThrottle > 500) currentThrottle = 500;
+    if (_currentThrottle > 500) _currentThrottle = 500;
 
     // Virtual clutch **********************************************************************************
 #if defined EXCAVATOR_MODE // Excavator mode ---
     clutchDisengaged = true;
 
-    targetRpm = currentThrottle - hydraulicLoad;
+    targetRpm = _currentThrottle - hydraulicLoad;
     targetRpm = constrain(targetRpm, 0, 500);
 
 
 #else   // Normal mode ---
-    if ((currentSpeed < clutchEngagingPoint && currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear || currentRpm < 200) {
+    if ((currentSpeed < clutchEngagingPoint && _currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear || _currentRpm < 200) {
       clutchDisengaged = true;
     }
     else {
@@ -2154,21 +2253,23 @@ void engineMassSimulation() {
       else converterSlip = engineLoad * torqueconverterSlipPercentage / 100;
 
       if (!neutralGear) targetRpm = currentSpeed * gearRatio[selectedAutomaticGear] / 10 + converterSlip; // Compute engine RPM
-      else targetRpm = reMap(curveLinear, currentThrottle);
+      else targetRpm = reMap(curveLinear, _currentThrottle);
     }
     else if (doubleClutch) {
       // double clutch transmission
       if (!neutralGear) targetRpm = currentSpeed * gearRatio[selectedAutomaticGear] / 10; // Compute engine RPM
-      else targetRpm = reMap(curveLinear, currentThrottle);
+      else targetRpm = reMap(curveLinear, _currentThrottle);
 
     }
     else {
       // Manual transmission ----
       if (clutchDisengaged) { // Clutch disengaged: Engine revving allowed
 #if defined VIRTUAL_16_SPEED_SEQUENTIAL
-        targetRpm = currentThrottle;
+        targetRpm = _currentThrottle; // This is working
 #else
-        targetRpm = reMap(curveLinear, currentThrottle);
+        //targetRpm = reMap(curveLinear, _currentThrottle); // TODO, not working with enabled WiFi!! Output is always 0, even with fixed 300 input!
+        targetRpm = _currentThrottle; // This is working
+        //Serial.println(targetRpm);
 #endif
       }
       else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
@@ -2193,18 +2294,18 @@ void engineMassSimulation() {
 
 
     // Accelerate engine
-    if (targetRpm > (currentRpm + acc) && (currentRpm + acc) < maxRpm && engineState == RUNNING && engineRunning) {
+    if (targetRpm > (_currentRpm + acc) && (_currentRpm + acc) < maxRpm && engineState == RUNNING && engineRunning) {
       if (!airBrakeTrigger) { // No acceleration, if brake release noise still playing
-        if (!gearDownShiftingInProgress) currentRpm += acc;
-        else currentRpm += acc / 2; // less aggressive rpm rise while downshifting
-        if (currentRpm > maxRpm) currentRpm = maxRpm;
+        if (!gearDownShiftingInProgress) _currentRpm += acc;
+        else _currentRpm += acc / 2; // less aggressive rpm rise while downshifting
+        if (_currentRpm > maxRpm) _currentRpm = maxRpm;
       }
     }
 
     // Decelerate engine
-    if (targetRpm < currentRpm) {
-      currentRpm -= dec;
-      if (currentRpm < minRpm) currentRpm = minRpm;
+    if (targetRpm < _currentRpm) {
+      _currentRpm -= dec;
+      if (_currentRpm < minRpm) _currentRpm = minRpm;
     }
 
 #if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL
@@ -2213,14 +2314,20 @@ void engineMassSimulation() {
 #endif
 
     // Speed (sample rate) output
-    engineSampleRate = map(currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval); // Idle
+    engineSampleRate = map(_currentRpm, minRpm, maxRpm, maxSampleInterval, minSampleInterval); // Idle
+
+    //if ( xSemaphoreTake( xRpmSemaphore, portMAX_DELAY ) )
+    //{
+    currentRpm = _currentRpm;
+    //xSemaphoreGive( xRpmSemaphore ); // Now free or "Give" the semaphore for others.
+    //}
   }
 
   // Prevent Wastegate from being triggered while downshifting
   if (gearDownShiftingInProgress) wastegateMillis = millis();
 
   // Trigger Wastegate, if throttle rapidly dropped
-  if (lastThrottle - currentThrottle > 70 && !escIsBraking && millis() - wastegateMillis > 1000) {
+  if (lastThrottle - _currentThrottle > 70 && !escIsBraking && millis() - wastegateMillis > 1000) {
     wastegateMillis = millis();
     wastegateTrigger = true;
   }
@@ -2232,7 +2339,7 @@ void engineMassSimulation() {
   blowoffTrigger = ((gearUpShiftingInProgress || neutralGear) && millis() - blowoffMillis > 20 && millis() - blowoffMillis < 250 );
 #endif
 
-  lastThrottle = currentThrottle;
+  lastThrottle = _currentThrottle;
 }
 
 //
@@ -2639,7 +2746,7 @@ void gearboxDetection() {
 
 //
 // =======================================================================================================
-// SIMULATED AUTOMATIC TRANSMISSION GEAR SELECTOR
+// SIMULATED AUTOMATIC TRANSMISSION GEAR SELECTOR (running on core 0)
 // =======================================================================================================
 //
 
@@ -2650,6 +2757,13 @@ void automaticGearSelector() {
   static unsigned long lastDownShiftingMillis;
   uint16_t downShiftPoint = 200;
   uint16_t upShiftPoint = 490;
+  static int32_t _currentRpm = 0;       // Private current RPM (to prevent conflict with core 1)
+
+  //if ( xSemaphoreTake( xRpmSemaphore, portMAX_DELAY ) )
+  //{
+  _currentRpm = currentRpm;
+  //xSemaphoreGive( xRpmSemaphore ); // Now free or "Give" the semaphore for others.
+  //}
 
   if (millis() - gearSelectorMillis > 100) { // Waiting for 100ms is very important. Otherwise gears are skipped!
     gearSelectorMillis = millis();
@@ -2664,11 +2778,11 @@ void automaticGearSelector() {
     else { // Forward (multiple gears)
 
       // Adaptive shift points
-      if (millis() - lastDownShiftingMillis > 500 && currentRpm >= upShiftPoint && engineLoad < 5) { // 500ms locking timer!
+      if (millis() - lastDownShiftingMillis > 500 && _currentRpm >= upShiftPoint && engineLoad < 5) { // 500ms locking timer!
         selectedAutomaticGear ++; // Upshifting (load maximum is important to prevent gears from oscillating!)
         lastUpShiftingMillis = millis();
       }
-      if (millis() - lastUpShiftingMillis > 600 && selectedAutomaticGear > 1 && (currentRpm <= downShiftPoint || engineLoad > 100)) { // 600ms locking timer! TODO was 1000
+      if (millis() - lastUpShiftingMillis > 600 && selectedAutomaticGear > 1 && (_currentRpm <= downShiftPoint || engineLoad > 100)) { // 600ms locking timer! TODO was 1000
         selectedAutomaticGear --; // Downshifting incl. kickdown
         lastDownShiftingMillis = millis();
       }
@@ -2681,7 +2795,7 @@ void automaticGearSelector() {
     Serial.println(selectedAutomaticGear);
     Serial.println(engineLoad);
     Serial.println(upShiftPoint);
-    Serial.println(currentRpm);
+    Serial.println(_currentRpm);
     Serial.println(downShiftPoint);
     Serial.println("");
 #endif
@@ -2802,7 +2916,7 @@ void esc() {
         //}
 
         if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
-#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed transmission        
           escPulseWidth -= currentSpeed / 4; // Synchronize engine speed
           //escPulseWidth -= currentSpeed * 40 / 100; // Synchronize engine speed TODO
 #endif
@@ -2810,7 +2924,7 @@ void esc() {
           escPulseWidth = constrain(escPulseWidth, pulseZero[3], pulseMax[3]);
         }
         if (gearDownShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // increasing RPM, if shifting down transmission
-#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed transmission      
           escPulseWidth += 50; // Synchronize engine speed
           //escPulseWidth += currentSpeed;// * 40 / 100; // Synchronize engine speed TODO
 #endif
@@ -2850,14 +2964,14 @@ void esc() {
         if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
-#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission        
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed transmission        
           escPulseWidth += currentSpeed / 4; // Synchronize engine speed
 #endif
           gearUpShiftingPulse = false;
           escPulseWidth = constrain(escPulseWidth, pulseMin[3], pulseZero[3]);
         }
         if (gearDownShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // increasing RPM, if shifting down transmission
-#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed trasnsmission      
+#if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed transmission      
           escPulseWidth -= 50; // Synchronize engine speed
 #endif
           gearDownShiftingPulse = false;
@@ -3484,6 +3598,42 @@ void excavatorControl() {
 
 //
 // =======================================================================================================
+// TRAILER CONTROL (ESP NOW)
+// =======================================================================================================
+//
+
+void trailerControl() {
+#if defined WIRELESS_TRAILER
+
+  static unsigned long espNowMillis;
+
+  if (millis() - espNowMillis > pollRate) { // Every 20ms
+    espNowMillis = millis();
+
+    // Set values to send (timer number in brackets, not pin number, see LED setup section)
+    trailerData.tailLight = ledcRead(2);
+    trailerData.sideLight = ledcRead(8);
+    trailerData.reversingLight = ledcRead(6);
+    trailerData.indicatorL = ledcRead(3);
+    trailerData.indicatorR = ledcRead(4);
+
+
+    // Send message via ESP-NOW
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &trailerData, sizeof(trailerData));
+    //esp_now_send(broadcastAddress, (uint8_t *) &trailerData, sizeof(trailerData));
+    /*
+        if (result == ESP_OK) {
+          //Serial.println("Sent with success");
+        }
+        else {
+          //Serial.println("Error sending the data");
+        } */
+  }
+#endif
+}
+
+//
+// =======================================================================================================
 // MAIN LOOP, RUNNING ON CORE 1
 // =======================================================================================================
 //
@@ -3511,36 +3661,49 @@ void loop() {
   readPwmSignals();
 #endif
 
-  // Map pulsewidth to throttle
-  mapThrottle();
-
   // Horn triggering
   triggerHorn();
 
   // Indicator (turn signal) triggering
   triggerIndicators();
 
-  // rcTrigger
-  rcTriggerRead();
+  if ( xSemaphoreTake( xRpmSemaphore, portMAX_DELAY ) )
+  {
+    // Map pulsewidth to throttle
+    mapThrottle();
 
-  // Excavator specific controls
+    // rcTrigger
+    rcTriggerRead();
+
+    // Excavator specific controls
 #if defined EXCAVATOR_MODE
-  excavatorControl();
+    excavatorControl();
 #endif
+
+    // Dashboard control
+#if defined SPI_DASHBOARD
+    updateDashboard();
+#endif
+    xSemaphoreGive( xRpmSemaphore ); // Now free or "Give" the semaphore for others.
+  }
 
   // Read trailer switch state
 #if not defined THIRD_BRAKLELIGHT
   trailerPresenceSwitchRead();
 #endif
 
-  // Dashboard control
-#if defined SPI_DASHBOARD
-  updateDashboard();
-#endif
-
   // RGB LED control
 #if defined NEOPIXEL_LED
   updateRGBLEDs();
+#endif
+
+  // Trailer control, using ESP NOW
+  trailerControl();
+
+  // Core ID debug
+#if defined CORE_DEBUG
+  Serial.print("Running on core " );
+  Serial.println(coreId);
 #endif
 
   // Feeding the RTC watchtog timer is essential!
@@ -3556,14 +3719,21 @@ void loop() {
 void Task1code(void *pvParameters) {
   for (;;) {
 
+    // coreId = xPortGetCoreID(); // Running on core 0
+
     // DAC offset fader
     dacOffsetFade();
 
-    // Simulate engine mass, generate RPM signal
-    engineMassSimulation();
+    if ( xSemaphoreTake( xRpmSemaphore, portMAX_DELAY ) )
+    {
+      // Simulate engine mass, generate RPM signal
+      engineMassSimulation();
 
-    // Call gear selector
-    if (automatic || doubleClutch) automaticGearSelector();
+
+      // Call gear selector
+      if (automatic || doubleClutch) automaticGearSelector();
+      xSemaphoreGive( xRpmSemaphore ); // Now free or "Give" the semaphore for others.
+    }
 
     // Switch engine on or off
     engineOnOff();
@@ -3583,6 +3753,6 @@ void Task1code(void *pvParameters) {
     esc();
 
     // measure loop time
-    //loopTime = loopDuration(); // for debug only
+    loopTime = loopDuration(); // for debug only
   }
 }
