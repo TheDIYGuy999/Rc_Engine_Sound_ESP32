@@ -31,18 +31,22 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 #ifdef JAKE_BRAKE_SOUND
 #include "sounds/JakeBrake.h" // V8 Jake Brake sound
 #endif
-
+ 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%) 500
-volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
-volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (usually number of cylinders)
-volatile int dieselKnockStartPoint = 400; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250) 350
+volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockStartPoint = 400; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
-//#define V8_MEDIUM // V8 there will be "meduim loud" (1.33 * dieselKnockAdaptiveVolumePercentage) knocks EXPERIMENTAL, not good results!
+//#define V8_468 // V8 468 engine
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
-volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 30
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
+#ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
+uint8_t minKnockVolumePercentage = 5; // percentage, if at knock start RPM (about 5 - 80)
+uint16_t knockStartRpm = 400; // starting @ this RPM (about 50 - 400)
+#endif // ********************************************************************************
 //#include "sounds/DieselKnockDummy.h" // No knock
 #include "sounds/JeepWranglerRubicon392V8_2Knock3.h" // Jeep Wrangler Rubicon HEMI V8
 

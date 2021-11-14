@@ -20,11 +20,11 @@
  */
  
  // Select the vehicle configuration you have:
-//#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
+#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 //#define SERVOS_LANDY
 //#define SERVOS_RGT_EX86100
 //#define SERVOS_ACTROS
-#define SERVOS_RACING_TRUCK
+//#define SERVOS_RACING_TRUCK
 
 // Default servo configuration profile -------------------------------------------------------------------------------------------
 #ifdef SERVOS_DEFAULT

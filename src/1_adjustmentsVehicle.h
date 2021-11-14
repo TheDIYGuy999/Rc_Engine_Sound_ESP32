@@ -30,10 +30,11 @@
 //#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
 //#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 //#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
+#include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air coolded V8 Diesel truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
-#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
+//#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
 //#include "vehicles/URAL375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
@@ -52,7 +53,7 @@
 // US cars --------
 //#include "vehicles/ChevyNovaCoupeV8.h" // 1975 Chevy Nova Coupe V8
 //#include "vehicles/1965FordMustangV8.h"// 1965 Ford Mustang V8
-//#include "vehicles/Chevy468.h" // Chevy 468 big block V8 (needs rework!)
+//#include "vehicles/Chevy468.h" // Chevy 468 big block V8
 
 // EU cars --------
 //#include "vehicles/VwBeetle.h" // VW Käfer / Beetle
@@ -68,7 +69,7 @@
 //#include "vehicles/RAM2500_Cummins12Vautomatic.h" // Dodge RAM 2500 with inline 6, 12V Cummins 5.9l Diesel, automatic transmission
 //#include "vehicles/GMCsierra.h" // GMC Sierra V8 pickup, 3 speed automatic transmission
 //#include "vehicles/ChevyNovaCoupeV8_P407.h" // 1975 Chevy Nova Coupe V8, special version for HG-P407, 3 speed automatic transmission
-//#include "vehicles/JeepWranglerRubicon392V8.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (not the best)
+//#include "vehicles/JeepWranglerRubicon392V8.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (starter needs rework)
 //#include "vehicles/JeepWranglerRubicon392V8_2.h" // 2021 Jeep Wrangler Rubicon HEMI 392 V8 (insane bass!)
 
 // EU SUV --------

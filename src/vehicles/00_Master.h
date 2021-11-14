@@ -91,14 +91,20 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 280; // Adjust the Diesel knock volume (usually = 200 - 600%)
-volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
-volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (number of peaks per engine cycle in idle.h)
-volatile int dieselKnockStartPoint = 10; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockVolumePercentage = 200; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockStartPoint = 10; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
+//#define R6 // 6th Knock will be louder
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
+//#define V8_468 // V8 468 engine
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-//#define R6 // R6 inline 6 engine: 6th knock pulse (of 6) will be louder (set dieselKnockInterval to 6)
-volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the more silent knocks (usually = 50%)
+volatile int dieselKnockAdaptiveVolumePercentage = 18; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 18
+//#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
+#ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
+uint8_t minKnockVolumePercentage = 80; // percentage, if at knock start RPM (about 5 - 80)
+uint16_t knockStartRpm = 50; // starting @ this RPM (about 50 - 400)
+#endif // ********************************************************************************
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/UralV8Knock2.h" // Ural 4320 V8
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
@@ -160,7 +166,7 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/TrainHorn.h" // American train horn (no loop)
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short (incl. loop)
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (incl. loop)
-//#include "sounds/westinghouseHorn.h" // American truck horn (incl. loop)
+#include "sounds/westinghouseHorn.h" // American truck horn (incl. loop)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn (incl. loop)
 //#include "sounds/CarHorn.h" // A boring car horn (incl. loop)
 //#include "sounds/TruckHorn.h" // A generic truck horn (incl. loop)
@@ -171,7 +177,7 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn (incl. loop)
 //#include "sounds/DixieHorn.h" // Dixie horn
 //#include "sounds/FireTruckAirHorn.h" // US fire truck (incl. loop)
-#include "sounds/StadtLuzernHorn.h" // Steam Ship Stadt Luzern Horn
+//#include "sounds/StadtLuzernHorn.h" // Steam Ship Stadt Luzern Horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
@@ -271,7 +277,7 @@ const boolean automatic = false; // false = linear rpm curve, true = automatic t
 const boolean doubleClutch = false; // do not activate it at the same time as automatic!
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
-// Clutch parameters ---------------------------------------------------------------------------------------------------
+// Clutch parameters (about 90 for manual transmission, 10 for automatic) -----------------------------------------------
 uint16_t clutchEngagingPoint = 90; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Engine parameters ----------------------------------------------------------------------------------------------------

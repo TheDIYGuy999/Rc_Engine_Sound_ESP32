@@ -14,11 +14,11 @@ volatile int fullThrottleVolumePercentage = 150; // Volume Percentage while full
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 110; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
 volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-volatile const uint16_t revSwitchPoint = 250; // The rev sound is played instead of the idle sound above this point
+volatile const uint16_t revSwitchPoint = 250; // The rev sound is played instead of the idle sound above this point 250
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
-volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
+volatile const uint16_t idleVolumeProportionPercentage = 80; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
 #include "sounds/MGBGtV8rev.h" // MGB GT V8
 #endif
@@ -31,7 +31,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 #ifdef JAKE_BRAKE_SOUND
 #include "sounds/JakeBrake.h" // CAT V8 Jake Brake sound
 #endif
-
+/*
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
 volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%) 250
@@ -42,6 +42,23 @@ volatile int dieselKnockStartPoint = 10; // Volume will raise above this point (
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 #define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
 volatile int dieselKnockAdaptiveVolumePercentage = 20; // Adjust the Diesel knock volume for the more silent knocks (usually = 50%)
+*/
+
+
+// Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
+// play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
+volatile int dieselKnockVolumePercentage = 800; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockStartPoint = 10; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
+#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
+//#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
+#ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
+uint8_t minKnockVolumePercentage = 5; // percentage, if at knock start RPM (about 5 - 80)
+uint16_t knockStartRpm = 100; // starting @ this RPM (about 50 - 400)
+#endif // ********************************************************************************
 #include "sounds/MGBGtV8knock.h" // MGB GT V8
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------

@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.3; // Software revision.
+const float codeVersion = 8.4; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -2147,9 +2147,11 @@ void mapThrottle() {
   if (!escIsBraking && engineRunning && (currentThrottleFaded > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottleFaded, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
   else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
 
+#if defined RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
   // Calculate RPM dependent Diesel knock volume
-  if (currentRpm > 400) rpmDependentKnockVolume = map(currentRpm, 400, 500, 5, 100);
-  else rpmDependentKnockVolume = 5;
+  if (currentRpm > 400) rpmDependentKnockVolume = map(currentRpm, knockStartRpm, 500, minKnockVolumePercentage, 100);
+  else rpmDependentKnockVolume = minKnockVolumePercentage;
+#endif  
 
   // Calculate engine rpm dependent turbo volume
   if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);

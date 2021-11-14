@@ -145,7 +145,7 @@ const boolean doubleClutch = false; // do not activate it at the same time as au
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
+uint16_t clutchEngagingPoint = 10; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.

@@ -36,14 +36,18 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%) 170
-volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while idling (usually = 20%)
-volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (usually number of cylinders)
-volatile int dieselKnockStartPoint = 50; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockStartPoint = 50; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM
-volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
+#ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
+uint8_t minKnockVolumePercentage = 5; // percentage, if at knock start RPM (about 5 - 80)
+uint16_t knockStartRpm = 400; // starting @ this RPM (about 50 - 400)
+#endif // ********************************************************************************
 //#include "sounds/DieselKnockDummy.h" // No knock
 //#include "sounds/1965FordMustangV8knock.h" // 1965 Ford Mustang V8
 #include "sounds/1965FordMustangV8knockLowpass.h" // 1965 Ford Mustang V8
@@ -154,7 +158,7 @@ const boolean doubleClutch = false; // do not activate it at the same time as au
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
+uint16_t clutchEngagingPoint = 10; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
