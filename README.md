@@ -485,6 +485,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 8.5:
+- ESP-NOW is only transmitting, if a variable in the packet has changed. Advantages: longer battery life, ESP32 stays cooler, less noise in the speaker
+- Support for multiple trailer slaves (intended for articulated cattle trailer)
+- support for trailer servos (legs, ramps, rotating beacon control). Controlled via horn pot (if hazards on / 5th wheel uncoupled)
+
 ### New in V 8.4:
 - Trailer software version for ESP8266 added
 - German Magirus Deutz 256 V8 truck sound added

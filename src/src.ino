@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.4; // Software revision.
+const float codeVersion = 8.5; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -319,7 +319,7 @@ volatile boolean engineJakeBraking = false;              // Active, if engine is
 volatile boolean wastegateTrigger = false;               // Trigger wastegate (blowoff) after rapid throttle drop
 volatile boolean blowoffTrigger = false;                 // Trigger jake brake sound (blowoff) after rapid throttle drop
 volatile boolean dieselKnockTrigger = false;             // Trigger Diesel ignition "knock"
-volatile boolean dieselKnockTriggerFirst = false;        // The first  Diesel ignition "knock" per sequence
+volatile boolean dieselKnockTriggerFirst = false;        // The first Diesel ignition "knock" per sequence
 volatile boolean airBrakeTrigger = false;                // Trigger for air brake noise
 volatile boolean parkingBrakeTrigger = false;            // Trigger for air parking brake noise
 volatile boolean shiftingTrigger = false;                // Trigger for shifting noise
@@ -411,8 +411,11 @@ boolean indicatorRon = false;                            // Right indicator (Bli
 boolean fogLightOn = false;                              // Fog light is on
 boolean cannonFlash = false;                             // Flashing cannon fire
 
-// DEBUG stuff
-volatile uint8_t coreId = 99;
+// Trailer
+bool legsUp;
+bool legsDown;
+bool rampsUp;
+bool rampsDown;
 
 // ESP NOW variables for wireless trailer communication ----------------------------
 #if defined WIRELESS_TRAILER
@@ -427,11 +430,19 @@ typedef struct struct_message { // This is the data packet
   uint8_t reversingLight;
   uint8_t indicatorL;
   uint8_t indicatorR;
+  bool legsUp;
+  bool legsDown;
+  bool rampsUp;
+  bool rampsDown;
+  bool beaconsOn;
 } struct_message;
 
 // Create a struct_message called trailerData
 struct_message trailerData;
 #endif // --------------------------------------------------------------------------
+
+// DEBUG stuff
+volatile uint8_t coreId = 99;
 
 // Our main tasks
 TaskHandle_t Task1;
@@ -678,7 +689,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
   //dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
   //dacWrite(DAC1, constrain(a + 128, 0, 255));
 
@@ -1141,7 +1152,7 @@ void IRAM_ATTR trailerPresenceSwitchInterrupt() {
 // callback when data is sent
 void IRAM_ATTR OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   //Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Trailer found" : "No trailer found");
+  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Trailer found" : "No trailer found");
   //pollRate = ESP_NOW_SEND_SUCCESS ? 20 : 100; // TODO
 }
 
@@ -1202,14 +1213,32 @@ void setupEspNow() {
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
 
-  // Add peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  // Add peer 1
+  memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer");
+    Serial.println("Failed to add peer 1");
     return;
   }
 
-  
+  // Add peer 2
+#ifdef TRAILER_2
+  memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer 2");
+    return;
+  }
+#endif
+
+  // Add peer 3
+#ifdef TRAILER_3
+  memcpy(peerInfo.peer_addr, broadcastAddress3, 6);
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer 3");
+    return;
+  }
+#endif
+
+
 #endif
 }
 
@@ -1918,16 +1947,16 @@ void mcpwmOutput() {
 
   // Winch CH3 **********************
 #if defined MODE2_WINCH
-  static uint16_t winchServoMicrosDesired = CH3C;
+  static uint16_t winchServoMicrosTarget = CH3C;
   static uint16_t winchServoMicros = CH3C;
   static unsigned long winchDelayMicros;
   if (micros() - winchDelayMicros > 12000) {
     winchDelayMicros = micros();
-    if (winchPull) winchServoMicrosDesired = CH3L;
-    else if (winchRelease) winchServoMicrosDesired = CH3R;
-    else winchServoMicrosDesired = CH3C;
-    if (winchServoMicros < winchServoMicrosDesired) winchServoMicros ++;
-    if (winchServoMicros > winchServoMicrosDesired) winchServoMicros --;
+    if (winchPull) winchServoMicrosTarget = CH3L;
+    else if (winchRelease) winchServoMicrosTarget = CH3R;
+    else winchServoMicrosTarget = CH3C;
+    if (winchServoMicros < winchServoMicrosTarget) winchServoMicros ++;
+    if (winchServoMicros > winchServoMicrosTarget) winchServoMicros --;
   }
   mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
 #endif
@@ -2151,7 +2180,7 @@ void mapThrottle() {
   // Calculate RPM dependent Diesel knock volume
   if (currentRpm > 400) rpmDependentKnockVolume = map(currentRpm, knockStartRpm, 500, minKnockVolumePercentage, 100);
   else rpmDependentKnockVolume = minKnockVolumePercentage;
-#endif  
+#endif
 
   // Calculate engine rpm dependent turbo volume
   if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
@@ -3064,11 +3093,13 @@ unsigned long loopDuration() {
 
 void triggerHorn() {
 
-  //#if not defined EXCAVATOR_MODE // Only used, if our vehicle is not an excavator!
-
-  if (!winchEnabled) { // Horn & siren control mode *************************
+  if (!winchEnabled && !unlock5thWheel && !hazard) { // Horn & siren control mode *************
     winchPull = false;
     winchRelease = false;
+    legsUp = false;
+    legsDown = false;
+    rampsUp = false;
+    rampsDown = false;
 
     // detect horn trigger ( impulse length > 1900us) -------------
     if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) {
@@ -3099,9 +3130,46 @@ void triggerHorn() {
     else {
       blueLightTrigger = false;
     }
-
   }
-  else { // Winch control mode **********************************************
+
+  else if (unlock5thWheel) { // Trailer leg control mode *************************************
+    winchPull = false;
+    winchRelease = false;
+    rampsUp = false;
+    rampsDown = false;
+
+    // legs down ( impulse length > 1900us) -------------
+    if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) legsDown = true;
+    else legsDown = false;
+
+
+    // legs up ( impulse length < 1100us) -------------
+    if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) legsUp = true;
+    else legsUp = false;
+  }
+
+  else if (hazard) { // Trailer ramps control mode ************************33***************
+    winchPull = false;
+    winchRelease = false;
+    legsUp = false;
+    legsDown = false;
+
+    // ramps down ( impulse length > 1900us) -------------
+    if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) rampsDown = true;
+    else rampsDown = false;
+
+
+    // ramps up ( impulse length < 1100us) -------------
+    if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) rampsUp = true;
+    else rampsUp = false;
+  }
+
+  else { // Winch control mode *****************************************************************
+    legsUp = false;
+    legsDown = false;
+    rampsUp = false;
+    rampsDown = false;
+
     // pull winch ( impulse length > 1900us) -------------
     if (pulseWidth[4] > 1900 && pulseWidth[4] < pulseMaxLimit[4]) winchPull = true;
     else winchPull = false;
@@ -3109,10 +3177,7 @@ void triggerHorn() {
     // release winch ( impulse length < 1100us) -------------
     if (pulseWidth[4] < 1100 && pulseWidth[4] > pulseMinLimit[4]) winchRelease = true;
     else winchRelease = false;
-
   }
-
-  //#endif
 }
 
 //
@@ -3609,8 +3674,31 @@ void trailerControl() {
 
   static unsigned long espNowMillis;
 
+  uint8_t taillightOld = 0;
+  uint8_t sidelightOld = 0;
+  uint8_t reversingLightOld = 0;
+  uint8_t indicatorLOld = 0;
+  uint8_t indicatorROld = 0;
+  bool legsUpOld = false;
+  bool legsdownOld = false;
+  bool rampsUpOld = false;
+  bool rampsdownOld = false;
+  bool beaconsOnOld = false;
+
   if (millis() - espNowMillis > pollRate) { // Every 20ms
     espNowMillis = millis();
+
+    // Store previous values for comparison
+    taillightOld = trailerData.tailLight;
+    sidelightOld = trailerData.sideLight;
+    reversingLightOld = trailerData.reversingLight;
+    indicatorLOld = trailerData.indicatorL;
+    indicatorROld = trailerData.indicatorR;
+    legsUpOld = trailerData.legsUp;
+    legsdownOld = trailerData.legsDown;
+    rampsUpOld = trailerData.rampsUp;
+    rampsdownOld = trailerData.rampsDown;
+    beaconsOnOld = trailerData.beaconsOn;
 
     // Set values to send (timer number in brackets, not pin number, see LED setup section)
     trailerData.tailLight = ledcRead(2);
@@ -3618,18 +3706,27 @@ void trailerControl() {
     trailerData.reversingLight = ledcRead(6);
     trailerData.indicatorL = ledcRead(3);
     trailerData.indicatorR = ledcRead(4);
+    trailerData.legsUp = legsUp;
+    trailerData.legsDown = legsDown;
+    trailerData.rampsUp = rampsUp;
+    trailerData.rampsDown = rampsDown;
+    trailerData.beaconsOn = blueLightTrigger;
 
+    // Check, if one or more values have changed (saves battery live, prevents speaker noise and the ESP32 runs cooler)
+    if (taillightOld != trailerData.tailLight ||
+        sidelightOld != trailerData.sideLight ||
+        reversingLightOld != trailerData.reversingLight ||
+        indicatorLOld != trailerData.indicatorL ||
+        indicatorROld != trailerData.indicatorR ||
+        legsUpOld != trailerData.legsUp ||
+        legsdownOld != trailerData.legsDown ||
+        rampsUpOld != trailerData.rampsUp ||
+        rampsdownOld != trailerData.rampsDown ||
+        beaconsOnOld != trailerData.beaconsOn) {
 
-    // Send message via ESP-NOW
-    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &trailerData, sizeof(trailerData));
-    //esp_now_send(broadcastAddress, (uint8_t *) &trailerData, sizeof(trailerData));
-    /*
-        if (result == ESP_OK) {
-          //Serial.println("Sent with success");
-        }
-        else {
-          //Serial.println("Error sending the data");
-        } */
+      // If so, then send message via ESP-NOW
+      esp_err_t result = esp_now_send(0, (uint8_t *) &trailerData, sizeof(trailerData));
+    }
   }
 #endif
 }

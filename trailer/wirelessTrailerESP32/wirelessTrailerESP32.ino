@@ -1,11 +1,20 @@
 /* Trailer for RC engine sound & LED controller for Arduino ESP32. Written by TheDIYGuy999
-    Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
  *  ***** ESP32 CPU frequency must be set to 240MHz! *****
     ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 */
 
-const float codeVersion = 0.1; // Software revision.
+const float codeVersion = 0.2; // Software revision.
+
+//
+// =======================================================================================================
+// ! ! I M P O R T A N T ! !   ALL USER SETTINGS ARE DONE IN THE FOLLOWING TABS, WHICH ARE DISPLAYED ABOVE
+// (ADJUST THEM BEFORE CODE UPLOAD), DO NOT CHANGE ANYTHING IN THIS TAB EXCEPT THE DEBUG OPTIONS
+// =======================================================================================================
+//
+
+// All the required user settings are done in the following .h files:
+#include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
 
 //
 // =======================================================================================================
@@ -19,6 +28,7 @@ const float codeVersion = 0.1; // Software revision.
 #include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
 
 // No need to install these, they come with the ESP32 board definition
+#include "driver/mcpwm.h"  // for servo PWM output
 #include <esp_now.h>
 #include <WiFi.h>
 
@@ -47,6 +57,12 @@ const float codeVersion = 0.1; // Software revision.
 #define REVERSING_LIGHT_PIN 17 // (TX2) White reversing light
 #define SIDELIGHT_PIN 18 // Side lights
 
+#define SERVO_1_PIN 13 // Servo CH1 legs
+#define SERVO_2_PIN 12 // Servo CH2 ramps
+#define SERVO_3_PIN 14 // Servo CH3 beacon control
+#define SERVO_4_PIN 27 // Servo CH4 spare servo channel
+
+
 // Objects *************************************************************************************
 // Status LED objects -----
 statusLED tailLight(false); // "false" = output not inversed
@@ -65,6 +81,11 @@ typedef struct struct_message { // This is the data packet
   uint8_t reversingLight;
   uint8_t indicatorL;
   uint8_t indicatorR;
+  bool legsUp;
+  bool legsDown;
+  bool rampsUp;
+  bool rampsDown;
+  bool beaconsOn;
 } struct_message;
 
 // Create a struct_message called trailerData
@@ -92,7 +113,45 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   Serial.println(trailerData.indicatorL);
   Serial.print("Indicator R: ");
   Serial.println(trailerData.indicatorR);
+  Serial.print("Legs up: ");
+  Serial.println(trailerData.legsUp);
+  Serial.print("Legs down: ");
+  Serial.println(trailerData.legsDown);
+  Serial.print("Ramps up: ");
+  Serial.println(trailerData.rampsUp);
+  Serial.print("Ramps down: ");
+  Serial.println(trailerData.rampsDown);
+  Serial.print("Beacons on: ");
+  Serial.println(trailerData.beaconsOn);
+
   Serial.println();
+}
+
+//
+// =======================================================================================================
+// mcpwm SETUP (1x during startup)
+// =======================================================================================================
+//
+// See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
+
+void setupMcpwm() {
+  // 1. set our servo output pins
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, SERVO_1_PIN);    //Set legs as PWM0A
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SERVO_2_PIN);    //Set ramps as PWM0B
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1A, SERVO_4_PIN);    //Set beacon as PWM1A
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1B, SERVO_3_PIN);    //Set spare servo as PWM1B
+
+  // 2. configure MCPWM parameters
+  mcpwm_config_t pwm_config;
+  pwm_config.frequency = SERVO_FREQUENCY;     //frequency usually = 50Hz, some servos may run smoother @ 100Hz
+  pwm_config.cmpr_a = 0;                      //duty cycle of PWMxa = 0
+  pwm_config.cmpr_b = 0;                      //duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER;
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
+
+  // 3. configure channels with settings above
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
+  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_1, &pwm_config);    //Configure PWM1A & PWM1B
 }
 
 //
@@ -142,6 +201,8 @@ void setup() {
   reversingLight.begin(REVERSING_LIGHT_PIN, 4, 20000); // Timer 4, 20kHz
   indicatorL.begin(INDICATOR_LEFT_PIN, 5, 20000); // Timer 5, 20kHz
   indicatorR.begin(INDICATOR_RIGHT_PIN, 6, 20000); // Timer 6, 20kHz
+
+  setupMcpwm(); // mcpwm servo output setup
 }
 
 //
@@ -161,10 +222,116 @@ void led() {
 
 //
 // =======================================================================================================
+// ROTATING BEACON CONTROL (disconnect USB & battery after upload for correct beacon function)
+// =======================================================================================================
+//
+
+bool beaconControl(uint8_t pulses) {
+
+  /* Beacons: "RC DIY LED Rotating Beacon Light Flash For 1/10 Truck Crawler Toy"
+      from: https://www.ebay.ch/itm/303979210629
+      States (every servo signal change from 1000 to 2000us will switch to the next state):
+      0 rotating beacon slow
+      1 Rotating beacon slow
+      2 4x flash
+      3 endless flash
+      4 off
+
+  */
+
+  static unsigned long pulseMillis;
+  static unsigned long pulseWidth = CH3L;
+  static uint8_t i;
+
+  if (millis() - pulseMillis > 40) { // Every 40ms (this is the required minimum)
+    pulseMillis = millis();
+    if (pulseWidth == CH3L) {
+      pulseWidth = CH3R;
+    }
+    else {
+      pulseWidth = CH3L;
+      i++;
+    }
+    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, pulseWidth);
+  }
+
+  if (i >= pulses) {
+    i = 0;
+    return true;
+  }
+  else return false;
+}
+
+//
+// =======================================================================================================
+// MCPWM SERVO RC SIGNAL OUTPUT (BUS communication mode only)
+// =======================================================================================================
+//
+// See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
+
+void mcpwmOutput() {
+
+  // Legs servo CH1 (active, if 5th wheel is unlocked, use horn pot) **********************
+  static uint16_t legsServoMicrosTarget = CH1L;
+  static uint16_t legsServoMicros = CH1L;
+  static unsigned long legsDelayMicros;
+  if (micros() - legsDelayMicros > LEGS_RAMP_TIME) {
+    legsDelayMicros = micros();
+    if (trailerData.legsDown) legsServoMicrosTarget = CH1L; // down
+    else if (trailerData.legsUp) legsServoMicrosTarget = CH1R; // up
+    else legsServoMicrosTarget = legsServoMicros; // stop
+    if (legsServoMicros < legsServoMicrosTarget) legsServoMicros ++;
+    if (legsServoMicros > legsServoMicrosTarget) legsServoMicros --;
+  }
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, legsServoMicros);
+
+  // Ramps servo CH2 (active, if hazards are on, use horn pot) *****************************
+  static uint16_t rampsServoMicrosTarget = CH2R;
+  static uint16_t rampsServoMicros = CH2R;
+  static unsigned long rampsDelayMicros;
+  if (micros() - rampsDelayMicros > RAMPS_RAMP_TIME) {
+    rampsDelayMicros = micros();
+    if (trailerData.rampsDown) rampsServoMicrosTarget = CH2L; // down
+    else if (trailerData.rampsUp) rampsServoMicrosTarget = CH2R; // up
+    else rampsServoMicrosTarget = rampsServoMicros; // stop
+    if (rampsServoMicros < rampsServoMicrosTarget) rampsServoMicros ++;
+    if (rampsServoMicros > rampsServoMicrosTarget) rampsServoMicros --;
+  }
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, rampsServoMicros);
+
+  // Beacon control CH3 (use horn / blue light pot)******************************************
+  // Init (5 pulses are required to shut beacons off after power on)
+  static bool blueLightInit;
+  if (!blueLightInit) {
+    if (beaconControl(5)) blueLightInit = true;
+  }
+
+  // Switching modes
+  static uint16_t beaconServoMicros;
+  static bool lockRotating, lockOff;
+  if (blueLightInit) {
+    if (trailerData.beaconsOn && !lockRotating) { // Rotating mode on (1 pulse)
+      if (beaconControl(1)) {
+        lockRotating = true;
+        lockOff = false;
+      }
+    }
+    if (!trailerData.beaconsOn && !lockOff && lockRotating) { // Off (4 pulses)
+      if (beaconControl(4)) {
+        lockOff = true;
+        lockRotating = false;
+      }
+    }
+  }
+}
+
+//
+// =======================================================================================================
 // MAIN LOOP, RUNNING ON CORE 1
 // =======================================================================================================
 //
 
 void loop() {
- // No loop required!
+
+  mcpwmOutput();
 }
