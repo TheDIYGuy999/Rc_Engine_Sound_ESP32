@@ -274,7 +274,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/UnimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 //#include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 //#include "vehicles/MercedesActrosV6.h" // Mercedes Actros V6 Race Truck incl. tire squealing
-//#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Lots of bass, but a bit noisy
+//#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Bad quality!
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 //#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
 //#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
@@ -283,7 +283,8 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
 //#include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 //#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
-#include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air coolded V8 Diesel truck
+//#include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air coolded V8 Diesel truck
+#include "vehicles/MagirusMercur125.h" // Magirus Mercur air coolded V6 Diesel truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
@@ -484,6 +485,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 8.6:
+- Magirus Mercur 125 air cooled V6 Diesel truck sound
 
 ### New in V 8.5:
 - ESP-NOW is only transmitting, if a variable in the packet has changed. Advantages: longer battery life, ESP32 stays cooler, less noise in the speaker
