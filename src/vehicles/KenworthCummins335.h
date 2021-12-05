@@ -31,6 +31,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 #include "sounds/KenworthCummins335JakeBrake.h" // Cummins 335 R6 Diesel Jake Brake sound (1952 Kenworth)
 #endif
 
+/*
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
 volatile int dieselKnockVolumePercentage = 600; // Adjust the Diesel knock volume (usually = 200 - 600%)
@@ -40,6 +41,23 @@ volatile int dieselKnockStartPoint = 110; // Volume will raise above this point 
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+*/
+
+// Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
+// play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
+volatile int dieselKnockVolumePercentage = 700; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockStartPoint = 20; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
+//#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
+#define R6 // 6th Knock will be louder
+//#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
+volatile int dieselKnockAdaptiveVolumePercentage = 70; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 18
+#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
+#ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
+uint8_t minKnockVolumePercentage = 80; // percentage, if at knock start RPM (about 5 - 80)
+uint16_t knockStartRpm = 50; // starting @ this RPM (about 50 - 400)
+#endif // ********************************************************************************
 #include "sounds/KenworthCummins335Knock2.h" // Cummins 335 R6 Diesel knock sound (1952 Kenworth)
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
@@ -142,6 +160,7 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 
 // Choose the light options --------
 //#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
+#define INDICATOR_SIDE_MARKERS // The indicators are used as side markers as well
 
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"

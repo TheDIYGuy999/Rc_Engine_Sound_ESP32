@@ -20,10 +20,11 @@
  */
  
  // Select the vehicle configuration you have:
-#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
+//#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 //#define SERVOS_LANDY
 //#define SERVOS_RGT_EX86100
 //#define SERVOS_ACTROS
+#define SERVOS_KING_HAULER 
 //#define SERVOS_RACING_TRUCK
 
 // Default servo configuration profile -------------------------------------------------------------------------------------------
@@ -89,6 +90,7 @@ const uint16_t STEERING_RAMP_TIME = 300; // 0 = fastest speed, enlarge it to aro
 #ifdef SERVOS_ACTROS
 
 #define CH3_BEACON // Rotating Beacons are connected to Servo CH3. BUS mode only! https://www.ebay.ch/itm/303979210629
+#define MODE2_TRAILER_UNLOCKING // The mode 2 button is used for trailer unlocking by servo CH4 (sound1 triggering will not work!)
 
 // Servo frequency
 const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
@@ -99,7 +101,29 @@ const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoothe
 const uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 steering left, center, right
 const uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 transmission gear 1, 2, 3
 const uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 Beacons (modes are switched, if position changes from 1000 to 2000us)
-const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
+const uint16_t CH4L = 1350, CH4R = 1650; // CH4 trailer coupler (5th. wheel) locked, unlocked
+
+// Servo ramp time 
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+
+#endif
+
+// TAMIYA King Hauler -------------------------------------------------------------------------------------------
+#ifdef SERVOS_KING_HAULER
+
+#define CH3_BEACON // Rotating Beacons are connected to Servo CH3. BUS mode only! https://www.ebay.ch/itm/303979210629
+#define MODE2_TRAILER_UNLOCKING // The mode 2 button is used for trailer unlocking by servo CH4 (sound1 triggering will not work!)
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+ 
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits 
+const uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 steering left, center, right
+const uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 transmission gear 1, 2, 3
+const uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 Beacons (modes are switched, if position changes from 1000 to 2000us)
+const uint16_t CH4L = 1500, CH4R = 1100; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
 const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements

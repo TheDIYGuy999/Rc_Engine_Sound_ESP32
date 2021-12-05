@@ -155,6 +155,7 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 
 // Choose the light options --------
 //#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
+#define INDICATOR_SIDE_MARKERS // The indicators are used as side markers as wellß
 
 // Choose the blue light options -----------------------------------------------------------------------------------------
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"

@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.6; // Software revision.
+const float codeVersion = 8.7; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -64,7 +64,7 @@ void channelZero();
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
-//#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
+#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
 //#define CORE_DEBUG // Don't use this!
 
 // TODO = Things to clean up!
@@ -384,6 +384,7 @@ boolean clutchDisengaged = true;                         // Active while clutch 
 uint8_t selectedGear = 1;                                // The currently used gear of our shifting gearbox
 uint8_t selectedAutomaticGear = 1;                       // The currently used gear of our automatic gearbox
 boolean gearUpShiftingInProgress;                        // Active while shifting upwards
+boolean doubleClutchInProgress;                          // Double-clutch (Zwischengas)
 boolean gearDownShiftingInProgress;                      // Active while shifting downwards
 boolean gearUpShiftingPulse;                             // Active, if shifting upwards begins
 boolean gearDownShiftingPulse;                           // Active, if shifting downwards begins
@@ -931,6 +932,12 @@ void IRAM_ATTR fixedPlaybackTimer() {
   else knockSilent = true;
 #endif
 
+#ifdef R6_2
+  // R6 inline 6 engine: 6th and 3rd knock pulse (of 6) will be louder
+  if (curKnockCylinder == 6 || curKnockCylinder == 3) knockSilent = false;
+  else knockSilent = true;
+#endif
+
   if (curDieselKnockSample < knockSampleCount) {
 #if defined RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100 * rpmDependentKnockVolume / 100);
@@ -1192,7 +1199,7 @@ void setupMcpwm() {
 void setupEspNow() {
 #if defined WIRELESS_TRAILER
   // Set device as a Wi-Fi Station
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_STA); // WIFI_STA = Station (outer required) WIFI_AP = ESP32 is an access point for stations
   WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
   // Output my MAC address - useful for later
   Serial.print ( "Sound controller MAC address is: ");
@@ -2141,8 +2148,8 @@ void mapThrottle() {
 #if not defined EXCAVATOR_MODE
   // Auto throttle while gear shifting (synchronizing the Tamiya 3 speed gearbox)
   if (!escIsBraking && escIsDriving && shiftingAutoThrottle && !automatic && !doubleClutch) {
-    if (gearUpShiftingInProgress) currentThrottle = 0; // No throttle
-    if (gearDownShiftingInProgress) currentThrottle = 500; // Full throttle
+    if (gearUpShiftingInProgress && !doubleClutchInProgress) currentThrottle = 0; // No throttle
+    if (gearDownShiftingInProgress || doubleClutchInProgress) currentThrottle = 500; // Full throttle
     currentThrottle = constrain (currentThrottle, 0, 500); // Limit throttle range
   }
 #endif
@@ -2493,7 +2500,16 @@ void led() {
 #endif
 
   // Lights brightness ----
+#if defined FLICKERING_WHILE_CRANKING
+  static unsigned long flickerMillis;
+  if (millis() - flickerMillis > 30) { // Every 30ms
+    flickerMillis = millis();
+    if (engineStart) crankingDim = random(25, 55); else crankingDim = 0; // lights are dimmer and flickering while engine cranking
+  }
+#else
   if (engineStart) crankingDim = 50; else crankingDim = 0; // lights are dimmer while engine cranking
+#endif
+
   if (headLightsFlasherOn || headLightsHighBeamOn) dipDim = 10; else dipDim = 170; // High / low beam and headlight flasher (SBUS CH5)
 
   // Reversing light ----
@@ -2736,8 +2752,15 @@ void gearboxDetection() {
   }
 
   // Gear upshifting duration
+  static uint16_t upshiftingDuration = 700;
   if (!gearUpShiftingInProgress) upShiftingMillis = millis();
-  if (millis() - upShiftingMillis > 700) gearUpShiftingInProgress = false;
+  if (millis() - upShiftingMillis > upshiftingDuration) gearUpShiftingInProgress = false;
+
+  // Double-clutch (Zwischengas während dem Hochschalten)
+#if defined DOUBLE_CLUTCH
+  upshiftingDuration = 900;
+  doubleClutchInProgress = (millis() - upShiftingMillis >= 500 && millis() - upShiftingMillis < 600); // Apply full throttle
+#endif
 
   // Gear downshifting detection
   if (selectedGear < previousGear) {
@@ -3338,16 +3361,31 @@ void rcTriggerRead() {
   }
 
   // Latching 2 position switches ******************************************************************
+
+  // Mode 1 ----
   mode1 = mode1Trigger.onOff(pulseWidth[8], 1800, 1200); // CH8 (MODE1)
 #ifdef TRANSMISSION_NEUTRAL
   neutralGear = mode1; // Transmission neutral
 #endif
+
+  // Mode 2 ----
   mode2 = mode2Trigger.onOff(pulseWidth[9], 1800, 1200); // CH9 (MODE2)
-#ifndef MODE2_WINCH // Sound 1 mode
-  if (mode2) sound1trigger = true; //Trigger sound 1 (It is reset after playback is done
-#else // Winch mode
+
+#if defined MODE2_WINCH // Winch control mode
   if (mode2) winchEnabled = true;
   else winchEnabled = false;
+
+#elif defined MODE2_TRAILER_UNLOCKING // 5th wheel unlocking mode
+  static bool fifthWheelStateLock2;
+  if (driveState == 0) { // Only allow change, if vehicle stopped!
+    if (mode2 != fifthWheelStateLock2)  {
+      unlock5thWheel = !unlock5thWheel;
+      fifthWheelStateLock2 = !fifthWheelStateLock2;
+    }
+  }
+
+#else // Sound 1 triggering mode
+  if (mode2) sound1trigger = true; //Trigger sound 1 (It is reset after playback is done
 #endif
 
   // Momentary buttons ******************************************************************
@@ -3372,7 +3410,6 @@ void rcTriggerRead() {
 
 #endif
 }
-
 
 //
 // =======================================================================================================

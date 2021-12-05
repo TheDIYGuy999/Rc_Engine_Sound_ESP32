@@ -99,6 +99,8 @@ volatile int dieselKnockInterval = 8; // Idle sample length divided by this numb
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V8_468 // V8 468 engine
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
+//#define R6 // 6th Knock will be louder
+//#define R6_2 // 6th and 3rd Knock will be louder
 volatile int dieselKnockAdaptiveVolumePercentage = 18; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 18
 //#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
 #ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
@@ -212,11 +214,13 @@ volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 
 //#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
 //#include "sounds/AirBrakeSqueak2.h" // Squeaky air brake sound
 //#include "sounds/UralBrakeSqueak.h" // URAL 4320 air brake sound
+//#include "sounds/Saurer2DMbrake.h" // // Saurer 2DM air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
 //#include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
 #include "sounds/ParkingBrake.h" // Parking brake sound
+//#include "sounds/Saurer2DMparkingBrake.h" // // Saurer 2DM air parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
 volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usually = 200%)
@@ -232,6 +236,7 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 //#include "sounds/GlenCanyon.h" // Glen Canyon country song for truckers ;-)
 //#include "sounds/door.h" // opening and closing the door
 //#include "sounds/Pigs.h" // pig transporter for Onkel_Tom ;-)
+//#include "sounds/chirp.h" // central locking sound
 
 // Choose the reversing beep sound --------
 volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%)
