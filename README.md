@@ -489,6 +489,9 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+- New SMD board with more connectors ans switch mode power supply added
+- Trailer software v0.3 with trailer leg support and light on / off switch, switched by tracrors 5th wheel
+
 ### New in V 8.7:
 - Trailer 5th wheel unlocking by servo CH4 can now also be used in combination with my "Micro RC" remote. Use "#define MODE2_TRAILER_UNLOCKING" in "7_adjustmentsServos.h"
 - Kenworth sounds reworked

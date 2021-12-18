@@ -18,7 +18,7 @@
 // The dispay CS pin needs to be connected to GND.
 // Shaker, sidelights and both beacon flashers will not work!
 
-uint8_t dashRotation = 1; // 3 = normal, 1 = upside down
+uint8_t dashRotation = 3; // 3 = normal, 1 = upside down
  
 #define MAX_REAL_SPEED 110                 // max speed in km/h to show on the dashboard
 int manualGearRatios[3] = {305, 165, 100}; // TAMIYA gear ratios: 1st 1:32.49, 2nd 1:17.66, 3rd 1:10.66, value div 100 (used for real shifting transmissions only!)

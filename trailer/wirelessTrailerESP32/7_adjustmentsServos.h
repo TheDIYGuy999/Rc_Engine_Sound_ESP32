@@ -14,6 +14,8 @@
 // Servo frequency
 const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
 
+#define LEGS_ESC_MODE // use this, if your legs are driven by an ESC instead of a servo
+
 // Servo limits 
 const uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 legs down, unused, up
 const uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 ramp down, unused, up

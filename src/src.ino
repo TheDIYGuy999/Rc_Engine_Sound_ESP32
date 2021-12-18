@@ -64,7 +64,7 @@ void channelZero();
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
-#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
+//#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
 //#define CORE_DEBUG // Don't use this!
 
 // TODO = Things to clean up!

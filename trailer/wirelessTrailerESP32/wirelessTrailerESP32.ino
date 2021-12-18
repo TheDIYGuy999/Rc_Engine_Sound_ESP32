@@ -4,7 +4,7 @@
     ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 */
 
-const float codeVersion = 0.2; // Software revision.
+const float codeVersion = 0.3; // Software revision.
 
 //
 // =======================================================================================================
@@ -62,6 +62,7 @@ const float codeVersion = 0.2; // Software revision.
 #define SERVO_3_PIN 14 // Servo CH3 beacon control
 #define SERVO_4_PIN 27 // Servo CH4 spare servo channel
 
+#define FIFTH_WHEEL_DETECTION_PIN 32 // This NO switch is closed, if the trailer is coupled to the 5th wheel. Between Pin 32 and GND
 
 // Objects *************************************************************************************
 // Status LED objects -----
@@ -91,6 +92,8 @@ typedef struct struct_message { // This is the data packet
 // Create a struct_message called trailerData
 struct_message trailerData;
 
+bool trailerCoupled;
+
 //
 // =======================================================================================================
 // ESP NOW TRAILER DATA RECEIVED CALLBACK
@@ -101,7 +104,7 @@ struct_message trailerData;
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&trailerData, incomingData, sizeof(trailerData));
 
-  led();
+  //led();
 
   Serial.print("Tailllight: ");
   Serial.println(trailerData.tailLight);
@@ -192,6 +195,8 @@ void setup() {
   // Serial setup
   Serial.begin(115200); // USB serial (for DEBUG)
 
+  pinMode(FIFTH_WHEEL_DETECTION_PIN, INPUT_PULLUP);
+
   // ESP NOW setup
   setupEspNow();
 
@@ -202,7 +207,38 @@ void setup() {
   indicatorL.begin(INDICATOR_LEFT_PIN, 5, 20000); // Timer 5, 20kHz
   indicatorR.begin(INDICATOR_RIGHT_PIN, 6, 20000); // Timer 6, 20kHz
 
+  tailLight.pwm(255);
+  sideLight.pwm(255);
+  reversingLight.pwm(255);
+  indicatorL.pwm(255);
+  indicatorR.pwm(255);
+
+  delay(500); // LED test 0.5s (all on)
+
+  tailLight.pwm(0);
+  sideLight.pwm(0);
+  reversingLight.pwm(0);
+  indicatorL.pwm(0);
+  indicatorR.pwm(0);
+
   setupMcpwm(); // mcpwm servo output setup
+}
+
+//
+// =======================================================================================================
+// 5TH WHEEL DETECTION SWITCH
+// =======================================================================================================
+//
+
+void switchDetect() {
+  static unsigned long switchMillis;
+
+  if (!digitalRead(FIFTH_WHEEL_DETECTION_PIN)) {
+    switchMillis = millis(); // if coupled
+    //Serial.println("coupled");
+  }
+
+  trailerCoupled = (millis() - switchMillis <= 1000); // 1s delay, if not coupled
 }
 
 //
@@ -213,11 +249,20 @@ void setup() {
 
 void led() {
 
-  tailLight.pwm(trailerData.tailLight);
-  sideLight.pwm(trailerData.sideLight);
-  reversingLight.pwm(trailerData.reversingLight);
-  indicatorL.pwm(trailerData.indicatorL);
-  indicatorR.pwm(trailerData.indicatorR);
+  if (trailerCoupled) {
+    tailLight.pwm(trailerData.tailLight);
+    sideLight.pwm(trailerData.sideLight);
+    reversingLight.pwm(trailerData.reversingLight);
+    indicatorL.pwm(trailerData.indicatorL);
+    indicatorR.pwm(trailerData.indicatorR);
+  }
+  else {
+    tailLight.pwm(0);
+    sideLight.pwm(0);
+    reversingLight.pwm(0);
+    indicatorL.pwm(0);
+    indicatorR.pwm(0);
+  }
 }
 
 //
@@ -272,6 +317,14 @@ bool beaconControl(uint8_t pulses) {
 void mcpwmOutput() {
 
   // Legs servo CH1 (active, if 5th wheel is unlocked, use horn pot) **********************
+
+#ifdef LEGS_ESC_MODE // ESC mode
+  static uint16_t legsServoMicros = CH1L;
+  if (trailerData.legsDown) legsServoMicros = CH1L; // down
+  else if (trailerData.legsUp) legsServoMicros = CH1R; // up
+  else legsServoMicros = CH1C; // off
+
+#else // Servo mode  
   static uint16_t legsServoMicrosTarget = CH1L;
   static uint16_t legsServoMicros = CH1L;
   static unsigned long legsDelayMicros;
@@ -283,6 +336,7 @@ void mcpwmOutput() {
     if (legsServoMicros < legsServoMicrosTarget) legsServoMicros ++;
     if (legsServoMicros > legsServoMicrosTarget) legsServoMicros --;
   }
+#endif
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, legsServoMicros);
 
   // Ramps servo CH2 (active, if hazards are on, use horn pot) *****************************
@@ -333,5 +387,7 @@ void mcpwmOutput() {
 
 void loop() {
 
+  switchDetect();
   mcpwmOutput();
+  led();
 }
