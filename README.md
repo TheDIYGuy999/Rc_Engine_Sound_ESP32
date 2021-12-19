@@ -9,10 +9,13 @@ Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H
 
 Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
-New: fully assembled, tested and working 30 pin SMD version, manufactured and pre-assembled by https://www.pcbway.com
+New: fully assembled, tested and working 30 pin SMD version with switch mode PSU & display connector, manufactured and pre-assembled by https://www.pcbway.com
+![](documentation/pictures/30pinSmdSwitchModeVersion.jpg)
+
+Fully assembled, tested and working 30 pin SMD version, manufactured and pre-assembled by https://www.pcbway.com
 ![](documentation/pictures/30pinSmdVersion.jpg)
 
-Fully assembled, tested and working 30 pin version
+Fully assembled, tested and working 30 pin thru hole version
 ![](documentation/pictures/30PinAssembled.jpg)
 
 Compact version for excavator (IBUS & sound only, supplied by 6V BEC)
@@ -489,7 +492,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
-- New SMD board with more connectors ans switch mode power supply added
+- New SMD board with more connectors and switch mode power supply added
 - Trailer software v0.3 with trailer leg support and light on / off switch, switched by tracrors 5th wheel
 
 ### New in V 8.7:
