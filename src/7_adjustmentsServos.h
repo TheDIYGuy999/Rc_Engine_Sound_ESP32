@@ -42,7 +42,7 @@ const uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, re
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
 
@@ -61,7 +61,7 @@ const uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, re
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 300; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 300; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
 
@@ -82,7 +82,7 @@ const uint16_t CH3L = 1435, CH3C = 1495, CH3R = 1560; // CH3 winch pull, off, re
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 300; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
 
@@ -104,7 +104,7 @@ const uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 Beacons (modes are 
 const uint16_t CH4L = 1350, CH4R = 1650; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
 
@@ -112,7 +112,7 @@ const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to aroun
 #ifdef SERVOS_KING_HAULER
 
 #define CH3_BEACON // Rotating Beacons are connected to Servo CH3. BUS mode only! https://www.ebay.ch/itm/303979210629
-#define MODE2_TRAILER_UNLOCKING // The mode 2 button is used for trailer unlocking by servo CH4 (sound1 triggering will not work!)
+#define MODE2_TRAILER_UNLOCKING // The mode 2 button is used for trailer 5th wheel unlocking by servo CH4 (sound1 triggering will not work!)
 
 // Servo frequency
 const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
@@ -126,7 +126,7 @@ const uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 Beacons (modes are 
 const uint16_t CH4L = 1500, CH4R = 1100; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 1000; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
 
@@ -145,6 +145,6 @@ const uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 Beacons (modes are 
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 1000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif

@@ -8,7 +8,7 @@
 //#include "vehicles/CaboverCAT3408.h" // Cabover truck with Caterpillar 3408 V8 Diesel
 //#include "vehicles/PeterbiltDetroit8v92.h" // Peterbilt 359 with Detroit 8V92 V8 2 stroke Diesel
 //#include "vehicles/KenworthW900ADetroit8V71.h" // Kenworth W900A with Detroit 8V71 V8 2 stroke Diesel
-#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
+//#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (King Hauler)
 //#include "vehicles/CAT3408OpenPipes.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel and open pipes
 //#include "vehicles/KenworthW900ACAT3408new.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (good bass speaker required)
 //#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
@@ -26,7 +26,7 @@
 //#include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Bad quality!
 //#include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 //#include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
-//#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
+#include "vehicles/Scania143.h" // SCANIA 143 V8 - the legend! The best sounding in my opinion
 //#include "vehicles/ScaniaV8Firetruck.h" // SCANIA V8 firetruck, automatic Allison 6 speed transmission with torque converter, "Martinshorn" siren
 //#include "vehicles/VolvoFH16_750.h" // Volvo FH16 750 truck. Inline 6, 750 horses, open pipes!
 //#include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version

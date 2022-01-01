@@ -492,6 +492,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 8.8:
+- Enabled Neopixels not conflicting with steering servo speed anymore, only executed every 20ms
+- More Neopixel options, but still experimental
+- High engine RPM is not heavily slowing down steering servo movements anymore
+- #define HAZARDS_WHILE_5TH_WHEEL_UNLOCKED enables hazards, if 5th wheel is unlocked
+
 - New SMD board with more connectors and switch mode power supply added
 - Trailer software v0.3 with trailer leg support and light on / off switch, switched by tracrors 5th wheel
 

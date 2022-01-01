@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.7; // Software revision.
+const float codeVersion = 8.8; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -82,10 +82,10 @@ void channelZero();
 #include <SBUS.h>      // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
 #include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
 #include <IBusBM.h>    // https://github.com/bmellink/IBusBM        <<------- required for IBUS interface
-#include <TFT_eSPI.h>  // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard
-#include <FastLED.h>   // https://github.com/FastLED/FastLED        <<------- required for Neopixel support
+#include <TFT_eSPI.h>  // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard. Use v2.3.70
+#include <FastLED.h>   // https://github.com/FastLED/FastLED        <<------- required for Neopixel support. Use V3.3.3
 
-// Additional headers
+// Additional headers (included)
 #include "src/curves.h"    // Nonlinear throttle curve arrays
 #include "src/dashboard.h" // For LCD dashboard. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 #include "src/SUMD.h"      // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
@@ -220,8 +220,7 @@ rcTrigger indicatorRTrigger(100);
 Dashboard dashboard;
 
 // Neopixel
-#define RGB_LEDS_COUNT 1
-CRGB rgbLEDs[RGB_LEDS_COUNT];
+CRGB rgbLEDs[NEOPIXEL_COUNT];
 
 // Global variables **********************************************************************
 
@@ -1340,7 +1339,8 @@ void setup() {
 #endif
 
   // Neopixel setup
-  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, RGB_LEDS_COUNT);
+  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
+  FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
 
   // Communication setup --------------------------------------------
   indicatorL.on();
@@ -1925,13 +1925,19 @@ void mcpwmOutput() {
   uint16_t steeringServoMicros;
   static uint16_t steeringServoMicrosDelayed = CH1C;
   static unsigned long steeringDelayMicros;
+  int16_t steeringDeviation = 1;
   if (micros() - steeringDelayMicros > STEERING_RAMP_TIME) { // Adjustable steering max. ramp speed
+  // It is required to calculate a variable deviation, accodring to how much "delay" the steering ramp time has
+  // Reason: we have a high interrupt load at high engine RPM. The servo movements are getting too slow otherwise
+    steeringDeviation = (micros() - steeringDelayMicros) - STEERING_RAMP_TIME;
+    steeringDeviation = constrain(steeringDeviation, 1, 10);
     steeringDelayMicros = micros();
+
     if (pulseWidth[1] < 1500) steeringServoMicros = map(pulseWidth[1], 1000, 1500, CH1L, CH1C);
     else if (pulseWidth[1] > 1500) steeringServoMicros = map(pulseWidth[1], 1500, 2000, CH1C, CH1R);
     else steeringServoMicros = CH1C;
-    if (steeringServoMicrosDelayed < steeringServoMicros) steeringServoMicrosDelayed++;
-    if (steeringServoMicrosDelayed > steeringServoMicros) steeringServoMicrosDelayed--;
+    if (steeringServoMicrosDelayed < steeringServoMicros) steeringServoMicrosDelayed += steeringDeviation;
+    if (steeringServoMicrosDelayed > steeringServoMicros) steeringServoMicrosDelayed -= steeringDeviation;
     steeringServoMicrosDelayed = constrain(steeringServoMicrosDelayed, min(CH1L, CH1R), max(CH1L, CH1R));
     //Serial.println(steeringServoMicros);
     //Serial.println(steeringServoMicrosDelayed);
@@ -2549,7 +2555,12 @@ void led() {
   indicatorOffBrightness = 0;
 #endif
 
+
+#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
+  if (!hazard && !unlock5thWheel ) { // Hazards also active, if 5th wheel unlocked
+#else
   if (!hazard) {
+#endif
     if (indicatorLon) {
       if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness)) indicatorSoundOn = true; // Left indicator
     }
@@ -2575,8 +2586,8 @@ void led() {
 #endif
   }
   else { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
-    if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade)) indicatorSoundOn = true;
-    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade);
+    if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness)) indicatorSoundOn = true;
+    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness);   
   }
 
   // Headlights, tail lights ----
@@ -3561,8 +3572,13 @@ void updateDashboard() {
   }
 
   // Indicator lamps
+#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
+  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel));
+  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel));
+#else  
   dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard));
   dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard));
+#endif  
   dashboard.setLowBeamIndicator(lightsOn);
   dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
   dashboard.setFogLightIndicator(fogLightOn);
@@ -3598,10 +3614,23 @@ void updateDashboard() {
 //
 
 void updateRGBLEDs() {
-  uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
 
-  rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
-  FastLED.show();
+  static uint32_t lastNeopixelTime = millis();
+
+  if (millis() - lastNeopixelTime > 20) { // Every 20 ms
+    lastNeopixelTime = millis();
+
+    uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
+
+    rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+    //FastLED.show();
+    rgbLEDs[1] = CRGB::Red;
+    rgbLEDs[2] = CRGB::White;
+    rgbLEDs[3] = CRGB::Yellow;
+    rgbLEDs[4] = CRGB::Blue;
+    rgbLEDs[5] = CRGB::Green;
+    FastLED.show();
+  }
 }
 
 //
@@ -3829,7 +3858,7 @@ void loop() {
 #endif
 
   // RGB LED control
-#if defined NEOPIXEL_LED
+#if defined NEOPIXEL_ENABLED
   updateRGBLEDs();
 #endif
 

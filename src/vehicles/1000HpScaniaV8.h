@@ -9,7 +9,7 @@ volatile int startVolumePercentage = 140; // Adjust the start volume (usually = 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 80; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-volatile int fullThrottleVolumePercentage = 200; // Volume Percentage while full throttle (for rev sound as well)
+volatile int fullThrottleVolumePercentage = 150; // Volume Percentage while full throttle (for rev sound as well) 200
 //#include "sounds/1000HpScaniaV8idle2.h" // SCANIA V8
 #include "sounds/ScaniaV8idle.h" // SCANIA V8
 
@@ -34,6 +34,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 #include "sounds/ScaniaV8jakebrake.h" // SCANIA V8
 #endif
 
+/*
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
 volatile int dieselKnockVolumePercentage = 300; // Adjust the Diesel knock volume (usually = 200 - 600%)
@@ -43,6 +44,26 @@ volatile int dieselKnockStartPoint = 110; // Volume will raise above this point 
 #define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 10; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
+*/
+
+// Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
+// play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
+volatile int dieselKnockVolumePercentage = 400; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockIdleVolumePercentage = 0; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockStartPoint = 10; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
+volatile int dieselKnockInterval = 8; // Idle sample length divided by this number (1 - 20, depending on sound files)
+//#define R6 // 6th Knock will be louder
+#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
+//#define V8_468 // V8 468 engine
+//#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
+//#define R6 // 6th Knock will be louder
+//#define R6_2 // 6th and 3rd Knock will be louder
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 18
+//#define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
+#ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
+uint8_t minKnockVolumePercentage = 80; // percentage, if at knock start RPM (about 5 - 80)
+uint16_t knockStartRpm = 50; // starting @ this RPM (about 50 - 400)
+#endif // ********************************************************************************
 //#include "sounds/1000HpScaniaV8knock.h" // SCANIA V8
 #include "sounds/ScaniaV8knockExtreme.h" // SCANIA V8
 
@@ -167,7 +188,7 @@ uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this 
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 310; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 290; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage! 310
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
