@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2021-11-24T03:13:03Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.6.2"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.5723,
+        "LayerNumber": 2,
+        "Name": {
+            "ProjectId": "RC_Engine_Sound_ESP32"
+        },
+        "Owner": "Martin Sommer <msommer74@gmail.com>",
+        "Size": {
+            "X": 71.12,
+            "Y": 46.99
+        }
+    }
+}

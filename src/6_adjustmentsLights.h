@@ -19,7 +19,7 @@
 // More light configurations ---------------------------------------------------------------------------------------------------------------------
 //#define NO_CABLIGHTS // The cablights step in the lights sequence is skipped, if defined
 //#define NO_FOGLIGHTS // The foglights step in the lights sequence is skipped, if defined
-#define THIRD_BRAKLELIGHT // if defined, pin 32 is used for a third brake light, otherwise for a trailer presence switch
+//#define THIRD_BRAKLELIGHT // if defined, pin 32 is used for a third brake light, otherwise for a trailer presence switch (pulled to GND = no trailer attached)
 #define FLICKERING_WHILE_CRANKING // The lights will flicker a bit during engine cranking, otherwise they are just a bit dimmed
 #define HAZARDS_WHILE_5TH_WHEEL_UNLOCKED // Hazards on, if 5th wheel is unlocked
 

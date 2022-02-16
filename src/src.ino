@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.8; // Software revision.
+const float codeVersion = 8.9; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -416,6 +416,7 @@ bool legsUp;
 bool legsDown;
 bool rampsUp;
 bool rampsDown;
+bool trailerDetected;
 
 // ESP NOW variables for wireless trailer communication ----------------------------
 #if defined WIRELESS_TRAILER
@@ -3439,13 +3440,15 @@ void trailerPresenceSwitchRead() {
     couplerSwitchStateLatch = true;
   }
 
-  if (couplerSwitchStateLatch && millis() - switchMillis > 1) { // Debouncing delay
+  if (couplerSwitchStateLatch && millis() - switchMillis > 10) { // Debouncing delay
     if (digitalRead(COUPLER_SWITCH_PIN)) {
       couplingTrigger = true;
+      trailerDetected = true;
       couplerSwitchStateLatch = false;
     }
     else {
       uncouplingTrigger = true;
+      trailerDetected = false;
       couplerSwitchStateLatch = false;
     }
   }
@@ -3766,12 +3769,31 @@ void trailerControl() {
     rampsdownOld = trailerData.rampsDown;
     beaconsOnOld = trailerData.beaconsOn;
 
-    // Set values to send (timer number in brackets, not pin number, see LED setup section)
+    // Set values to send 
+    // Lights (timer number in brackets, not pin number, see LED setup section)
+#ifdef TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT // Tralier lights depending on truck mounted switch
+if (trailerDetected) {
     trailerData.tailLight = ledcRead(2);
     trailerData.sideLight = ledcRead(8);
     trailerData.reversingLight = ledcRead(6);
     trailerData.indicatorL = ledcRead(3);
     trailerData.indicatorR = ledcRead(4);
+}
+else {
+    trailerData.tailLight = 0;
+    trailerData.sideLight = 0;
+    trailerData.reversingLight = 0;
+    trailerData.indicatorL = 0;
+    trailerData.indicatorR = 0;
+}
+#else // Trailer lights always on
+    trailerData.tailLight = ledcRead(2);
+    trailerData.sideLight = ledcRead(8);
+    trailerData.reversingLight = ledcRead(6);
+    trailerData.indicatorL = ledcRead(3);
+    trailerData.indicatorR = ledcRead(4);
+#endif
+    // Other signals
     trailerData.legsUp = legsUp;
     trailerData.legsDown = legsDown;
     trailerData.rampsUp = rampsUp;

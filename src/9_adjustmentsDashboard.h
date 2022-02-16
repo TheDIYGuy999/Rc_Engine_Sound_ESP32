@@ -11,7 +11,7 @@
  * modify the Setup43_ST7735_ESP32_80x160.h file if you use other pins for the display connection
  */
 
-#define SPI_DASHBOARD // A 0.96" SPI LCD is used as dashboard: https://www.ebay.ch/itm/174458054566?hash=item289e82a7a6:g:LpAAAOSwtL1fdDtI 
+//#define SPI_DASHBOARD // A 0.96" SPI LCD is used as dashboard: https://www.ebay.ch/itm/174458054566?hash=item289e82a7a6:g:LpAAAOSwtL1fdDtI 
 
 // WARNING:
 // Pins 18 (SCL), 19 (DC), 21 (RES) & 23 (SDA) are used for the dashboard in this case!
