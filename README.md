@@ -492,6 +492,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+
+### New in V 9.0:
+- New parameter #define AIRPLANE_MODE in vehicle file (see MesserschmittBf109.h) for airplanes: throttle range always 1000-2000, idle @ 1000, no clutch simulation. No ESC output support, connect it directly to ESC!
+- Added Frikkies ramps ESC mode to the ESP32 trailer sketch.
+
 ### New in V 8.9:
 - New parameter in 10_adjustmentsTrailer.h: TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT switches wireless trailer lights off, if no trailer is detected on truck mounted optional trailer detection switch on pin 32. If yo uwant to use this switch, comment out THIRD_BRAKLELIGHT in 6_adjustmentsLights.h
 

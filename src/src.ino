@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 8.9; // Software revision.
+const float codeVersion = 9.0; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -59,7 +59,7 @@ void channelZero();
 #include "10_adjustmentsTrailer.h"      // <<------- Trailer related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-//#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
+#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
@@ -1739,6 +1739,10 @@ void processRawChannels() {
   if (channelAutoZero[3]) channelAutoZero[2] = true;
 #endif
 
+#ifdef AIRPLANE_MODE // If airplane mode: always disable CH3 auto zero adjustment
+  channelAutoZero[3] = false;
+#endif
+
   if (millis() - lastOutOfRangeMillis > 500) {
     for (int i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
 
@@ -2130,6 +2134,19 @@ void mapThrottle() {
   if (millis() - rpmLoweringMillis > 5000) rpmLowering = 250; // Medium RPM
   else rpmLowering = 0; // Full RPM
 
+  #elif defined AIRPLANE_MODE // Airplane mode ---------------------------------------------- 
+
+  // Never engage clutch
+  maxClutchSlippingRpm = 500;
+  clutchEngagingPoint = 500;
+
+  // calculate a throttle value from the pulsewidth signal (forward only, throttle zero @1000)
+  if (pulseWidth[3] > 1100) {
+    currentThrottle = map(pulseWidth[3], 1100, 2000, 0, 500);
+  }
+  else {
+    currentThrottle = 0;
+  }
 
 #else // Normal mode --------------------------------------------------------------------------- 
 
@@ -2880,8 +2897,7 @@ void automaticGearSelector() {
 
 void esc() {
 
-#if not defined TRACKED_MODE // No ESC control in TRACKED_MODE
-
+#if not defined TRACKED_MODE && not defined AIRPLANE_MODE // No ESC control in TRACKED_MODE or in AIRPLANE_MODE
   static int32_t escPulseWidth = 1500;
   static int32_t escPulseWidthOut = 1500;
   static uint32_t escSignal;
@@ -3183,7 +3199,7 @@ void triggerHorn() {
     else legsUp = false;
   }
 
-  else if (hazard) { // Trailer ramps control mode ************************33***************
+  else if (hazard) { // Trailer ramps control mode ***************************************
     winchPull = false;
     winchRelease = false;
     legsUp = false;

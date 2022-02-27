@@ -4,7 +4,7 @@
     ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 */
 
-const float codeVersion = 0.3; // Software revision.
+const float codeVersion = 0.4; // Software revision.
 
 //
 // =======================================================================================================
@@ -340,6 +340,13 @@ void mcpwmOutput() {
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, legsServoMicros);
 
   // Ramps servo CH2 (active, if hazards are on, use horn pot) *****************************
+#ifdef RAMPS_ESC_MODE // ESC mode
+  static uint16_t rampsServoMicros = CH2L;
+  if (trailerData.rampsDown) rampsServoMicros = CH2L; // down
+  else if (trailerData.rampsUp) rampsServoMicros = CH2R; // up
+  else rampsServoMicros = CH2C; // off
+
+#else // Servo mode 
   static uint16_t rampsServoMicrosTarget = CH2R;
   static uint16_t rampsServoMicros = CH2R;
   static unsigned long rampsDelayMicros;
@@ -351,6 +358,7 @@ void mcpwmOutput() {
     if (rampsServoMicros < rampsServoMicrosTarget) rampsServoMicros ++;
     if (rampsServoMicros > rampsServoMicrosTarget) rampsServoMicros --;
   }
+#endif
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, rampsServoMicros);
 
   // Beacon control CH3 (use horn / blue light pot)******************************************

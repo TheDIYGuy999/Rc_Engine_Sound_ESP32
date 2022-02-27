@@ -168,3 +168,4 @@ const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
+#define AIRPLANE_MODE // for airplanes: throttle range always 1000-2000, idle @ 1000, no clutch simulation
