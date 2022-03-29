@@ -61,7 +61,7 @@ LCD dashboard (original by Gamadril)
 - Variable length for horn & siren, using loop area in sound files (new in v5.6)
 - BUS decoder for steering servo and shifting servo (connect servos to CH1 & CH2) pins
 - Trailer coupler (5th wheel) servo can be connected to the CH4 pins (not in PWM communication mode)
-- TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKLELIGHT" setting in "6_adjustmentsLights.h" tab)
+- TAMIYA trailer presence switch can be connected to pin 32 (depending on "#define THIRD_BRAKELIGHT" setting in "6_adjustmentsLights.h" tab)
 - Support for non linear throttle and steering curves (for more accurate control around center position). Use "EXPONENTIAL_THROTTLE" & "EXPONENTIAL_STEERING" in "2_adjustmentsRemote.h"
 - Support for HOBBYWING Quicrun Fusion Motor / ESC combo. Use "#define QUICRUN_FUSION" in "3_adjustmentsESC.h"
 - Support for winch, connected to CH3 (BUS communication mode only). Use "#define MODE2_WINCH" in "7_adjustmentsServo.h" The mode 2 button is then used to switch between horn / siren sontrol and winch control via CH4. The winch is controlled by an old RC servo driver board. The speed and neutral settings are done using "CH3L", CH3C" and CH3R" positions.
@@ -498,7 +498,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 - Added Frikkies ramps ESC mode to the ESP32 trailer sketch.
 
 ### New in V 8.9:
-- New parameter in 10_adjustmentsTrailer.h: TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT switches wireless trailer lights off, if no trailer is detected on truck mounted optional trailer detection switch on pin 32. If yo uwant to use this switch, comment out THIRD_BRAKLELIGHT in 6_adjustmentsLights.h
+- New parameter in 10_adjustmentsTrailer.h: TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT switches wireless trailer lights off, if no trailer is detected on truck mounted optional trailer detection switch on pin 32. If yo uwant to use this switch, comment out THIRD_BRAKELIGHT in 6_adjustmentsLights.h
 
 ### New in V 8.8:
 - Enabled Neopixels not conflicting with steering servo speed anymore, only executed every 20ms
@@ -647,7 +647,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ### New in V 6.6:
 - Trailer coupling & uncoupling sounds now triggered by a normally open switch, connected between pin 32 and GND. Intended to use the original TAMIYA switch.
-- New "#define THIRD_BRAKLELIGHT" setting in the "6_adjustmentsLights.h" tab. Comment it out, if you want to use the switch above.
+- New "#define THIRD_BRAKELIGHT" setting in the "6_adjustmentsLights.h" tab. Comment it out, if you want to use the switch above.
 - A trailer coupler (5th wheel) servo can now be connectet to the "CH4" header" (not available in PWM communication mode). See note (3 in "adjustmentsRemote.xlsx"
 
 ### New in V 6.5:

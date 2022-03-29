@@ -93,9 +93,11 @@ void channelZero();
 // No need to install these, they come with the ESP32 board definition
 #include "driver/rmt.h"    // for PWM signal detection
 #include "driver/mcpwm.h"  // for servo PWM output
+#include "rom/rtc.h"       // for displaying reset reason
 #include "soc/rtc_wdt.h"   // for watchdog timer
 #include <esp_now.h>
 #include <WiFi.h>
+#include <Esp.h>           // for displaying memory information
 
 // The following tasks are not required for Visual Studio Code IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -161,7 +163,7 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 
 #define RGB_LEDS_PIN 0 // Pin is used for WS2812 LED control
 
-#if defined THIRD_BRAKLELIGHT
+#if defined THIRD_BRAKELIGHT
 #define BRAKELIGHT_PIN 32 // Upper brake lights
 #else
 #define COUPLER_SWITCH_PIN 32 // switch for trailer coupler sound
@@ -469,6 +471,14 @@ volatile uint32_t fixedTimerTicks = maxSampleInterval;
 // It will be used to ensure only only one Task is accessing this resource at any time.
 SemaphoreHandle_t xPwmSemaphore;
 SemaphoreHandle_t xRpmSemaphore;
+
+// These are used to print the reset reason on startup
+const char *RESET_REASONS[] = {"POWERON_RESET", "NO_REASON", "SW_RESET", "OWDT_RESET", "DEEPSLEEP_RESET", "SDIO_RESET", "TG0WDT_SYS_RESET", "TG1WDT_SYS_RESET", "RTCWDT_SYS_RESET", "INTRUSION_RESET", "TGWDT_CPU_RESET", "SW_CPU_RESET", "RTCWDT_CPU_RESET", "EXT_CPU_RESET", "RTCWDT_BROWN_OUT_RESET", "RTCWDT_RTC_RESET"};
+
+// Convert µs to degrees (°)
+float us2degree(uint16_t value) {
+  return (value - 500) / 11.111 - 90.0;
+}
 
 //
 // =======================================================================================================
@@ -1144,7 +1154,7 @@ void IRAM_ATTR readPpm() {
 // TRAILER PRESENCE SWITCH INTERRUPT
 // =======================================================================================================
 //
-#if not defined THIRD_BRAKLELIGHT
+#if not defined THIRD_BRAKELIGHT
 void IRAM_ATTR trailerPresenceSwitchInterrupt() {
   couplerSwitchInteruptLatch = true;
 }
@@ -1202,13 +1212,12 @@ void setupEspNow() {
   WiFi.mode(WIFI_STA); // WIFI_STA = Station (outer required) WIFI_AP = ESP32 is an access point for stations
   WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
   // Output my MAC address - useful for later
-  Serial.print ( "Sound controller MAC address is: ");
-  Serial.println(WiFi.macAddress());
+  Serial.printf("Sound controller MAC address is: %s\n", WiFi.macAddress().c_str());
   // shut down wifi
   WiFi.disconnect();
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
-    Serial.println("Error initializing ESP-NOW");
+    Serial.printf("Error initializing ESP-NOW\n");
     return;
   }
 
@@ -1223,7 +1232,7 @@ void setupEspNow() {
   // Add peer 1
   memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer 1");
+    Serial.printf("Failed to add peer 1\n");
     return;
   }
 
@@ -1231,7 +1240,7 @@ void setupEspNow() {
 #ifdef TRAILER_2
   memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer 2");
+    Serial.printf("Failed to add peer 2\n");
     return;
   }
 #endif
@@ -1240,14 +1249,14 @@ void setupEspNow() {
 #ifdef TRAILER_3
   memcpy(peerInfo.peer_addr, broadcastAddress3, 6);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Failed to add peer 3");
+    Serial.printf("Failed to add peer 3\n");
     return;
   }
 #endif
 
+#endif // WIRELESS_TRAILER
 
-#endif
-}
+} // setupEspNow()
 
 //
 // =======================================================================================================
@@ -1272,9 +1281,21 @@ void setup() {
 
   // Serial setup
   Serial.begin(115200); // USB serial (for DEBUG)
+  delay(1000); // Give serial port/connection some time to get ready
 
-  // ESP NOW setup
-  setupEspNow();
+  // Print some system and software info to serial monitor
+  Serial.printf("\n\nRC engine sound & LED controller for Arduino ESP32 Version %.2f\n", codeVersion);
+  Serial.printf("XTAL Frequency: %i Mhz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
+  Serial.printf("Internal RAM size: %i Byte, Free: %i Byte\n", ESP.getHeapSize(), ESP.getFreeHeap());
+  Serial.printf("WiFi MAC address: %s\n", WiFi.macAddress().c_str());
+  for (uint8_t coreNum = 0; coreNum < 2; coreNum++) {
+    uint8_t resetReason = rtc_get_reset_reason(coreNum);
+    if (resetReason <= (sizeof(RESET_REASONS) / sizeof(RESET_REASONS[0]))) {
+      Serial.printf("Core %i reset reason: %i: %s\n", coreNum, rtc_get_reset_reason(coreNum), RESET_REASONS[resetReason - 1]);
+    }
+  }
+
+   setupEspNow();
 
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the PWM variable.
@@ -1303,7 +1324,7 @@ void setup() {
   pinMode(COMMAND_RX, INPUT_PULLDOWN);
 
 
-#if not defined THIRD_BRAKLELIGHT // If a third brakelight is not defined, pin 32 for the trailer presence switch
+#if not defined THIRD_BRAKELIGHT // If a third brakelight is not defined, pin 32 for the trailer presence switch
   pinMode(COUPLER_SWITCH_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(COUPLER_SWITCH_PIN), trailerPresenceSwitchInterrupt, CHANGE);
 #endif
@@ -1323,7 +1344,7 @@ void setup() {
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 20000); // Timer 10, 20kHz
 #endif
 
-#if defined THIRD_BRAKLELIGHT
+#if defined THIRD_BRAKELIGHT
   brakeLight.begin(BRAKELIGHT_PIN, 11, 20000); // Timer 11, 20kHz
 #endif
   cabLight.begin(CABLIGHT_PIN, 12, 20000); // Timer 12, 20kHz
@@ -1340,8 +1361,10 @@ void setup() {
 #endif
 
   // Neopixel setup
+#ifdef NEOPIXEL_ENABLED
   FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
   FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
+#endif
 
   // Communication setup --------------------------------------------
   indicatorL.on();
@@ -1432,28 +1455,31 @@ void setup() {
   // Read RC signals for the first time (used for offset calculations)
 #if defined SBUS_COMMUNICATION
   sbusInit = false;
-  Serial.println("Initializing SBUS, check transmitter & receiver (sbusInverted true / false OK?)...");
+  Serial.printf("Initializing SBUS (sbusInverted = %s) ...\n", sbusInverted ? "true" : "false");
+  Serial.printf("(Make sure radio and receiver are connected, turned on, bound and configured for SBUS output.)\n");
   while (!sbusInit) {
     readSbusCommands(); // SBUS communication (pin 36)
   }
-  Serial.println("SBUS initialization done!");
+  Serial.printf("... SBUS initialization succesfull!\n");
 
 #elif defined IBUS_COMMUNICATION
   ibusInit = false;
-  Serial.println("Initializing IBUS, check transmitter & receiver...");
+  Serial.printf("Initializing IBUS ...\n");
+  Serial.printf("(Make sure radio and receiver are connected, turned on, bound and configured for IBUS output.)\n");
   while (!ibusInit) {
     readIbusCommands(); // IBUS communication (pin 36)
   }
-  Serial.println("IBUS initialization done!");
+  Serial.printf("... IBUS initialization succesfull!\n");
 
 #elif defined SUMD_COMMUNICATION
   SUMD_init = false;
-  Serial.println("Initializing SUMD, check transmitter & receiver...");
+  Serial.printf("Initializing SUMD ...\n");
+  Serial.printf("(Make sure radio and receiver are connected, turned on, bound and configured for SUMD output.)\n");
   while (!SUMD_init)
   {
     readSumdCommands();
   }
-  Serial.println("SUMD initialization done!");
+  Serial.printf("... SUMD initialization succesfull!\n");
 
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
@@ -1612,7 +1638,7 @@ void readSbusCommands() {
   // Failsafe triggering (works, if SBUS wire is unplugged, but SBUSfailSafe signal from the receiver is untested!)
   if (millis() - lastSbusFailsafe > 50 && !SBUSfailSafe  && !SBUSlostFrame) {
     failSafe = true; // if timeout (signal loss)
-    //Serial.println("SBUS failsafe");
+    //Serial.printf("SBUS failsafe!\n");
   }
   else failSafe = false;
 
@@ -1726,7 +1752,7 @@ void readSumdCommands() {
 
 //
 // =======================================================================================================
-// PROZESS CHANNELS (Normalize, auto zero and reverse)
+// PROCESS CHANNELS (Normalize, auto zero and reverse)
 // =======================================================================================================
 //
 
@@ -1742,16 +1768,16 @@ void processRawChannels() {
 #ifdef AIRPLANE_MODE // If airplane mode: always disable CH3 auto zero adjustment
   channelAutoZero[3] = false;
 #endif
-
+  if (!autoZeroDone) {
+    Serial.printf("Transmitter channel offsets: \n"); // Print offsets, if switching on the controller
+  } 
   if (millis() - lastOutOfRangeMillis > 500) {
-    for (int i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
+    for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
 
       // Position valid for auto calibration? Must be between 1400 and 1600 microseconds
       if (channelAutoZero[i] && !autoZeroDone && (pulseWidthRaw[i] > 1600 || pulseWidthRaw[i] < 1400)) {
         channel = i;
-        Serial.print("CH ");
-        Serial.print(channel);
-        Serial.println(" signal out of auto calibration range, check transmitter & receiver");
+        Serial.printf("CH%i signal out of auto calibration range, check transmitter & receiver!\n", channel);
         channelZero();
         lastOutOfRangeMillis = millis();
         i--;
@@ -1799,10 +1825,7 @@ void processRawChannels() {
       // Compensate pulsewidth with auto zero offset
       pulseWidth[i] += pulseOffset[i];
       if (!autoZeroDone) { // Print offsets, if switching on the controller
-        Serial.print("Offset CH ");
-        Serial.print(i);
-        Serial.print(" [microseconds]: ");
-        Serial.println(pulseOffset[i]);
+        Serial.printf(" CH%i: %i µs\n", i, pulseOffset[i]);
       }
 
       // Set auto zero done flag
@@ -1821,39 +1844,27 @@ void processRawChannels() {
   if (millis() - printChannelMillis > 1000 && autoZeroDone) { // Every 1000ms
     printChannelMillis = millis();
 
-    Serial.println("Channels [microseconds]:");
-    Serial.println(pulseWidth[1]);
-    Serial.println(pulseWidth[2]);
-    Serial.println(pulseWidth[3]);
-    Serial.println(pulseWidth[4]);
-    Serial.println(pulseWidth[5]);
-    Serial.println(pulseWidth[6]);
-    Serial.println(pulseWidth[7]);
-    Serial.println(pulseWidth[8]);
-    Serial.println(pulseWidth[9]);
-    Serial.println(pulseWidth[10]);
-    Serial.println(pulseWidth[11]);
-    Serial.println(pulseWidth[12]);
-    Serial.println(pulseWidth[13]);
-    Serial.println("Throttle:");
-    Serial.println(currentThrottle);
-    Serial.println("States:");
-    Serial.println(mode1);
-    Serial.println(mode2);
-    Serial.println(momentary1);
-    Serial.println(hazard);
-    Serial.println(left);
-    Serial.println(right);
-    Serial.println("Failsafe:");
-    Serial.println(SBUSfailSafe);
-    Serial.println(SBUSlostFrame);
-    Serial.println(failSafe);
-    Serial.println("Misc:");
-    Serial.println(MAX_RPM_PERCENTAGE);
-    Serial.println(loopTime);
-    Serial.println("");
+    Serial.printf("CHANNEL_DEBUG:\n");
+    for (uint8_t channelNum = 1; channelNum < PULSE_ARRAY_SIZE; channelNum++) {
+      Serial.printf(" CH%i: %i µs\n", channelNum, pulseWidth[channelNum]);
+    }
+    Serial.printf("Throttle: %i/%i\n", currentThrottle, maxRpm);
+    Serial.printf("States:\n");
+    Serial.printf(" MODE1:            %s\n", mode1 ? "true" : "false");
+    Serial.printf(" MODE2:            %s\n", mode2 ? "true" : "false");
+    Serial.printf(" MOMENTARY1:       %s\n", momentary1 ? "true" : "false");
+    Serial.printf(" HAZARDS:          %s\n", hazard ? "true" : "false");
+    Serial.printf(" INDICATOR_LEFT:   %s\n", indicatorLon ? "true" : "false");
+    Serial.printf(" INDICATOR_RIGHT:  %s\n", indicatorRon ? "true" : "false");
+    Serial.printf(" SBUS Failsafe:    %s\n", SBUSfailSafe ? "true" : "false");
+    Serial.printf(" SBUS Lost frames: %s\n", SBUSlostFrame ? "true" : "false");
+    Serial.printf(" Failsafe state:   %s\n", failSafe ? "true" : "false");
+    Serial.printf("Misc:\n");
+    Serial.printf(" MAX_RPM_PERCENTAGE: %i\n", MAX_RPM_PERCENTAGE);
+    Serial.printf(" loopTime:           %i\n", loopTime);
+    Serial.printf("-----------------------------------\n");
   }
-#endif
+#endif // CHANNEL_DEBUG
 }
 
 // Sub function for channel centering ----
@@ -1932,7 +1943,7 @@ void mcpwmOutput() {
   static unsigned long steeringDelayMicros;
   int16_t steeringDeviation = 1;
   if (micros() - steeringDelayMicros > STEERING_RAMP_TIME) { // Adjustable steering max. ramp speed
-  // It is required to calculate a variable deviation, accodring to how much "delay" the steering ramp time has
+  // It is required to calculate a variable deviation, according to how much "delay" the steering ramp time has
   // Reason: we have a high interrupt load at high engine RPM. The servo movements are getting too slow otherwise
     steeringDeviation = (micros() - steeringDelayMicros) - STEERING_RAMP_TIME;
     steeringDeviation = constrain(steeringDeviation, 1, 10);
@@ -1944,8 +1955,8 @@ void mcpwmOutput() {
     if (steeringServoMicrosDelayed < steeringServoMicros) steeringServoMicrosDelayed += steeringDeviation;
     if (steeringServoMicrosDelayed > steeringServoMicros) steeringServoMicrosDelayed -= steeringDeviation;
     steeringServoMicrosDelayed = constrain(steeringServoMicrosDelayed, min(CH1L, CH1R), max(CH1L, CH1R));
-    //Serial.println(steeringServoMicros);
-    //Serial.println(steeringServoMicrosDelayed);
+    //Serial.printf("steeringServoMicros: %s\n", steeringServoMicros);
+    //Serial.printf("steeringServoMicrosDelayed: %s\n", steeringServoMicrosDelayed);
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, steeringServoMicrosDelayed);
   }
 
@@ -2019,43 +2030,23 @@ void mcpwmOutput() {
   if (millis() - printServoMillis > 1000) { // Every 1000ms
     printServoMillis = millis();
 
-    Serial.println("Servo Positions: [microseconds], [degrees]");
-
-    Serial.print("CH1 (steering):  ");
-    Serial.print(steeringServoMicrosDelayed);
-    Serial.print(", ");
-    Serial.println((steeringServoMicrosDelayed - 500) / 11.111 - 90);
-
-    Serial.print("CH2 (shifting):  ");
-    Serial.print(shiftingServoMicros);
-    Serial.print(", ");
-    Serial.println((shiftingServoMicros - 500) / 11.111 - 90);
+    Serial.printf("SERVO_DEBUG:\n");
+    Serial.printf("CH1 (steering) :  %i µS, %.2f°\n", steeringServoMicrosDelayed, us2degree(steeringServoMicrosDelayed));
+    Serial.printf("CH2 (shifting) :  %i µS, %.2f°\n", shiftingServoMicros, us2degree(shiftingServoMicros));
 
 #if defined MODE2_WINCH
-    Serial.print("CH3 (winch): ");
-    Serial.print(winchServoMicros);
-    Serial.print(", ");
-    Serial.println((winchServoMicros - 500) / 11.111 - 90);
+    Serial.printf("CH3 (winch)    :  %i µS, %f°\n", winchServoMicros, us2degree(winchServoMicros));
 #endif
 
 #if defined CH3_BEACON
-    Serial.print("CH3 (beacon): ");
-    Serial.print(beaconServoMicros);
-    Serial.print(", ");
-    Serial.println((beaconServoMicros - 500) / 11.111 - 90);
+    Serial.printf("CH3 (winch)    :  %i µS, %f°\n", beaconServoMicros, us2degree(beaconServoMicros));
 #endif
 
-    Serial.print("CH4 (5th wheel): ");
-    Serial.print(couplerServoMicros);
-    Serial.print(", ");
-    Serial.println((couplerServoMicros - 500) / 11.111 - 90);
-
-    Serial.println("");
+    Serial.printf("CH4 (5th wheel):  %i µS, %.2f°\n", couplerServoMicros, us2degree(couplerServoMicros));
+    Serial.printf("-------------------------------------\n");
   }
-#endif
+#endif // SERVO_DEBUG
 }
-
-
 
 //
 // =======================================================================================================
@@ -2098,12 +2089,12 @@ void mapThrottle() {
   if (millis() - printTrackedMillis > 1000) { // Every 1000ms
     printTrackedMillis = millis();
 
-    Serial.println("TRACKED DEBUG:");
-    Serial.println(currentThrottleLR[2]);
-    Serial.println(currentThrottleLR[3]);
-    Serial.println(currentThrottle);
+    Serial.printf("TRACKED DEBUG:\n");
+    Serial.printf("currentThrottleLR[2]: %i\n", currentThrottleLR[2]);
+    Serial.printf("currentThrottleLR[3]: %i\n", currentThrottleLR[3]);
+    Serial.printf("currentThrottle: %i\n", currentThrottle);
   }
-#endif
+#endif // TRACKED_DEBUG
 
 #elif defined EXCAVATOR_MODE // Excavator mode ---------------------------------------------- 
 
@@ -2188,7 +2179,7 @@ void mapThrottle() {
 
     if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 499) currentThrottleFaded += 2;
     if (currentThrottleFaded > currentThrottle && currentThrottleFaded > 2) currentThrottleFaded -= 2;
-    //Serial.println(currentThrottleFaded);
+    //Serial.printf("currentThrottleFaded: %i\n", currentThrottleFaded);
   }
 
   // Calculate throttle dependent engine idle volume
@@ -2331,7 +2322,7 @@ void engineMassSimulation() {
 #else
         //targetRpm = reMap(curveLinear, _currentThrottle); // TODO, not working with enabled WiFi!! Output is always 0, even with fixed 300 input!
         targetRpm = _currentThrottle; // This is working
-        //Serial.println(targetRpm);
+        //Serial.printf(targetRpm);
 #endif
       }
       else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
@@ -2815,14 +2806,15 @@ void gearboxDetection() {
   static unsigned long manualTransDebugMillis;
   if (millis() - manualTransDebugMillis > 100) {
     manualTransDebugMillis = millis();
-    Serial.println(currentThrottle);
-    Serial.println(selectedGear);
-    Serial.println(sequentialLock);
-    Serial.println(currentRpm);
-    Serial.println(currentSpeed);
-    Serial.println("");
+    Serial.printf("MANUAL_TRANS_DEBUG:\n");
+    Serial.printf("currentThrottle: %i\n", currentThrottle);
+    Serial.printf("selectedGear: %i\n", selectedGear);
+    Serial.printf("sequentialLock: %s\n", sequentialLock ? "true" : "false");
+    Serial.printf("currentRpm: %i\n", currentRpm);
+    Serial.printf("currentSpeed: %i\n", currentSpeed);
+    Serial.printf("---------------------------------\n");
   }
-#endif
+#endif // MANUAL_TRANS_DEBUG
 
 #endif // End of not TRACKED_MODE -----------------------------------------------------------------------
 }
@@ -2874,13 +2866,14 @@ void automaticGearSelector() {
     }
 
 #ifdef AUTO_TRANS_DEBUG
-    Serial.println(currentThrottle);
-    Serial.println(selectedAutomaticGear);
-    Serial.println(engineLoad);
-    Serial.println(upShiftPoint);
-    Serial.println(_currentRpm);
-    Serial.println(downShiftPoint);
-    Serial.println("");
+    Serial.printf("AUTO_TRANS_DEBUG:\n");
+    Serial.printf("currentThrottle: %i\n", currentThrottle);
+    Serial.printf("selectedAutomaticGear: %i\n", selectedAutomaticGear);
+    Serial.printf("engineLoad: %i\n", engineLoad);
+    Serial.printf("upShiftPoint: %i\n", upShiftPoint);
+    Serial.printf("_currentRpm: %i\n", _currentRpm);
+    Serial.printf("downShiftPoint: %i\n", downShiftPoint);
+    Serial.printf("-----------------------------------\n");
 #endif
   }
 }
@@ -2954,20 +2947,21 @@ void esc() {
 #ifdef ESC_DEBUG
     if (millis() - lastStateTime > 300) { // Print the data every 300ms
       lastStateTime = millis();
-      Serial.println(driveState);
-      Serial.println(pulse);
-      Serial.println(escPulse);
-      Serial.println(escPulseMin);
-      Serial.println(escPulseMax);
-      Serial.println(brakeRampRate);
-      Serial.println(currentRpm);
-      Serial.println(escPulseWidth);
-      Serial.println(escPulseWidthOut);
-      Serial.println(currentSpeed);
-      Serial.println(speedLimit);
-      Serial.println("");
+      Serial.printf("ESC_DEBUG:\n");
+      Serial.printf("driveState:       %i\n", driveState);
+      Serial.printf("pulse:            %i\n", pulse);
+      Serial.printf("escPulse:         %i\n", escPulse);
+      Serial.printf("escPulseMin:      %i\n", escPulseMin);
+      Serial.printf("escPulseMax:      %i\n", escPulseMax);
+      Serial.printf("brakeRampRate:    %i\n", brakeRampRate);
+      Serial.printf("currentRpm:       %i\n", currentRpm);
+      Serial.printf("escPulseWidth:    %i\n", escPulseWidth);
+      Serial.printf("escPulseWidthOut: %i\n", escPulseWidthOut);
+      Serial.printf("currentSpeed:     %i\n", currentSpeed);
+      Serial.printf("speedLimit:       %i\n", speedLimit);
+      Serial.printf("--------------------------------------\n");
     }
-#endif
+#endif // ESC_DEBUG
 
     // Drive state state machine **********************************************************************************
     switch (driveState) {
@@ -3446,7 +3440,7 @@ void rcTriggerRead() {
 //
 
 void trailerPresenceSwitchRead() {
-#if not defined THIRD_BRAKLELIGHT
+#if not defined THIRD_BRAKELIGHT
   static unsigned long switchMillis;
   static boolean couplerSwitchStateLatch;
 
@@ -3891,7 +3885,7 @@ void loop() {
   }
 
   // Read trailer switch state
-#if not defined THIRD_BRAKLELIGHT
+#if not defined THIRD_BRAKELIGHT
   trailerPresenceSwitchRead();
 #endif
 
