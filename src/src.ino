@@ -2039,7 +2039,7 @@ void mcpwmOutput() {
 #endif
 
 #if defined CH3_BEACON
-    Serial.printf("CH3 (winch)    :  %i µS, %f°\n", beaconServoMicros, us2degree(beaconServoMicros));
+    Serial.printf("CH3 (beacon)    :  %i µS, %f°\n", beaconServoMicros, us2degree(beaconServoMicros));
 #endif
 
     Serial.printf("CH4 (5th wheel):  %i µS, %.2f°\n", couplerServoMicros, us2degree(couplerServoMicros));
