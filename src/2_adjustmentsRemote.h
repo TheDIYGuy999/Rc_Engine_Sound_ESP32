@@ -64,6 +64,18 @@ boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS s
   //#define AUTO_INDICATORS // Indicators triggered automatically by steering angle or manually by controller CH6
 */
 
+// IMPORTANT information for the Flysky FS-i6/X/S radios:
+//
+// (1) Go to "Functions" -> "Switches assign" and select SWA, SWB or SWD for "Fly mode".
+// This will be the switch to access secondary functions on the FUNCTION_R and FUNCTION_L axes (by temporarily limiting their range/dual rate to 75%).
+// This switch should NOT be assigned to anything else in "Aux. channels" (and as such not assigned anywhere below)! Most people use SWA, which is also the default.
+//
+// (2) Now go to "Functions" -> "Dual rate/exp.".
+// Note, that "Normal" changes to "Sport" as soon as the selected Fly mode switch is toggled.
+// 
+// (3) Now switch to "Sport" and set the "Rate" of "Ch2" from 100 to 75.
+// Do the exact same thing for "Ch4", but don't change "Ch1" (this one should still be 100 in both modes)!
+
 // Flysky FS-i6X remote configuration profile ---------------------------------------------------------------------------------------------------
 #ifdef FLYSKY_FS_I6X
 
