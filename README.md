@@ -492,6 +492,10 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 9.1:
+- New Benford 3 Ton Dumper sound
+- New profile for the stick based "Micro RC" DIY remote. Allows to use remote CH 2 & 4 for other stuff
+- New "#define SEMI_AUTOMATIC" option allows to use the 3 position switch for other stuff. The manual transmission is switched automatically
 
 ### New in V 9.0:
 - New parameter #define AIRPLANE_MODE in vehicle file (see MesserschmittBf109.h) for airplanes: throttle range always 1000-2000, idle @ 1000, no clutch simulation. No ESC output support, connect it directly to ESC!

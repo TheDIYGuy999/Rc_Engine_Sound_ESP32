@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 9.0; // Software revision.
+const float codeVersion = 9.1; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -2745,7 +2745,7 @@ void gearboxDetection() {
   // if automatic transmission, always 2nd gear
   if (automatic || doubleClutch) selectedGear = 2;
 
-#ifndef VIRTUAL_16_SPEED_SEQUENTIAL // 3 gears, directly selected by 3 position switch ----
+#if not defined VIRTUAL_16_SPEED_SEQUENTIAL && not defined SEMI_AUTOMATIC// 3 gears, directly selected by 3 position switch ----
   // Gear detection
   if (pulseWidth[2] > 1700) selectedGear = 3;
   else if (pulseWidth[2] < 1300) selectedGear = 1;
@@ -2762,6 +2762,12 @@ void gearboxDetection() {
   }
   if (pulseWidth[2] > 1400 && pulseWidth[2] < 1600) sequentialLock = false;
 #endif // End of VIRTUAL_16_SPEED_SEQUENTIAL ----
+
+#if defined SEMI_AUTOMATIC // gears not controlled by the 3 position switch
+  if (currentRpm > 490 && selectedGear < 3 && !gearUpShiftingInProgress && !gearDownShiftingInProgress && engineLoad < 5 && currentThrottle > 490) selectedGear ++;
+  if (currentRpm < 200 && selectedGear > 1 && !gearUpShiftingInProgress && !gearDownShiftingInProgress) selectedGear --; // 
+  if (neutralGear) selectedGear = 1;
+#endif
 
   // Gear upshifting detection
   if (selectedGear > previousGear) {

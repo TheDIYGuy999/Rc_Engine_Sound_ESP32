@@ -9,11 +9,14 @@
 // #define VIRTUAL_3_SPEED allows to simulate a 3 speed shifing transmission, if your vehicle doesn't have a real one.
 // Gears are shifted, using the 3 position switch. Example: your crawler has a 2 speed transmission, which is used as off road reducer,
 // but no real 3 speed shifting transmission. Don't uncomment if for vehicles with electric or hydrostatic drive or automatic transmissions!
-//#define VIRTUAL_3_SPEED
+#define VIRTUAL_3_SPEED
 //#define VIRTUAL_16_SPEED_SEQUENTIAL // This is still experimental!
 
 //#define TRANSMISSION_NEUTRAL Allows to put the transmission in neutral. This can't be used, if the "Mode 1" button is used for other stuff!
 #define TRANSMISSION_NEUTRAL
+
+// #define SEMI_AUTOMATIC This will simulate a semi automatic transmission. Shifting is not controlled by the 3 position switch in this mode!
+#define SEMI_AUTOMATIC
 
 //#define MODE1_SHIFTING The 2 speed transmission is shifted by the "Mode 1" button instead of the 3 position switch (Micro RC remote only).
 // This is often used in WPL vehicles with 2 speed transmission, used as off road reducer
@@ -28,4 +31,4 @@ uint16_t automaticReverseAccelerationPercentage = 100;
 // Automatic transmission with overdrive (lower RPM in top gear, gear ratio lower than 1:1, 4 & 6 speed only)
 #define OVERDRIVE // This is usually on, but don't use it for double clutch transmissions!
 
-#define DOUBLE_CLUTCH // Double-clutch (Zwischengas) Enable this for older trucks without synchronised gears
+//#define DOUBLE_CLUTCH // Double-clutch (Zwischengas) Enable this for older trucks without synchronised gears

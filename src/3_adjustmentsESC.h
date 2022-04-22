@@ -71,7 +71,8 @@ AS-12/6RW EASY from Modellbau-Regler.de is recommended for smaller vehicles (WPL
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 1200
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck (top speed = 160km/h) = 900
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
-const int16_t escPulseSpan = 1200; // 500 = full ESC power available, 1000 half ESC power available etc. 
+// - Meccano Dumper = 500
+const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. 
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.
@@ -80,7 +81,8 @@ const int16_t escPulseSpan = 1200; // 500 = full ESC power available, 1000 half 
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 40 (was 0)
 // - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 150
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck = 50
-const int16_t escTakeoffPunch = 40; 
+// - Meccano Dumper = 0
+const int16_t escTakeoffPunch = 0; 
 
 // Additional reverse speed (disconnect & reconnect battery after changing this setting):
 // Usually 0. Enlarge it, if your reverse speed is too slow.
@@ -88,4 +90,5 @@ const int16_t escTakeoffPunch = 40;
 // - Hobbywing 1060 ESC & stock WPL 370 motor & 2 speed shifting transmission = 150
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 0
 // - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 80
+// - Meccano Dumper = 0
 const int16_t escReversePlus = 0;

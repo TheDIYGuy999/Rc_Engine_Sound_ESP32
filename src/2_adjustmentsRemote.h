@@ -6,7 +6,8 @@
 //#define FLYSKY_GT5              // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 //#define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
 //#define GRAUPNER_MZ_12          // <------- Graupner MZ-12 PRO
-#define MICRO_RC                 // <------- Don't use this with standard remotes!
+//#define MICRO_RC                // <------- The car style DIY "Micro RC" remote. Don't use this with standard remotes!
+#define MICRO_RC_STICK            // <------- The stick based DIY "Micro RC" remote. Don't use this with standard remotes!
 
 // For testing only!
 //#define FLYSKY_FS_I6S_EXCAVATOR_TEST // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator
@@ -523,7 +524,7 @@ const uint16_t pulseSpan = 480;
 
 #endif
 
-// "Micro RC" DIY Arduino remote configuration profile -------------------------------------------------------------------------------------------
+// "Micro RC" (the car style one) DIY Arduino remote configuration profile -------------------------------------------------------------------------------------------
 #ifdef MICRO_RC
 
 // Channel assignment (use NONE for non existing channels!)
@@ -584,6 +585,72 @@ const uint16_t pulseSpan = 480;
 
 // Automatic or manual modes -----
 //#define AUTO_LIGHTS
+//#define AUTO_ENGINE_ON_OFF
+#define AUTO_INDICATORS
+
+#endif
+
+// "Micro RC" (The stick based one) DIY Arduino remote configuration profile -------------------------------------------------------------------------------------------
+#ifdef MICRO_RC_STICK
+
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 1          // CH1 steering
+#define GEARBOX NONE        // CH2 3 position switch for gearbox (left throttle in tracked mode)
+#define THROTTLE 3          // CH3 throttle & brake (right throttle in tracked mode)
+#define HORN 5              // CH4 horn and bluelight / siren
+#define FUNCTION_R NONE     // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L NONE     // CH6 indicators, hazards
+#define POT2 16             // CH7 pot2
+#define MODE1 6             // CH8 mode 1 switch
+#define MODE2 7             // CH9 mode 2 switch
+#define MOMENTARY1 8        // CH10
+#define HAZARDS 9           // CH11
+#define INDICATOR_LEFT 10   // CH12
+#define INDICATOR_RIGHT 11  // CH13
+
+// Channels reversed or not
+boolean channelReversed[14] = {
+  false, // CH0 (unused)
+  false, // CH1
+  false, // CH2
+  false, // CH3
+  false, // CH4
+  false, // CH5
+  false, // CH6
+  false, // CH7
+  true,  // CH8
+  true,  // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[14] = {
+  false, // CH0 (unused)
+  true,  // CH1 true
+  false, // CH2
+  true,  // CH3 true
+  false, // CH4
+  false, // CH5
+  false, // CH6
+  false, // CH7
+  false, // CH8
+  false, // CH9
+  false, // CH10
+  false, // CH11
+  false, // CH12
+  false  // CH13
+}; 
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+#define AUTO_LIGHTS
 //#define AUTO_ENGINE_ON_OFF
 #define AUTO_INDICATORS
 
