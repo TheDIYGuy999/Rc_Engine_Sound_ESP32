@@ -59,12 +59,13 @@ void channelZero();
 #include "10_adjustmentsTrailer.h"      // <<------- Trailer related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
+//#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
 //#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
+//#define ESPNOW_DEBUG  // uncomment for additional ESP-NOW messages
 //#define CORE_DEBUG // Don't use this!
 
 // TODO = Things to clean up!
@@ -1167,10 +1168,25 @@ void IRAM_ATTR trailerPresenceSwitchInterrupt() {
 //
 
 // callback when data is sent
-void IRAM_ATTR OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  //Serial.print("\r\nLast Packet Send Status:\t");
-  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Trailer found" : "No trailer found");
+void IRAM_ATTR onTrailerDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+
+#ifdef ESPNOW_DEBUG
+
+  // This will confirm, if data was received by peer and which one
+  Serial.printf("ESP-NOW data received by peer %02x:%02x:%02x:%02x:%02x:%02x : %s\n",
+      (unsigned char) mac_addr[0],
+      (unsigned char) mac_addr[1],
+      (unsigned char) mac_addr[2],
+      (unsigned char) mac_addr[3],
+      (unsigned char) mac_addr[4],
+      (unsigned char) mac_addr[5],
+      ESP_NOW_SEND_SUCCESS == status ? "OK" : "FAILED"
+    );
+
   //pollRate = ESP_NOW_SEND_SUCCESS ? 20 : 100; // TODO
+
+#endif
+
 }
 
 //
@@ -1211,45 +1227,42 @@ void setupEspNow() {
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA); // WIFI_STA = Station (outer required) WIFI_AP = ESP32 is an access point for stations
   WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
-  // Output my MAC address - useful for later
-  Serial.printf("Sound controller MAC address is: %s\n", WiFi.macAddress().c_str());
   // shut down wifi
   WiFi.disconnect();
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
-    Serial.printf("Error initializing ESP-NOW\n");
+    Serial.printf("Error initializing ESP-NOW!\n");
     return;
   }
 
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent); // TODO, optional
+  // Register callback function to call when data was sent (used only for debug for now)
+  esp_now_register_send_cb(onTrailerDataSent); // TODO, optional
 
   // Register peer
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
 
-  // Add peer 1
-  memcpy(peerInfo.peer_addr, broadcastAddress1, 6);
+  // Add peer 1 (1st trailer)
+  memcpy(peerInfo.peer_addr, broadcastAddress1, ESP_NOW_ETH_ALEN);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.printf("Failed to add peer 1\n");
+    Serial.printf("Failed to add peer #1 (1st trailer)\n");
     return;
   }
 
-  // Add peer 2
+  // Add peer 2 (2nd trailer)
 #ifdef TRAILER_2
-  memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
+  memcpy(peerInfo.peer_addr, broadcastAddress2, ESP_NOW_ETH_ALEN);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.printf("Failed to add peer 2\n");
+    Serial.printf("Failed to add peer #2 (2nd trailer)\n");
     return;
   }
 #endif
 
-  // Add peer 3
+  // Add peer 3 (3rd trailer)
 #ifdef TRAILER_3
-  memcpy(peerInfo.peer_addr, broadcastAddress3, 6);
+  memcpy(peerInfo.peer_addr, broadcastAddress3, ESP_NOW_ETH_ALEN);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.printf("Failed to add peer 3\n");
+    Serial.printf("Failed to add peer #3 (3rd trailer)\n");
     return;
   }
 #endif
@@ -3830,9 +3843,19 @@ else {
 
       // If so, then send message via ESP-NOW
       esp_err_t result = esp_now_send(0, (uint8_t *) &trailerData, sizeof(trailerData));
+
+#ifdef ESPNOW_DEBUG
+
+      // This will confirm if a message was SENT successfully (callback will later check if RECEIVED and by whom).
+      Serial.printf("ESP-NOW data sent: %s\n", result == ESP_NOW_SEND_SUCCESS ? "OK" : "FAILED");
+
+#endif
+
     }
   }
+
 #endif
+
 }
 
 //
