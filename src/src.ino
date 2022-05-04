@@ -3815,6 +3815,21 @@ else {
     trailerData.indicatorL = 0;
     trailerData.indicatorR = 0;
 }
+#elif defined(TRAILER_LIGHTS_TRAILER_PRESENCE_WHILE_5TH_WHEEL_LOCKED) //Tralier lights depending on trucks 5-th wheel
+if (!unlock5thWheel) {
+    trailerData.tailLight = ledcRead(2);
+    trailerData.sideLight = ledcRead(8);
+    trailerData.reversingLight = ledcRead(6);
+    trailerData.indicatorL = ledcRead(3);
+    trailerData.indicatorR = ledcRead(4);
+}
+else {
+    trailerData.tailLight = 0;
+    trailerData.sideLight = 0;
+    trailerData.reversingLight = 0;
+    trailerData.indicatorL = 0;
+    trailerData.indicatorR = 0;
+}      
 #else // Trailer lights always on
     trailerData.tailLight = ledcRead(2);
     trailerData.sideLight = ledcRead(8);
