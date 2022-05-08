@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 9.1; // Software revision.
+const float codeVersion = 9.2; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -60,7 +60,7 @@ void channelZero();
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
-//#define ESC_DEBUG // uncomment it to debug the ESC
+#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
@@ -98,6 +98,7 @@ void channelZero();
 #include "soc/rtc_wdt.h"   // for watchdog timer
 #include <esp_now.h>
 #include <WiFi.h>
+#include <WebServer.h>
 #include <Esp.h>           // for displaying memory information
 
 // The following tasks are not required for Visual Studio Code IDE! ----
@@ -118,6 +119,11 @@ void channelZero();
 // Use a 330Ohm resistor in series with all I/O pins! allows to drive LED directly and
 // provides short circuit protection. Also works on the serial Rx pin "VP" (36)
 // ------------------------------------------------------------------------------------
+
+
+// Serial command pins for SBUS & IBUS -----
+#define DEBUG_RX 99 // 99 is just a dummy, because the "RX0" pin (GPIO3) is used for the headlights and causing issues, if rx enabled!
+#define DEBUG_TX 1 // The "RX0" is on pin 1 
 
 // Serial command pins for SBUS & IBUS -----
 #define COMMAND_RX 36 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
@@ -148,7 +154,7 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 #ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
 #define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
 #else
-#define HEADLIGHT_PIN 3 // 3 = RX0 pin, (1 = TX0 is not usable) white headllights
+#define HEADLIGHT_PIN 3 // 3 = "RX0" pin, (1 = "TX0" is not usable) white headllights
 #endif
 
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
@@ -194,7 +200,7 @@ statusLED shakerMotor(false);
 statusLED cabLight(false);
 statusLED brakeLight(false);
 
-statusLED escOut(false);
+// statusLED escOut(false); ESC now using mcpwm
 
 // rcTrigger objects -----
 // Analog or 3 position switches (short / long pressed time)
@@ -224,6 +230,9 @@ Dashboard dashboard;
 
 // Neopixel
 CRGB rgbLEDs[NEOPIXEL_COUNT];
+
+// Webserver for configuration
+WebServer server(80);
 
 // Global variables **********************************************************************
 
@@ -1173,15 +1182,15 @@ void IRAM_ATTR onTrailerDataSent(const uint8_t *mac_addr, esp_now_send_status_t 
 #ifdef ESPNOW_DEBUG
 
   // This will confirm, if data was received by peer and which one
-  Serial.printf("ESP-NOW data received by peer %02x:%02x:%02x:%02x:%02x:%02x : %s\n",
-      (unsigned char) mac_addr[0],
-      (unsigned char) mac_addr[1],
-      (unsigned char) mac_addr[2],
-      (unsigned char) mac_addr[3],
-      (unsigned char) mac_addr[4],
-      (unsigned char) mac_addr[5],
-      ESP_NOW_SEND_SUCCESS == status ? "OK" : "FAILED"
-    );
+  Serial.printf("ESP-NOW data received by peer (trailer) %02x:%02x:%02x:%02x:%02x:%02x : %s\n",
+                (unsigned char) mac_addr[0],
+                (unsigned char) mac_addr[1],
+                (unsigned char) mac_addr[2],
+                (unsigned char) mac_addr[3],
+                (unsigned char) mac_addr[4],
+                (unsigned char) mac_addr[5],
+                ESP_NOW_SEND_SUCCESS == status ? "OK" : "FAILED"
+               );
 
   //pollRate = ESP_NOW_SEND_SUCCESS ? 20 : 100; // TODO
 
@@ -1191,17 +1200,17 @@ void IRAM_ATTR onTrailerDataSent(const uint8_t *mac_addr, esp_now_send_status_t 
 
 //
 // =======================================================================================================
-// mcpwm SETUP (1x during startup)
+// mcpwm unit 0 SETUP for servos (1x during startup)
 // =======================================================================================================
 //
 // See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
 
 void setupMcpwm() {
   // 1. set our servo output pins
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN);    //Set steering as PWM0A
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN);    //Set shifting as PWM0B
-  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1A, COUPLER_PIN);    //Set coupling as PWM1A
-  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM1B, WINCH_PIN);    //Set winch as PWM1B
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN);   //Set steering as PWM0A
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN);   //Set shifting as PWM0B
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN);    //Set coupling as PWM1A
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN);      //Set winch  or beacon as PWM1B
 
   // 2. configure MCPWM parameters
   mcpwm_config_t pwm_config;
@@ -1213,7 +1222,30 @@ void setupMcpwm() {
 
   // 3. configure channels with settings above
   mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
-  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_1, &pwm_config);    //Configure PWM1A & PWM1B
+  mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_1, &pwm_config);    //Configure PWM1A & PWM1B
+}
+
+//
+// =======================================================================================================
+// mcpwm unit 1 SETUP for ESC (1x during startup)
+// =======================================================================================================
+//
+// See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
+
+void setupMcpwmESC() {
+  // 1. set our ESC output pin
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, ESC_OUT_PIN);    //Set ESC as PWM0A
+
+  // 2. configure MCPWM parameters
+  mcpwm_config_t pwm_config;
+  pwm_config.frequency = 50;                  //frequency always 50Hz
+  pwm_config.cmpr_a = 0;                      //duty cycle of PWMxa = 0
+  pwm_config.cmpr_b = 0;                      //duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER;
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
+
+  // 3. configure channels with settings above
+  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
 }
 
 //
@@ -1223,9 +1255,15 @@ void setupMcpwm() {
 //
 
 void setupEspNow() {
+  //#if defined WIRELESS_TRAILER
+  // Set device as a Wi-Fi Access point for configuration
+  WiFi.mode(WIFI_AP); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations
+  // Output my MAC address - useful for later
+  Serial.printf("Sound controller MAC address is: %s\n", WiFi.macAddress().c_str());
+
 #if defined WIRELESS_TRAILER
-  // Set device as a Wi-Fi Station
-  WiFi.mode(WIFI_STA); // WIFI_STA = Station (outer required) WIFI_AP = ESP32 is an access point for stations
+  // Set device as a Wi-Fi Station for ESP-NOW
+  WiFi.mode(WIFI_STA); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations
   WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
   // shut down wifi
   WiFi.disconnect();
@@ -1293,11 +1331,13 @@ void setup() {
   rtc_wdt_protect_on();         // Enable RTC WDT write protection
 
   // Serial setup
-  Serial.begin(115200); // USB serial (for DEBUG)
+  Serial.begin(115200, SERIAL_8N1, DEBUG_RX, DEBUG_TX);// USB serial (for DEBUG) Mode, Rx pin (99 = not used), Tx pin
   delay(1000); // Give serial port/connection some time to get ready
 
   // Print some system and software info to serial monitor
-  Serial.printf("\n\nRC engine sound & LED controller for Arduino ESP32 Version %.2f\n", codeVersion);
+  Serial.printf("\n\nTheDIYGug999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
+  Serial.printf("https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32\n");
+  Serial.printf("Please read carefully: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/README.md\n");
   Serial.printf("XTAL Frequency: %i Mhz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
   Serial.printf("Internal RAM size: %i Byte, Free: %i Byte\n", ESP.getHeapSize(), ESP.getFreeHeap());
   Serial.printf("WiFi MAC address: %s\n", WiFi.macAddress().c_str());
@@ -1308,7 +1348,7 @@ void setup() {
     }
   }
 
-   setupEspNow();
+  setupEspNow();
 
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the PWM variable.
@@ -1342,8 +1382,8 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(COUPLER_SWITCH_PIN), trailerPresenceSwitchInterrupt, CHANGE);
 #endif
 
-  // LED & shaker motor setup (note, that we only have timers from 0 - 15)
-  headLight.begin(HEADLIGHT_PIN, 1, 20000); // Timer 1, 20kHz
+  // LED & shaker motor setup (note, that we only have timers from 0 - 15, but 0 - 1 are used for interrupts!)
+  headLight.begin(HEADLIGHT_PIN, 15, 20000); // Timer 15, 20kHz
   tailLight.begin(TAILLIGHT_PIN, 2, 20000); // Timer 2, 20kHz
   indicatorL.begin(INDICATOR_LEFT_PIN, 3, 20000); // Timer 3, 20kHz
   indicatorR.begin(INDICATOR_RIGHT_PIN, 4, 20000); // Timer 4, 20kHz
@@ -1366,7 +1406,8 @@ void setup() {
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
 #endif
 
-  escOut.begin(ESC_OUT_PIN, 15, 50, 16); // Timer 15, 50Hz, 16bit <-- ESC running @ 50Hz
+  // ESC setup
+  setupMcpwmESC(); // ESC now using mpcpwm
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
@@ -1444,7 +1485,7 @@ void setup() {
   xTaskCreatePinnedToCore(
     Task1code,   // Task function
     "Task1",     // name of task
-    8192,       // Stack size of task (10000)
+    8192,       // Stack size of task (8192)
     NULL,        // parameter of the task
     1,           // priority of the task (1 = low, 3 = medium, 5 = highest)
     &Task1,      // Task handle to keep track of created task
@@ -1468,12 +1509,12 @@ void setup() {
   // Read RC signals for the first time (used for offset calculations)
 #if defined SBUS_COMMUNICATION
   sbusInit = false;
-  Serial.printf("Initializing SBUS (sbusInverted = %s) ...\n", sbusInverted ? "true" : "false");
+  Serial.printf("Initializing SBUS (sbusInverted = %s, needs to be true for most standard radios) ...\n", sbusInverted ? "true" : "false");
   Serial.printf("(Make sure radio and receiver are connected, turned on, bound and configured for SBUS output.)\n");
   while (!sbusInit) {
     readSbusCommands(); // SBUS communication (pin 36)
   }
-  Serial.printf("... SBUS initialization succesfull!\n");
+  Serial.printf("... SBUS initialization succesful!\n");
 
 #elif defined IBUS_COMMUNICATION
   ibusInit = false;
@@ -1482,7 +1523,7 @@ void setup() {
   while (!ibusInit) {
     readIbusCommands(); // IBUS communication (pin 36)
   }
-  Serial.printf("... IBUS initialization succesfull!\n");
+  Serial.printf("... IBUS initialization succesful!\n");
 
 #elif defined SUMD_COMMUNICATION
   SUMD_init = false;
@@ -1492,7 +1533,7 @@ void setup() {
   {
     readSumdCommands();
   }
-  Serial.printf("... SUMD initialization succesfull!\n");
+  Serial.printf("... SUMD initialization succesful!\n");
 
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
@@ -1783,7 +1824,7 @@ void processRawChannels() {
 #endif
   if (!autoZeroDone) {
     Serial.printf("Transmitter channel offsets: \n"); // Print offsets, if switching on the controller
-  } 
+  }
   if (millis() - lastOutOfRangeMillis > 500) {
     for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
 
@@ -1931,7 +1972,7 @@ bool beaconControl(uint8_t pulses) {
       pulseWidth = CH3L;
       i++;
     }
-    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, pulseWidth);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, pulseWidth);
   }
 
   if (i >= pulses) {
@@ -1956,8 +1997,8 @@ void mcpwmOutput() {
   static unsigned long steeringDelayMicros;
   int16_t steeringDeviation = 1;
   if (micros() - steeringDelayMicros > STEERING_RAMP_TIME) { // Adjustable steering max. ramp speed
-  // It is required to calculate a variable deviation, according to how much "delay" the steering ramp time has
-  // Reason: we have a high interrupt load at high engine RPM. The servo movements are getting too slow otherwise
+    // It is required to calculate a variable deviation, according to how much "delay" the steering ramp time has
+    // Reason: we have a high interrupt load at high engine RPM. The servo movements are getting too slow otherwise
     steeringDeviation = (micros() - steeringDelayMicros) - STEERING_RAMP_TIME;
     steeringDeviation = constrain(steeringDeviation, 1, 10);
     steeringDelayMicros = micros();
@@ -2000,7 +2041,7 @@ void mcpwmOutput() {
     if (winchServoMicros < winchServoMicrosTarget) winchServoMicros ++;
     if (winchServoMicros > winchServoMicrosTarget) winchServoMicros --;
   }
-  mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
 #endif
 
   // Beacon CH3 **********************
@@ -2035,7 +2076,7 @@ void mcpwmOutput() {
   static uint16_t couplerServoMicros;
   if (unlock5thWheel) couplerServoMicros = CH4R;
   else couplerServoMicros = CH4L;
-  mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_OPR_A, couplerServoMicros);
+  mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, couplerServoMicros);
 
   // Print servo signal debug infos **********************
   static unsigned long printServoMillis;
@@ -2138,7 +2179,7 @@ void mapThrottle() {
   if (millis() - rpmLoweringMillis > 5000) rpmLowering = 250; // Medium RPM
   else rpmLowering = 0; // Full RPM
 
-  #elif defined AIRPLANE_MODE // Airplane mode ---------------------------------------------- 
+#elif defined AIRPLANE_MODE // Airplane mode ---------------------------------------------- 
 
   // Never engage clutch
   maxClutchSlippingRpm = 500;
@@ -2458,7 +2499,7 @@ static unsigned long xenonMillis;
 uint32_t indicatorFade = 300; // 300 is the fading time, simulating an incandescent bulb
 
 // Brake light sub function ---------------------------------
-void brakeLightsSub(int8_t brightness) {
+void brakeLightsSub(uint8_t brightness) {
   if (escIsBraking) {
     tailLight.pwm(255 - crankingDim);  // Taillights (full brightness)
     brakeLight.pwm(255 - crankingDim); // Brakelight on
@@ -2609,7 +2650,7 @@ void led() {
   }
   else { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
     if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness)) indicatorSoundOn = true;
-    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness);   
+    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness);
   }
 
   // Headlights, tail lights ----
@@ -2763,8 +2804,9 @@ void gearboxDetection() {
   if (pulseWidth[2] > 1700) selectedGear = 3;
   else if (pulseWidth[2] < 1300) selectedGear = 1;
   else selectedGear = 2;
+#endif // End of manual 3 speed ---- 
 
-#else // 16 gears, selected by up / down impulses ----
+#if defined VIRTUAL_16_SPEED_SEQUENTIAL // 16 gears, selected by up / down impulses ----
   if (pulseWidth[2] > 1700 && selectedGear < 16 && !sequentialLock) {
     sequentialLock = true;
     selectedGear ++;
@@ -2776,11 +2818,11 @@ void gearboxDetection() {
   if (pulseWidth[2] > 1400 && pulseWidth[2] < 1600) sequentialLock = false;
 #endif // End of VIRTUAL_16_SPEED_SEQUENTIAL ----
 
-#if defined SEMI_AUTOMATIC // gears not controlled by the 3 position switch
+#if defined SEMI_AUTOMATIC // gears not controlled by the 3 position switch but by RPM limits ----
   if (currentRpm > 490 && selectedGear < 3 && !gearUpShiftingInProgress && !gearDownShiftingInProgress && engineLoad < 5 && currentThrottle > 490) selectedGear ++;
-  if (currentRpm < 200 && selectedGear > 1 && !gearUpShiftingInProgress && !gearDownShiftingInProgress) selectedGear --; // 
+  if (currentRpm < 200 && selectedGear > 1 && !gearUpShiftingInProgress && !gearDownShiftingInProgress) selectedGear --; //
   if (neutralGear) selectedGear = 1;
-#endif
+#endif // End of SEMI_AUTOMATIC ----
 
   // Gear upshifting detection
   if (selectedGear > previousGear) {
@@ -3114,11 +3156,11 @@ void esc() {
 
     // ESC control
 #ifndef ESC_DIR
-    escSignal = map(escPulseWidthOut, escPulseMin, escPulseMax, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534, not reversed)
+    escSignal = escPulseWidthOut;
 #else
-    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, 3278, 6553); // 1 - 2ms (5 - 10% pulsewidth of 65534, reversed)
+    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, escPulseMin, escPulseMax); // direction inversed
 #endif
-    escOut.pwm(escSignal);
+    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
 
 
     // Calculate a speed value from the pulsewidth signal (used as base for engine sound RPM while clutch is engaged)
@@ -3607,10 +3649,10 @@ void updateDashboard() {
 #ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
   dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel));
   dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel));
-#else  
+#else
   dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard));
   dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard));
-#endif  
+#endif
   dashboard.setLowBeamIndicator(lightsOn);
   dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
   dashboard.setFogLightIndicator(fogLightOn);
@@ -3649,13 +3691,13 @@ void updateRGBLEDs() {
 
   static uint32_t lastNeopixelTime = millis();
 
+#ifdef NEOPIXEL_DEMO // Demo -------------------------------------------------------------
   if (millis() - lastNeopixelTime > 20) { // Every 20 ms
     lastNeopixelTime = millis();
 
     uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
 
     rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
-    //FastLED.show();
     rgbLEDs[1] = CRGB::Red;
     rgbLEDs[2] = CRGB::White;
     rgbLEDs[3] = CRGB::Yellow;
@@ -3663,6 +3705,50 @@ void updateRGBLEDs() {
     rgbLEDs[5] = CRGB::Green;
     FastLED.show();
   }
+#endif
+
+#ifdef NEOPIXEL_KNIGHT_RIDER // Knight Rider ---------------------------------------------
+  static int16_t increment = 1;
+  static int16_t counter = 0;
+
+  if (millis() - lastNeopixelTime > 100) { // Every 100 ms
+    lastNeopixelTime = millis();
+
+    counter += increment;
+    if (counter == NEOPIXEL_COUNT - 1) increment = -1;
+    if (counter == 0) increment = 1;
+    rgbLEDs[counter] = CRGB::Red;
+    for (int i = 0; i < NEOPIXEL_COUNT; i++) {
+      rgbLEDs[i].nscale8(190);  //190
+    }
+    FastLED.show();
+  }
+#endif
+
+#ifdef NEOPIXEL_B33LZ3BUB // B33lz3bub Austria cab light ---------------------------------
+  if (millis() - lastNeopixelTime > 20) { // Every 20 ms
+    lastNeopixelTime = millis();
+
+    uint8_t hue = map(pulseWidth[7], 1000, 2000, 0, 255);   // map pulseWidth[7] from poti VRA to hue
+    if (hue <= 20) {    // LEDs off
+      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+    }
+    else if (hue > 20 && hue < 235) {     // different colors depending on potentiometer VRA CH7
+      for (int i = 0; i < NEOPIXEL_COUNT; i++) {
+        rgbLEDs[i] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+      }
+    }
+    else if (hue >= 235 && hue < 250) {   // colors red-white-red -> flag color for Austria ;-)
+      rgbLEDs[0] = CRGB::Red;
+      rgbLEDs[1] = CRGB::White;
+      rgbLEDs[2] = CRGB::Red;
+    }
+    else {
+      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White);  // only white
+    }
+    FastLED.show();
+  }
+#endif
 }
 
 //
@@ -3798,23 +3884,23 @@ void trailerControl() {
     rampsdownOld = trailerData.rampsDown;
     beaconsOnOld = trailerData.beaconsOn;
 
-    // Set values to send 
+    // Set values to send
     // Lights (timer number in brackets, not pin number, see LED setup section)
 #ifdef TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT // Tralier lights depending on truck mounted switch
-if (trailerDetected) {
-    trailerData.tailLight = ledcRead(2);
-    trailerData.sideLight = ledcRead(8);
-    trailerData.reversingLight = ledcRead(6);
-    trailerData.indicatorL = ledcRead(3);
-    trailerData.indicatorR = ledcRead(4);
-}
-else {
-    trailerData.tailLight = 0;
-    trailerData.sideLight = 0;
-    trailerData.reversingLight = 0;
-    trailerData.indicatorL = 0;
-    trailerData.indicatorR = 0;
-}
+    if (trailerDetected) {
+      trailerData.tailLight = ledcRead(2);
+      trailerData.sideLight = ledcRead(8);
+      trailerData.reversingLight = ledcRead(6);
+      trailerData.indicatorL = ledcRead(3);
+      trailerData.indicatorR = ledcRead(4);
+    }
+    else {
+      trailerData.tailLight = 0;
+      trailerData.sideLight = 0;
+      trailerData.reversingLight = 0;
+      trailerData.indicatorL = 0;
+      trailerData.indicatorR = 0;
+    }
 #else // Trailer lights always on
     trailerData.tailLight = ledcRead(2);
     trailerData.sideLight = ledcRead(8);

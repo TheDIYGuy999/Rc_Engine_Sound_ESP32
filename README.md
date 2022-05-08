@@ -492,6 +492,12 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 9.2:
+- Now compatible with latest Espressif Systems ESP32 board definition 1.0.6 (problem was caused by haedlights conflicting with TX pin)
+- ESC now controlled by mcpwm (as all other servo outputs) instead of statusLED
+- "Knight Rider" scanner for 8 Neopixels
+- "b33lz3bub" Austria cab light animation for 3 Neopixels
+
 ### New in V 9.1:
 - New Benford 3 Ton Dumper sound
 - New profile for the stick based "Micro RC" DIY remote. Allows to use remote CH 2 & 4 for other stuff

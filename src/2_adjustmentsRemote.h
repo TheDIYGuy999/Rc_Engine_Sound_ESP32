@@ -6,8 +6,8 @@
 //#define FLYSKY_GT5              // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 //#define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
 //#define GRAUPNER_MZ_12          // <------- Graupner MZ-12 PRO
-//#define MICRO_RC                // <------- The car style DIY "Micro RC" remote. Don't use this with standard remotes!
-#define MICRO_RC_STICK            // <------- The stick based DIY "Micro RC" remote. Don't use this with standard remotes!
+#define MICRO_RC                // <------- The car style DIY "Micro RC" remote. Don't use this with standard remotes!
+//#define MICRO_RC_STICK            // <------- The stick based DIY "Micro RC" remote. Don't use this with standard remotes!
 
 // For testing only!
 //#define FLYSKY_FS_I6S_EXCAVATOR_TEST // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator
