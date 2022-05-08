@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 // VEHICLE SETTINGS ****************************************************************************************************
 // Select the vehicle preset you want (uncomment the one you want, remove //, never more than one)
 

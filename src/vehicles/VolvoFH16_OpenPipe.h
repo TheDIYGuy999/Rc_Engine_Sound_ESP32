@@ -1,4 +1,6 @@
-// Vehicle specific settings for sound, lights, ESC, transmission.
+#include <Arduino.h>
+
+// Vehicle specific settings for sound, lights, ESC, transmission. This is a vehicle specific file.
 // See: https://www.youtube.com/watch?v=MU1iwzl33Zw&list=LL&index=4
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------

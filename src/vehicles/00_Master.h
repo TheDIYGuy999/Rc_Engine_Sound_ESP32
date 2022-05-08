@@ -1,4 +1,7 @@
-// Vehicle specific settings for sound, lights, ESC, transmission. This master file is containing all available sounds, which are not already used in pre made configurations
+#include <Arduino.h>
+
+// Vehicle specific settings for sound, lights, ESC, transmission.
+// This master file is containing all available sounds, which are not already used in pre made configurations
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
