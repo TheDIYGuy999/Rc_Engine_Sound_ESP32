@@ -3,10 +3,9 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 90; // Adjust the start volume (usually = 100%)
-//#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
-#include "sounds/ScaniaV8Start.h" // Scania V8 Start
+//#include "sounds/UnionPacific2002start.h" // Union Pacific 2002 SD70M Locomotive Start
+#include "sounds/ScaniaV8start.h" // Scania V8 Start
 //#include "sounds/ScaniaR500V8Start.h" // Scania R500 V8 Start
-//#include "sounds/ScaniaV8StartNew.h" // Scania V8 Start
 //#include "sounds/UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available) use it for King Hauler
 //#include "sounds/HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
@@ -37,8 +36,7 @@ volatile const uint16_t revSwitchPoint = 250; // The rev sound is played instead
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-//#include "sounds/ScaniaV8Rev.h" // Scania V8
-#include "sounds/ScaniaV8Rev2.h" // Scania V8
+#include "sounds/ScaniaV8rev.h" // Scania V8
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------

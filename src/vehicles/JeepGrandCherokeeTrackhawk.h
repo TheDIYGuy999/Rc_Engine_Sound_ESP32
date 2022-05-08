@@ -19,8 +19,7 @@ volatile int engineRevVolumePercentage = 30; // the engine volume will be thrott
 const uint16_t revSwitchPoint = 250; // The rev sound is played instead of the idle sound above this point
 const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 #ifdef REV_SOUND
-//#include "sounds/ScaniaV8Rev.h" // Scania V8
-#include "sounds/ScaniaV8Rev2.h" // Scania V8
+#include "sounds/ScaniaV8rev.h" // Scania V8
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------

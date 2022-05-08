@@ -3,13 +3,13 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 130; // Adjust the start volume (usually = 100%)
-#include "sounds/MesserschmittBf109Start3.h" // Messerschmitt Bf109 Start
+#include "sounds/MesserschmittBf109start3.h" // Messerschmitt Bf109 Start
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 110; // Volume Percentage while full throttle (for rev sound as well)
-#include "sounds/MesserschmittBf109Idle.h" // Messerschmitt Bf109
+#include "sounds/MesserschmittBf109idle.h" // Messerschmitt Bf109
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
@@ -19,7 +19,7 @@ volatile const uint16_t revSwitchPoint = 150; // The rev sound is played instead
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-#include "sounds/MesserschmittBf109Rev.h" // Messerschmitt Bf109 Rev
+#include "sounds/MesserschmittBf109rev.h" // Messerschmitt Bf109 Rev
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
@@ -40,7 +40,7 @@ volatile int dieselKnockStartPoint = 200; // Volume will raise above this point 
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the more silent knocks (usually = 50%)
-#include "sounds/MesserschmittBf109Knock.h" // Messerschmitt Bf109 Knock
+#include "sounds/MesserschmittBf109knock.h" // Messerschmitt Bf109 Knock
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 40; // Adjust the turbo volume (usually = 70%)

@@ -3,10 +3,9 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 100%)
-//#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
-//#include "sounds/ScaniaV8Start.h" // Scania V8 Start
+//#include "sounds/UnionPacific2002start.h" // Union Pacific 2002 SD70M Locomotive Start
+//#include "sounds/ScaniaV8start.h" // Scania V8 Start
 //#include "sounds/ScaniaR500V8Start.h" // Scania R500 V8 Start
-//#include "sounds/ScaniaV8StartNew.h" // Scania V8 Start
 //#include "sounds/UralV8Start.h" // Ural 4320 V8 Start (use it for Diesel trucks, if no other is available) use it for King Hauler
 //#include "sounds/HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/DefenderV8Start.h" // Land Rover Defender V8 Start
@@ -22,7 +21,7 @@ volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 
 //#include "sounds/v8soundteststart.h" // Wombii's Scania V8 Fire Truck start
 //#include "sounds/JeepGrandCherokeeTrackhawkStart.h" // Jeep Grand Cherokee Trackhawk start
 //#include "sounds/carCranking.h" // Generic car cranking
-//#include "sounds/MesserschmittBf109Start.h" // Messerschmitt Bf109 Start
+//#include "sounds/MesserschmittBf109start3.h" // Messerschmitt Bf109 Start
 //#include "sounds/UnimogU1000Start.h" // Unimog U1000 Turbo
 #include "sounds/Cat3408Start.h" // CAT 3408 V8 Diesel start (Kenworth W900A)
 //#include "sounds/1981KenworthW900A_DetroitStart.h" // Detroit Diesel 8V71 start sound (1981 Kenworth W900A)
@@ -32,8 +31,8 @@ volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 
 volatile int idleVolumePercentage = 90; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full throttle (for rev sound as well)
-//#include "sounds/M35Idle.h" // AM General M35 Truck
-#include "sounds/M35Idle2.h" // AM General M35 Truck
+//#include "sounds/M35idle.h" // AM General M35 Truck
+#include "sounds/M35idle2.h" // AM General M35 Truck
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound

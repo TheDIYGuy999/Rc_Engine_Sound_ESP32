@@ -3,7 +3,7 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 160; // Adjust the start volume (usually = 100%)
-#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
+#include "sounds/UnionPacific2002start.h" // Union Pacific 2002 SD70M Locomotive Start
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 90; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
@@ -12,7 +12,7 @@ volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full
 //#include "sounds/20Hz.h" // 20Hz test tone
 //#include "sounds/100Hz.h" // 100Hz test tone
 //#include "sounds/1000Hz.h" // 1000Hz test tone
-#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
+#include "sounds/UnionPacific2002idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
