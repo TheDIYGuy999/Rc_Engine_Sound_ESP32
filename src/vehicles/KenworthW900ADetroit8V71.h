@@ -30,10 +30,8 @@ volatile const uint16_t revSwitchPoint = 50; // The rev sound is played instead 
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
-//#include "sounds/ScaniaV8Rev.h" // Scania V8
-//#include "sounds/ScaniaV8Rev2.h" // Scania V8
-//#include "sounds/MesserschmittBf109Rev.h" // Messerschmitt Bf109 Rev
-//#include "sounds/MesserschmittBf109Rev2.h" // Messerschmitt Bf109 Rev
+//#include "sounds/ScaniaV8rev.h" // Scania V8
+//#include "sounds/MesserschmittBf109rev.h" // Messerschmitt Bf109 Rev
 //#include "sounds/3408CatRev.h" // CAT 3408 V8 Diesel idle (Kenworth W900A)
 //#include "sounds/3408CaterpillarPeterbiltRev.h" // CAT 3408 V8 Diesel rev (Peterbilt)
 //#include "sounds/BadAssRev.h" // Badass rev

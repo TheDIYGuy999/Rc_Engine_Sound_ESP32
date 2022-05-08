@@ -6,7 +6,7 @@
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
 volatile int startVolumePercentage = 150; // Adjust the start volume (usually = 100%)
-//#include "sounds/UnionPacific2002Start.h" // Union Pacific 2002 SD70M Locomotive Start
+//#include "sounds/UnionPacific2002start.h" // Union Pacific 2002 SD70M Locomotive Start
 //#include "sounds/HgP408Start.h" // HG P408 Humvee Diesel (only for small speakers)
 //#include "sounds/KenworthW900Start.h" // Kenworth W900 Truck Start
 //#include "sounds/MackStart.h" // Mack Truck Start
@@ -29,7 +29,7 @@ volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full
 //#include "sounds/20Hz.h" // 20Hz test tone
 //#include "sounds/100Hz.h" // 100Hz test tone
 //#include "sounds/1000Hz.h" // 1000Hz test tone
-//#include "sounds/UnionPacific2002Idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
+//#include "sounds/UnionPacific2002idle.h" // Union Pacific 2002 SD70M Locomotive with 16 cylinder Diesel (set volume to 60%)
 //#include "sounds/UralV8Idle2.h" // Ural 4320 V8
 //#include "sounds/HumveeDieselIdle.h" // "Humvvee" (Hummer H1) V8 Diesel
 //#include "sounds/HgP408Idle.h" // HG P408 Humvee Diesel (only for small speakers)
@@ -113,7 +113,6 @@ uint16_t knockStartRpm = 50; // starting @ this RPM (about 50 - 400)
 //#include "sounds/DieselKnockDummy.h" // If you don't want Diesel knock sound
 //#include "sounds/UralV8Knock2.h" // Ural 4320 V8
 //#include "sounds/LanzBulldogDieselKnock.h" // Lanz Bulldog tractor (Interval = 2)
-//#include "sounds/SCANIAV850TonKnock.h" // 50 ton SCANIA knock
 //#include "sounds/ActrosLoggingTruckDieselKnock.h" // Actros logging truck
 //#include "sounds/V8TrophyTruckKnock.h" // V8 Trophy Truck
 //#include "sounds/DAFXFKnock.h" // DAF XF truck
