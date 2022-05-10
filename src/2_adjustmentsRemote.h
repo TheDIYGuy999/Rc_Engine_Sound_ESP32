@@ -43,7 +43,7 @@ boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS s
 // CONFIGURATION PROFILES *********************************************************************************************************************
 /*
   // Channel settings -----
-  // Channnel assignment
+  // Channel assignment
   // Assign your remote channels (the green ones in the excel sheet "adjustmentsRemote.xlsx") and the sound controller channels (the blue ones)
   // for each function. Depending on your wiring and communication mode, not all channels are usable.
   // Example for Flysky:  -> connect receiver CH6 with sound controller CH2 etc. Also make sure, you plug in your PWM wires accordingly
@@ -303,7 +303,7 @@ const uint16_t pulseSpan = 480;
   * Channel 1 = Steering and automatic indicators
   * Channel 2 = Throttle & brake- reversing-lights
   * Channel 3 = Push button on the transmitter grip = hazards on / off
-  * Channel 4 = 3 positiion switch on the transmitter grip = gearbox shifting
+  * Channel 4 = 3 position switch on the transmitter grip = gearbox shifting
   * Channel 5 = left pot: left turn = blue lights & siren, right turn = horn
   * Channel 6 = right pot: left turn = engine start / stop, right turn = light sequences switching (hold it in end position, then return to center pos.)
   */
@@ -375,13 +375,13 @@ const uint16_t pulseSpan = 480;
 #ifdef RGT_EX86100
 
 /* Communication settings (above):-----------------------
- * Use PWM commmunication mode
+ * Use PWM communication mode
  */
 
 /* Transmitter settings -----------------------
  *  CH1 & 2 reverse: R
  *  CH2 EPA (LO & HI): max.
- *  CH1 DR: about 60% (so that the steerning servo is not pushing against end stops)
+ *  CH1 DR: about 60% (so that the steering servo is not pushing against end stops)
  *  CH1 center position: 0
  *  CH2 center position: around 0, so that vehicle is driving a straight line
  *  

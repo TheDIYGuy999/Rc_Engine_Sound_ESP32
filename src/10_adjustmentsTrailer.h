@@ -7,7 +7,7 @@
  */
 
 //#define WIRELESS_TRAILER // Disable it, if no wireless trailer is used. It may cause noise in the speaker, if no trailer is detected.
-//#define TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT // wireless trailer lights are swiched off, if truck mounted trailer presence switch on pin 32 is closed.
+//#define TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT // wireless trailer lights are switched off, if truck mounted trailer presence switch on pin 32 is closed.
 
 // IMPORTANT!! Replace the addresses below with your trailers MAC addresses!! --------------------------
 // Trailer 1

@@ -7,7 +7,7 @@
    Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/tools/Audio2Header.html
    Original converter code by bitluni (send him a high five, if you like the code)
 
-   Parts of automatic transmision code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
+   Parts of automatic transmission code from Wombii's fork: https://github.com/Wombii/Rc_Engine_Sound_ESP32
 
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 
@@ -72,7 +72,7 @@ void channelZero();
 
 //
 // =======================================================================================================
-// LIRBARIES & HEADER FILES, REQUIRED ESP32 BOARD DEFINITION
+// LIBRARIES & HEADER FILES, REQUIRED ESP32 BOARD DEFINITION
 // =======================================================================================================
 //
 
@@ -103,10 +103,10 @@ void channelZero();
 
 // The following tasks are not required for Visual Studio Code IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-// Warning: do not use Espressif ESP32 board definition v1.05, its causing crash & reboot loops! Use v1.04 instead.
+// Use Espressif ESP32 board definition v1.06.
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
 
-// Make sure to remove -master from your sketch folder name
+// Make sure to remove "-master" from your sketch folder name
 
 //
 // =======================================================================================================
@@ -116,7 +116,7 @@ void channelZero();
 // Pin assignment and wiring instructions ****************************************************************
 
 // ------------------------------------------------------------------------------------
-// Use a 330Ohm resistor in series with all I/O pins! allows to drive LED directly and
+// Use a 330 Ohm resistor in series with all I/O pins! allows to drive LED directly and
 // provides short circuit protection. Also works on the serial Rx pin "VP" (36)
 // ------------------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ void channelZero();
 #define PPM_PIN 36
 
 // PWM RC signal pins (active, if no other communications profile is enabled) -----
-// Channel numbers may be different on your recveiver!
+// Channel numbers may be different on your receiver!
 //CH1: (steering)
 //CH2: (gearbox) (left throttle in TRACKED_MODE)
 //CH3: (throttle) (right throttle in TRACKED_MODE)
@@ -152,9 +152,9 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 #define COUPLER_PIN 27 // CH4 output for coupler (5th. wheel) servo (bus communication only)
 
 #ifdef PROTOTYPE_36 // switching headlight pin depending on the board variant (do not uncomment it, or it will cause boot issues!)
-#define HEADLIGHT_PIN 0 // White headllights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
+#define HEADLIGHT_PIN 0 // White headlights connected to pin D0, which only exists on the 36 pin ESP32 board (causes boot issues, if used!)
 #else
-#define HEADLIGHT_PIN 3 // 3 = "RX0" pin, (1 = "TX0" is not usable) white headllights
+#define HEADLIGHT_PIN 3 // 3 = "RX0" pin, (1 = "TX0" is not usable) white headlights
 #endif
 
 #define TAILLIGHT_PIN 15 // Red tail- & brake-lights (combined)
@@ -163,7 +163,7 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 #define FOGLIGHT_PIN 16 // (16 = RX2) Fog lights
 #define REVERSING_LIGHT_PIN 17 // (TX2) White reversing light
 #define ROOFLIGHT_PIN 5 // Roof lights (high beam, if "define SEPARATE_FULL_BEAM")
-#define SIDELIGHT_PIN 18 // Side lights (connect roof ligthts here, if "define SEPARATE_FULL_BEAM")
+#define SIDELIGHT_PIN 18 // Side lights (connect roof lights here, if "define SEPARATE_FULL_BEAM")
 #define BEACON_LIGHT2_PIN 19 // Blue beacons light
 #define BEACON_LIGHT1_PIN 21 // Blue beacons light
 #define CABLIGHT_PIN 22 // Cabin lights
@@ -186,7 +186,7 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input 
 
 // Objects *************************************************************************************
 // Status LED objects (also used for PWM shaker motor and ESC control) -----
-statusLED headLight(false); // "false" = output not inversed
+statusLED headLight(false); // "false" = output not inverted
 statusLED tailLight(false);
 statusLED indicatorL(false);
 statusLED indicatorR(false);
@@ -749,7 +749,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static int32_t d = 0;                                        // Input signals "d" for mixer
   static boolean knockSilent = 0;                              // This knock will be more silent
   static boolean knockMedium = 0;                              // This knock will be medium
-  static uint8_t curKnockCylinder = 0;                         // Index of currently ignited zylinder
+  static uint8_t curKnockCylinder = 0;                         // Index of currently ignited cylinder
 
   //portENTER_CRITICAL_ISR(&fixedTimerMux);
 
@@ -1335,7 +1335,7 @@ void setup() {
   delay(1000); // Give serial port/connection some time to get ready
 
   // Print some system and software info to serial monitor
-  Serial.printf("\n\nTheDIYGug999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
+  Serial.printf("\n\nTheDIYGuy999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
   Serial.printf("https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32\n");
   Serial.printf("Please read carefully: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/README.md\n");
   Serial.printf("XTAL Frequency: %i Mhz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
@@ -1514,7 +1514,7 @@ void setup() {
   while (!sbusInit) {
     readSbusCommands(); // SBUS communication (pin 36)
   }
-  Serial.printf("... SBUS initialization succesful!\n");
+  Serial.printf("... SBUS initialization successful!\n");
 
 #elif defined IBUS_COMMUNICATION
   ibusInit = false;
@@ -1523,7 +1523,7 @@ void setup() {
   while (!ibusInit) {
     readIbusCommands(); // IBUS communication (pin 36)
   }
-  Serial.printf("... IBUS initialization succesful!\n");
+  Serial.printf("... IBUS initialization successful!\n");
 
 #elif defined SUMD_COMMUNICATION
   SUMD_init = false;
@@ -1533,7 +1533,7 @@ void setup() {
   {
     readSumdCommands();
   }
-  Serial.printf("... SUMD initialization succesful!\n");
+  Serial.printf("... SUMD initialization successful!\n");
 
 #elif defined PPM_COMMUNICATION
   readPpmCommands();
@@ -1630,7 +1630,7 @@ void readPwmSignals() {
 
 //
 // =======================================================================================================
-// READ PPM MULTI CHANNEL COMMMANDS (change the channel order in "2_adjustmentsRemote.h", if needed)
+// READ PPM MULTI CHANNEL COMMANDS (change the channel order in "2_adjustmentsRemote.h", if needed)
 // =======================================================================================================
 //
 
@@ -2460,7 +2460,7 @@ void engineOnOff() {
   // static unsigned long pulseDelayMillis; // TODO
   static unsigned long idleDelayMillis;
 
-  // Engine automatically switched on or off depending on throttle position and 15s delay timne
+  // Engine automatically switched on or off depending on throttle position and 15s delay time
   if (currentThrottle > 80 || driveState != 0) idleDelayMillis = millis(); // reset delay timer, if throttle not in neutral
 
 
@@ -2946,7 +2946,7 @@ void automaticGearSelector() {
 //
 
 // If you connect your ESC to pin 33, the vehicle inertia is simulated. Direct brake (crawler) ESC required
-// *** WARNING!! Do it at your own risk!! There is a falisafe function in case, the signal input from the
+// *** WARNING!! Do it at your own risk!! There is a failsafe function in case, the signal input from the
 // receiver is lost, but if the ESP32 crashes, the vehicle could get out of control!! ***
 
 void esc() {
@@ -2986,11 +2986,11 @@ void esc() {
   if (millis() - escMillis > escRampTime) { // About very 20 - 75ms
     escMillis = millis();
 
-    // calulate throttle dependent brake & acceleration steps
+    // calculate throttle dependent brake & acceleration steps
     brakeRampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
     driveRampRate = map (currentThrottle, 0, 500, 1, escAccelerationSteps);
 
-    // Emergency ramp rates for falisafe
+    // Emergency ramp rates for failsafe
     if (failSafe) {
       brakeRampRate = escBrakeSteps;
       driveRampRate = escBrakeSteps;
@@ -3158,7 +3158,7 @@ void esc() {
 #ifndef ESC_DIR
     escSignal = escPulseWidthOut;
 #else
-    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, escPulseMin, escPulseMax); // direction inversed
+    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, escPulseMin, escPulseMax); // direction inverted
 #endif
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
 
