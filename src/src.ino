@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 9.2; // Software revision.
+const float codeVersion = 9.3; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -60,7 +60,7 @@ void channelZero();
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
-#define ESC_DEBUG // uncomment it to debug the ESC
+//#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
 //#define TRACKED_DEBUG // debugging tracked vehicle mode
@@ -121,18 +121,15 @@ void channelZero();
 // ------------------------------------------------------------------------------------
 
 
-// Serial command pins for SBUS & IBUS -----
+// Serial DEBUG pins -----
 #define DEBUG_RX 99 // 99 is just a dummy, because the "RX0" pin (GPIO3) is used for the headlights and causing issues, if rx enabled!
 #define DEBUG_TX 1 // The "RX0" is on pin 1 
 
-// Serial command pins for SBUS & IBUS -----
+// Serial command pins for SBUS, IBUS, PPM, SUMD -----
 #define COMMAND_RX 36 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
 #define COMMAND_TX 39 // pin 39, labelled with "VN", only used as a dummy, not connected
 
-// PPM signal pin (multiple channel input with only one wire) -----
-#define PPM_PIN 36
-
-// PWM RC signal pins (active, if no other communications profile is enabled) -----
+// PWM RC signal input pins (active, if no other communications profile is enabled) -----
 // Channel numbers may be different on your recveiver!
 //CH1: (steering)
 //CH2: (gearbox) (left throttle in TRACKED_MODE)
@@ -144,7 +141,11 @@ void channelZero();
 const uint8_t PWM_CHANNELS[PWM_CHANNELS_NUM] = { 1, 2, 3, 4, 5, 6}; // Channel numbers
 const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input pin numbers
 
-#define ESC_OUT_PIN 33 // connect crawler type ESC here (working fine, but use it at your own risk! Not supported in TRACKED_MODE) -----
+// Output pins -----
+#define ESC_OUT_PIN 33 // connect crawler type ESC here. Not supported in TRACKED_MODE -----
+
+#define RZ7886_PIN1 33 // RZ7886 motor driver pin 1 (same as ESC_OUT_PIN)
+#define RZ7886_PIN2 32 // RZ7886 motor driver pin 2 (same as BRAKELIGHT_PIN)
 
 #define STEERING_PIN 13 // CH1 output for steering servo (bus communication only)
 #define SHIFTING_PIN 12 // CH2 output for shifting servo (bus communication only)
@@ -406,10 +407,10 @@ volatile boolean escIsBraking = false;                   // ESC is in a braking 
 volatile boolean escIsDriving = false;                   // ESC is in a driving state
 volatile boolean escInReverse = false;                   // ESC is driving or braking backwards
 int8_t driveState = 0;                                   // for ESC state machine
-int16_t escPulseMax;                                     // ESC calibration variables
-int16_t escPulseMin;
-int16_t escPulseMaxNeutral;
-int16_t escPulseMinNeutral;
+uint16_t escPulseMax = 2000;                             // ESC calibration variables (values will be changed later)
+uint16_t escPulseMin = 1000;
+uint16_t escPulseMaxNeutral = 1500;
+uint16_t escPulseMinNeutral = 1500;
 uint16_t currentSpeed = 0;                               // 0 - 500 (current ESC power)
 
 // Lights
@@ -1161,10 +1162,10 @@ void IRAM_ATTR readPpm() {
 
 //
 // =======================================================================================================
-// TRAILER PRESENCE SWITCH INTERRUPT
+// TRAILER PRESENCE SWITCH INTERRUPT (not usable with third brake light or RZ7886 motor driver)
 // =======================================================================================================
 //
-#if not defined THIRD_BRAKELIGHT
+#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE
 void IRAM_ATTR trailerPresenceSwitchInterrupt() {
   couplerSwitchInteruptLatch = true;
 }
@@ -1233,6 +1234,8 @@ void setupMcpwm() {
 // See: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/mcpwm.html#configure
 
 void setupMcpwmESC() {
+#if not defined RZ7886_DRIVER_MODE // Setup for classic crawler style RC ESC ----
+
   // 1. set our ESC output pin
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, ESC_OUT_PIN);    //Set ESC as PWM0A
 
@@ -1246,6 +1249,26 @@ void setupMcpwmESC() {
 
   // 3. configure channels with settings above
   mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
+
+#else // Setup for RZ7886 motor driver ----
+
+// 1. set our ESC output pin
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, RZ7886_PIN1);    //Set RZ7886 pin 1 as PWM0A
+  mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0B, RZ7886_PIN2);    //Set RZ7886 pin 2 as PWM0B
+
+  // 2. configure MCPWM parameters
+  mcpwm_config_t pwm_config;
+  pwm_config.frequency = RZ7886_FREQUENCY;    //frequency
+  pwm_config.cmpr_a = 0;                      //duty cycle of PWMxa = 0
+  pwm_config.cmpr_b = 0;                      //duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER;
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
+
+  // 3. configure channels with settings above
+  mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
+
+
+#endif
 }
 
 //
@@ -1335,7 +1358,7 @@ void setup() {
   delay(1000); // Give serial port/connection some time to get ready
 
   // Print some system and software info to serial monitor
-  Serial.printf("\n\nTheDIYGug999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
+  Serial.printf("\n\nTheDIYGuy999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
   Serial.printf("https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32\n");
   Serial.printf("Please read carefully: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/README.md\n");
   Serial.printf("XTAL Frequency: %i Mhz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
@@ -1368,16 +1391,10 @@ void setup() {
   }
 
   // Set pin modes
-  for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++) {
-    pinMode(PWM_PINS[i], INPUT_PULLDOWN);
-  }
-
-  pinMode(PPM_PIN, INPUT_PULLDOWN);
-
   pinMode(COMMAND_RX, INPUT_PULLDOWN);
 
 
-#if not defined THIRD_BRAKELIGHT // If a third brakelight is not defined, pin 32 for the trailer presence switch
+#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE// If a third brakelight is not defined and RZ7886 motor driver is not defined, pin 32 for the trailer presence switch
   pinMode(COUPLER_SWITCH_PIN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(COUPLER_SWITCH_PIN), trailerPresenceSwitchInterrupt, CHANGE);
 #endif
@@ -1397,7 +1414,7 @@ void setup() {
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 20000); // Timer 10, 20kHz
 #endif
 
-#if defined THIRD_BRAKELIGHT
+#if defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE
   brakeLight.begin(BRAKELIGHT_PIN, 11, 20000); // Timer 11, 20kHz
 #endif
   cabLight.begin(CABLIGHT_PIN, 12, 20000); // Timer 12, 20kHz
@@ -1405,9 +1422,6 @@ void setup() {
 #if not defined SPI_DASHBOARD
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
 #endif
-
-  // ESC setup
-  setupMcpwmESC(); // ESC now using mpcpwm
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
@@ -1436,7 +1450,7 @@ void setup() {
 
 #elif defined PPM_COMMUNICATION // PPM ----
   if (MAX_RPM_PERCENTAGE > maxPpmRpmPercentage) MAX_RPM_PERCENTAGE = maxPpmRpmPercentage; // Limit RPM range
-  attachInterrupt(digitalPinToInterrupt(PPM_PIN), readPpm, RISING); // begin PPM communication with compatible receivers
+  attachInterrupt(digitalPinToInterrupt(COMMAND_RX), readPpm, RISING); // begin PPM communication with compatible receivers
   setupMcpwm(); // mcpwm servo output setup
 
 #elif defined SUMD_COMMUNICATION // Graupner SUMD ----
@@ -1447,7 +1461,11 @@ void setup() {
 
 #else
   // PWM ----
+  #define PWM_COMMUNICATION
   if (MAX_RPM_PERCENTAGE > maxPwmRpmPercentage) MAX_RPM_PERCENTAGE = maxPwmRpmPercentage; // Limit RPM range
+   for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++) {
+    pinMode(PWM_PINS[i], INPUT_PULLDOWN);
+  }
   // New: PWM read setup, using rmt. Thanks to croky-b
   uint8_t i;
   rmt_config_t rmt_channels[PWM_CHANNELS_NUM] = {};
@@ -1555,12 +1573,15 @@ void setup() {
     pulseMinLimit[i] = pulseZero[i] - pulseLimit;
   }
 
-  // ESC output calibration
-  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; //Additional takeoff punch around zero
+  // ESC output range calibration
+  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; // Additional takeoff punch around zero
   escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
 
   escPulseMax = pulseZero[3] + escPulseSpan;
-  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; //Additional power for ESC with slow reverse
+  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; // Additional power for ESC with slow reverse
+
+// ESC setup
+  setupMcpwmESC(); // ESC now using mpcpwm
 }
 
 //
@@ -2952,9 +2973,10 @@ void automaticGearSelector() {
 void esc() {
 
 #if not defined TRACKED_MODE && not defined AIRPLANE_MODE // No ESC control in TRACKED_MODE or in AIRPLANE_MODE
-  static int32_t escPulseWidth = 1500;
-  static int32_t escPulseWidthOut = 1500;
-  static uint32_t escSignal;
+  static uint16_t escPulseWidth = 1500;
+  static uint16_t escPulseWidthOut = 1500;
+  static uint16_t escSignal = 1500;
+  static uint8_t motorDriverDuty = 0;
   static unsigned long escMillis;
   static unsigned long lastStateTime;
   static int8_t pulse; // -1 = reverse, 0 = neutral, 1 = forward
@@ -3009,17 +3031,21 @@ void esc() {
     if (millis() - lastStateTime > 300) { // Print the data every 300ms
       lastStateTime = millis();
       Serial.printf("ESC_DEBUG:\n");
-      Serial.printf("driveState:       %i\n", driveState);
-      Serial.printf("pulse:            %i\n", pulse);
-      Serial.printf("escPulse:         %i\n", escPulse);
-      Serial.printf("escPulseMin:      %i\n", escPulseMin);
-      Serial.printf("escPulseMax:      %i\n", escPulseMax);
-      Serial.printf("brakeRampRate:    %i\n", brakeRampRate);
-      Serial.printf("currentRpm:       %i\n", currentRpm);
-      Serial.printf("escPulseWidth:    %i\n", escPulseWidth);
-      Serial.printf("escPulseWidthOut: %i\n", escPulseWidthOut);
-      Serial.printf("currentSpeed:     %i\n", currentSpeed);
-      Serial.printf("speedLimit:       %i\n", speedLimit);
+      Serial.printf("driveState:            %i\n", driveState);
+      Serial.printf("pulse:                 %i\n", pulse);
+      Serial.printf("escPulse:              %i\n", escPulse);
+      Serial.printf("escPulseMin:           %i\n", escPulseMin);
+      Serial.printf("escPulseMinNeutral:    %i\n", escPulseMinNeutral);
+      Serial.printf("escPulseMaxNeutral:    %i\n", escPulseMaxNeutral);
+      Serial.printf("escPulseMax:           %i\n", escPulseMax);
+      Serial.printf("brakeRampRate:         %i\n", brakeRampRate);
+      Serial.printf("currentRpm:            %i\n", currentRpm);
+      Serial.printf("escPulseWidth:         %i\n", escPulseWidth);
+      Serial.printf("escPulseWidthOut:      %i\n", escPulseWidthOut);
+      Serial.printf("escSignal:             %i\n", escSignal);
+      Serial.printf("motorDriverDuty:       %i\n", motorDriverDuty);
+      Serial.printf("currentSpeed:          %i\n", currentSpeed);
+      Serial.printf("speedLimit:            %i\n", speedLimit);
       Serial.printf("--------------------------------------\n");
     }
 #endif // ESC_DEBUG
@@ -3078,7 +3104,8 @@ void esc() {
         escInReverse = false;
         escIsDriving = false;
         if (escPulseWidth > pulseZero[3]) escPulseWidth -= brakeRampRate; // brake with variable deceleration
-        if (escPulseWidth < pulseZero[3]) escPulseWidth = pulseZero[3]; // Overflow bug prevention!
+        if (escPulseWidth < pulseZero[3] + brakeMargin && pulse == -1) escPulseWidth = pulseZero[3] + brakeMargin; // Don't go completely back to neutral, if brake applied
+        if (escPulseWidth < pulseZero[3] && pulse == 0) escPulseWidth = pulseZero[3]; // Overflow prevention!
 
         if (pulse == 0 && escPulse == 1 && !neutralGear) {
           driveState = 1; // Driving forward
@@ -3124,7 +3151,8 @@ void esc() {
         escInReverse = true;
         escIsDriving = false;
         if (escPulseWidth < pulseZero[3]) escPulseWidth += brakeRampRate; // brake with variable deceleration
-        if (escPulseWidth > pulseZero[3]) escPulseWidth = pulseZero[3]; // Overflow bug prevention!
+        if (escPulseWidth > pulseZero[3] - brakeMargin && pulse == 1) escPulseWidth = pulseZero[3] - brakeMargin; // Don't go completely back to neutral, if brake applied
+        if (escPulseWidth > pulseZero[3] && pulse == 0) escPulseWidth = pulseZero[3]; // Overflow prevention!
 
         if (pulse == 0 && escPulse == -1 && !neutralGear) {
           driveState = 3; // Driving backwards
@@ -3151,16 +3179,49 @@ void esc() {
     escPulseWidthOut = reMap(curveQuicrunFusion, escPulseWidth);
 #else
     escPulseWidthOut = escPulseWidth;
-#endif // -----------------------------------------
+#endif // --------------------------------------------
 
 
-    // ESC control
+    // ESC range & direction calibration -------------
 #ifndef ESC_DIR
-    escSignal = escPulseWidthOut;
+    //escSignal = escPulseWidthOut;
+    escSignal = map(escPulseWidthOut, escPulseMin, escPulseMax, 1000, 2000);
 #else
-    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, escPulseMin, escPulseMax); // direction inversed
-#endif
+    escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, 1000, 2000); // direction inversed
+#endif // --------------------------------------------
+
+
+#if not defined RZ7886_DRIVER_MODE // Classic crawler style RC ESC mode ----
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
+
+#else // RZ 7886 motor driver mode ----
+  // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
+  // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
+  // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
+
+  if (escSignal > 1500) { // Forward
+      motorDriverDuty = map(escSignal, 1500, 2000, 0, 100);
+      mcpwm_set_signal_high(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A); // Pin A high!
+      mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, motorDriverDuty);
+      mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, MCPWM_DUTY_MODE_1); // MCPWM_DUTY_MODE_1 = inverse PWM mode, high, if 0% PWM
+    }
+    else if (escSignal < 1500) { // Reverse
+      motorDriverDuty = map(escSignal, 1500, 1000, 0, 100);
+      mcpwm_set_signal_high(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B);
+      mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, motorDriverDuty);
+      mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_1);
+    }
+    else { // Neutral
+      motorDriverDuty = 0; // Just for cosmetic reasons in ESC_DEBUG
+
+      // Both pins pwm @ the same time = variable drag brake
+      mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, RZ7886_DRAGBRAKE_DUTY);
+      mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, RZ7886_DRAGBRAKE_DUTY);
+      mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+      mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
+    }
+
+#endif
 
 
     // Calculate a speed value from the pulsewidth signal (used as base for engine sound RPM while clutch is engaged)
@@ -3501,7 +3562,7 @@ void rcTriggerRead() {
 //
 
 void trailerPresenceSwitchRead() {
-#if not defined THIRD_BRAKELIGHT
+#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE
   static unsigned long switchMillis;
   static boolean couplerSwitchStateLatch;
 
@@ -3965,7 +4026,7 @@ void loop() {
   mcpwmOutput(); // PWM servo signal output
 
 #elif defined PPM_COMMUNICATION
-  readPpmCommands(); // PPM communication (pin 34)
+  readPpmCommands(); // PPM communication (pin 36)
   mcpwmOutput(); // PWM servo signal output
 
 #else
@@ -4000,7 +4061,7 @@ void loop() {
   }
 
   // Read trailer switch state
-#if not defined THIRD_BRAKELIGHT
+#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE
   trailerPresenceSwitchRead();
 #endif
 

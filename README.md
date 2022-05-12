@@ -69,15 +69,18 @@ LCD dashboard (original by Gamadril)
 - Support for 2812 Neopixel LED (GPIO0)
 - Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote
 - ESP-NOW based 2.4 GHz wireless trailer control support
+- An An RZ7886 motor driver IC can be used instead of a standard crawler type RC ESC
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
 - Hazards switching on, if engine off in AUTO_LIGHTS mode
+- Wireless configuration?
 
 ## Known issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
 - The ESP32 does not work on macOS Big Sur 11.x, but this issue can be fixed easily as described here: [Big Sur Fix](BigSurFix.md) (for v1.04)
-- Under Windows 10 & macOS, there is a crash & reboot issue, if Espressif ESP32 board definition v1.05 is used. Use v1.04 instead!
+- macOS Monterey 10.3 does not include Python 2 anymore. For Arduino IDE, you have to install Python 3 and to change the path in pPlatform.txt according to:
+https://forum.arduino.cc/t/mac-os-update-killed-esp32-sketch/969580/24
 
 ## How to create new .h sound files:
 
@@ -254,6 +257,8 @@ If you want to make a new vehicle, copy vehicles/00_Master.h, store it with your
 Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 ```
+#include <Arduino.h>
+
 // VEHICLE SETTINGS ****************************************************************************************************
 // Select the vehicle preset you want (uncomment the one you want, remove //, never more than one)
 
@@ -264,7 +269,7 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/CaboverCAT3408.h" // Cabover truck with Caterpillar 3408 V8 Diesel
 //#include "vehicles/PeterbiltDetroit8v92.h" // Peterbilt 359 with Detroit 8V92 V8 2 stroke Diesel
 //#include "vehicles/KenworthW900ADetroit8V71.h" // Kenworth W900A with Detroit 8V71 V8 2 stroke Diesel
-//#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel
+//#include "vehicles/KenworthW900ACAT3408.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (King Hauler)
 //#include "vehicles/CAT3408OpenPipes.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel and open pipes
 //#include "vehicles/KenworthW900ACAT3408new.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (good bass speaker required)
 //#include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
@@ -290,11 +295,11 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 //#include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
 //#include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air coolded V8 Diesel truck
 //#include "vehicles/MagirusMercur125.h" // Magirus Mercur air coolded V6 Diesel truck
-#include "vehicles/Saurer2DM.h" // Swiss Saurer 2DM R6 Diesel truck
+//#include "vehicles/Saurer2DM.h" // Swiss Saurer 2DM R6 Diesel truck
 
 // Russian trucks --------
 //#include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
-//#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
+#include "vehicles/Ural375D.h" // URAL 375D 6x6 V8 petrol military truck
 //#include "vehicles/URAL375.h" // URAL 375D 6x6 V8 petrol military truck (new version with better V8 sound, but good bass speaker required)
 //#include "vehicles/GAZ66.h" // GAZ-66 V8 petrol military truck
 
@@ -306,6 +311,9 @@ Afterwards add a link to your vehicle.h (see examples below) and uncomment it
 
 // Excavators -------
 //#include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
+
+// Dumpers -------
+//#include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper
 
 // US motorcycles --------
 //#include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
@@ -491,6 +499,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 9.3:
+- Support for RZ7886 motor driver IC instead of classic RC ESC. Suitable for example for WPL vehicles with 370 motor. See "3_adjustmentsESC.h"
+- New "brakeMargin" setting in "3_adjustmentsESC.h"
+- ESC scaling bug of v9.2 fixed
 
 ### New in V 9.2:
 - Now compatible with latest Espressif Systems ESP32 board definition 1.0.6 (problem was caused by haedlights conflicting with TX pin)

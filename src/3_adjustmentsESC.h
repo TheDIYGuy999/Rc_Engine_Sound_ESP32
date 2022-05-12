@@ -48,19 +48,33 @@ Uncommented settings are left on factory preset
 HOBBYWING 1060 is working as well, but 1080 is still better
 
 *****************************************************************************
-AS-12/6RW EASY from Modellbau-Regler.de is recommended for smaller vehicles (WPL, MN Model etc.)
-
+AS-12/6RW EASY from Modellbau-Regler.de is suitable for smaller vehicles (WPL, MN Model etc.),
+but does not have the best drag brake. Better use an RZ7886 motor driver IC (see below)
 *****************************************************************************
 
 */
 
 // ESC SETTINGS ******************************************************************************************************
 
-// ESC type selection:
-//#define QUICRUN_FUSION // Linearity compensation for HOBBYWING Quicrun Fusion
-
-// Drive direction adjustment:
+// General options
+//#define QUICRUN_FUSION // Linearity compensation for HOBBYWING Quicrun Fusion motor / ESC combo
 //#define ESC_DIR // uncomment this, if your motor is spinning in the wrong direction
+
+/* RZ7886 motor driver IC instead of ESC. Not in combination with #define THIRD_BRAKELIGHT or #define TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT
+Wiring:
+Pin 1 to 33 "ESC"
+Pin 2 to 32
+Pin 3 to GND (0V)
+Pin 4 to Battery +
+Pin 5 & 6 to motor +
+Pin 7 & 8 to motor -
+Notes:
+- Make sure to have enough copper area around motor + and - for IC heatsinking!
+- Connect a 100 - 470uF electrolytic cap and a 100nF tantalum or ceramic cap across pins 2 - 3
+*/
+//#define RZ7886_DRIVER_MODE // An RZ7886 motor driver is used instead of a standard RC Crawler Type ESC. suitable for motors up to 370 size, for example WPL vehicles.
+const uint16_t RZ7886_FREQUENCY = 500; // 500 Hz is recommended. It is not audible, if virtual engine sound is running. Higher frequencies may overheat the driver IC!
+const uint8_t RZ7886_DRAGBRAKE_DUTY = 100; // 0 - 100%. 100% = max. brake power while standing still. 100% is recommended for crawlers.
 
 // Top speed adjustment:
 // Usually 500 ( = 1000 - 2000 microseconds output or -45° to 45° servo angle) Enlarge it, if your vehicle is too fast
@@ -72,7 +86,7 @@ AS-12/6RW EASY from Modellbau-Regler.de is recommended for smaller vehicles (WPL
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck (top speed = 160km/h) = 900
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
 // - Meccano Dumper = 500
-const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. 
+const uint16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc. 
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.
@@ -82,7 +96,7 @@ const int16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half E
 // - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 150
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck = 50
 // - Meccano Dumper = 0
-const int16_t escTakeoffPunch = 0; 
+const uint16_t escTakeoffPunch = 0; 
 
 // Additional reverse speed (disconnect & reconnect battery after changing this setting):
 // Usually 0. Enlarge it, if your reverse speed is too slow.
@@ -91,4 +105,11 @@ const int16_t escTakeoffPunch = 0;
 // - Hobbywing 1080 ESC & 35T 540 motor for TAMIYA trucks with 3 speed transmission = 0
 // - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 80
 // - Meccano Dumper = 0
-const int16_t escReversePlus = 0;
+const uint16_t escReversePlus = 0;
+
+// Brake margin: (Experimental!)
+// This setting prevents the ESC to go completely back to zero / neutral as long as the braker trigger is pulled.
+// This prevents the vehicle from rolling back as long as brake is applied. 0 = no effect, ca. 20 = strong effect.
+// How it works? Prevents the ESC from entering the "drag brake range"
+// Warning: vehicle may be unable to stop, if too high, especially when driving downhill!
+const uint16_t brakeMargin = 0; // For RZ7886 motor driver and 370 motor = 10

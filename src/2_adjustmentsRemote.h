@@ -22,7 +22,7 @@
 // PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This is my preferred communication protocol)--------
+// SBUS communication (RX header, 13 channels. This is my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
 
