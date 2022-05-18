@@ -412,15 +412,16 @@ boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS si
 
 #### SBUS (recommended, default setting, wired to "SBUS" header, 13 channels)
 ```
-// COMMUNICATION SETTINGS **********************************************************************************************
+// COMMUNICATION SETTINGS  ********************************************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channelschannelSetup.h) --------
+// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
-// SBUS communication (SBUS header, 13 channels. This my preferred communication protocol)--------
+// SBUS communication (RX header, 13 channels. This is my preferred communication protocol)--------
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
+uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -440,6 +441,12 @@ boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS s
 SBUS standard signal (default, used in most cases)
 ```
 boolean sbusInverted = true; // false = wired to non standard (inverted) SBUS signal (for example from "Micro RC" receiver)
+```
+
+SBUS baudrate fine adjustment. 100000 ist standard. With some receivers, the indicators and other functions may be randomly triggered, because there are bit errors.
+This variable allows to fine adjust the baudrate to solve this problem.
+```
+uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
 ```
 
 #### IBUS (not recommended, NO FAILSAFE, if bad contact in iBUS wiring! "RX" header, 13 channels)
@@ -499,6 +506,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 9.4:
+- Ticking noise, caused by accidentally enabled WiFi removed
+- SBUS baudrate can now be fine adjusted in order to solve unstable channel issues, causing accidentally triggered indicators etc.
+- Make sure you are using the latest version of my SBUS library!
 
 ### New in V 9.3:
 - Support for RZ7886 motor driver IC instead of classic RC ESC. Suitable for example for WPL vehicles with 370 motor. See "3_adjustmentsESC.h"

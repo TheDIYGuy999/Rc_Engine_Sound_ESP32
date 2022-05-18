@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 9.3; // Software revision.
+const float codeVersion = 9.4; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -1280,7 +1280,7 @@ void setupMcpwmESC() {
 void setupEspNow() {
   //#if defined WIRELESS_TRAILER
   // Set device as a Wi-Fi Access point for configuration
-  WiFi.mode(WIFI_AP); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations
+  //WiFi.mode(WIFI_AP); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations TODO, causing clicking noise!
   // Output my MAC address - useful for later
   Serial.printf("Sound controller MAC address is: %s\n", WiFi.macAddress().c_str());
 
@@ -1440,7 +1440,7 @@ void setup() {
 
 #if defined SBUS_COMMUNICATION // SBUS ----
   if (MAX_RPM_PERCENTAGE > maxSbusRpmPercentage) MAX_RPM_PERCENTAGE = maxSbusRpmPercentage; // Limit RPM range
-  sBus.begin(COMMAND_RX, COMMAND_TX, sbusInverted); // begin SBUS communication with compatible receivers
+  sBus.begin(COMMAND_RX, COMMAND_TX, sbusInverted, sbusBaud); // begin SBUS communication with compatible receivers
   setupMcpwm(); // mcpwm servo output setup
 
 #elif defined IBUS_COMMUNICATION // IBUS ----
