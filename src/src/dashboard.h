@@ -177,6 +177,7 @@ public:
      * @param value - -1 for R, 0 for N, > 0 for gear number
      */
     void setGear(int8_t value);
+    void setVolt(float value, float threshold);
     
 private:
     TFT_eSPI _tft = TFT_eSPI();
@@ -197,6 +198,7 @@ private:
     void drawAdBlue(uint16_t value);
     void drawPump(uint16_t x, uint16_t y, uint32_t color);
     void drawGear(char gear);
+    void drawVolt(float volt, float threshold);
 };
 
 #endif

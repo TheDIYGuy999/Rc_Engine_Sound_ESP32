@@ -113,3 +113,11 @@ const uint16_t escReversePlus = 0;
 // How it works? Prevents the ESC from entering the "drag brake range"
 // Warning: vehicle may be unable to stop, if too high, especially when driving downhill!
 const uint16_t brakeMargin = 0; // For RZ7886 motor driver and 370 motor = 10
+
+// Battery low discharge protection (only for boards with voltage divider resistors):
+//#define BATTERY_PROTECTION // This will disable the ESC output, if the battery cutout voltage is reached
+const float CUTOFF_VOLTAGE = 3.3; // Usually 3.3 V per LiPo cell. NEVER below 3.2 V!
+const float FULLY_CHARGED_VOLTAGE = 4.2; // Usually 4.2 V per LiPo cell, NEVER above!
+const uint16_t RESISTOR_TO_BATTTERY_PLUS = 9990; // 10000 Ohms (9900 for switch mode test board, 9650 for Ural)
+const uint16_t RESISTOR_TO_GND = 1000; // 1000 Ohms
+const float DIODE_DROP = 0.34; // About 0.34V for SS34 diode (0 for Ural)

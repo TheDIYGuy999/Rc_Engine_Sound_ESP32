@@ -62,7 +62,7 @@ const uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, re
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
 // Servo ramp time 
-const uint16_t STEERING_RAMP_TIME = 300; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
 

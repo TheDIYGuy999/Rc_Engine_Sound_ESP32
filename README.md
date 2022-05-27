@@ -70,6 +70,7 @@ LCD dashboard (original by Gamadril)
 - Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote
 - ESP-NOW based 2.4 GHz wireless trailer control support
 - An An RZ7886 motor driver IC can be used instead of a standard crawler type RC ESC
+- Battery low discharge protection options
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
@@ -206,6 +207,12 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - It needs to be connected to the "shaker" header and is supplied by the on board 5V regulator. The negative side is switched by the on board mosfet
 - Please note, that the used mosfet needs to be a logic level type. Otherwise the shaker will not work!
 - The motor should not draw more than about 300mA @ 5V. I'm using a shaker motor from GT Power.
+
+### RZ7886 DC motor driver instead of an ESC:
+This circuit will be included in future boards. It is intended for smaller scale vehicles like WPL
+![](documentation/pictures/RZ7886.png)
+![](documentation/pictures/RZ7886.JPG)
+![](documentation/pictures/RZ7886_1.JPG)
 
 ## Software:
 ### Required software for code uploading and editing:
@@ -506,6 +513,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 9.5:
+- Battery low discharge protection options added to "3_adjustmentsESC.h". Used in combination with ESC's without protection or internal RZ7886 motor driver
+- Battery level is shown on LCD dashboard (bottom left instrument and central display).
+- Experimental "#define HIGH_SLIPPINGPOINT" option in "4_adjustmentsTransmission.h"
+- New Defender V8 with open pipes
+- clutchEngagingPoint lowered from 100 to 10 in several automatic transmission vehicles. This is standard.
 
 ### New in V 9.4:
 - Ticking noise, caused by accidentally enabled WiFi removed

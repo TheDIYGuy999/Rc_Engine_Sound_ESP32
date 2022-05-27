@@ -15,7 +15,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 9.4; // Software revision.
+const float codeVersion = 9.5; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -79,15 +79,17 @@ void channelZero();
 // Libraries (you have to install all of them in the "Arduino sketchbook"/libraries folder)
 // !! Do NOT install the libraries in the sketch folder.
 // No manual library download is required in Visual Studio Code IDE (see platformio.ini)
-#include <statusLED.h> // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
-#include <SBUS.h>      // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
-#include <rcTrigger.h> // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
-#include <IBusBM.h>    // https://github.com/bmellink/IBusBM        <<------- required for IBUS interface
-#include <TFT_eSPI.h>  // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard. Use v2.3.70
-#include <FastLED.h>   // https://github.com/FastLED/FastLED        <<------- required for Neopixel support. Use V3.3.3
+#include <statusLED.h>      // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
+#include <SBUS.h>           // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
+#include <rcTrigger.h>      // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
+#include <IBusBM.h>         // https://github.com/bmellink/IBusBM        <<------- required for IBUS interface
+#include <TFT_eSPI.h>       // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard. Use v2.3.70
+#include <FastLED.h>        // https://github.com/FastLED/FastLED        <<------- required for Neopixel support. Use V3.3.3
+#include <ESP32AnalogRead.h>// https://github.com/madhephaestus/ESP32AnalogRead <<------- required for battery voltage measurement
 
 // Additional headers (included)
 #include "src/curves.h"    // Nonlinear throttle curve arrays
+#include "src/helper.h"    // Various stuff
 #include "src/dashboard.h" // For LCD dashboard. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 #include "src/SUMD.h"      // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 
@@ -127,7 +129,9 @@ void channelZero();
 
 // Serial command pins for SBUS, IBUS, PPM, SUMD -----
 #define COMMAND_RX 36 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
-#define COMMAND_TX 39 // pin 39, labelled with "VN", only used as a dummy, not connected
+#define COMMAND_TX 98 // 98 is just a dummy
+
+#define BATTERY_DETECT_PIN 39 // Voltage divider resistors connected to pin "VN"
 
 // PWM RC signal input pins (active, if no other communications profile is enabled) -----
 // Channel numbers may be different on your recveiver!
@@ -139,7 +143,7 @@ void channelZero();
 //CH6: (indicators, hazards)
 #define PWM_CHANNELS_NUM 6 // Number of PWM signal input pins 6
 const uint8_t PWM_CHANNELS[PWM_CHANNELS_NUM] = { 1, 2, 3, 4, 5, 6}; // Channel numbers
-const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input pin numbers
+const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = { 13, 12, 14, 27, 35, 34 }; // Input pin numbers (pin 34 & 35 only usable as inputs!)
 
 // Output pins -----
 #define ESC_OUT_PIN 33 // connect crawler type ESC here. Not supported in TRACKED_MODE -----
@@ -201,8 +205,6 @@ statusLED shakerMotor(false);
 statusLED cabLight(false);
 statusLED brakeLight(false);
 
-// statusLED escOut(false); ESC now using mcpwm
-
 // rcTrigger objects -----
 // Analog or 3 position switches (short / long pressed time)
 rcTrigger functionR100u(200); // 200ms required!
@@ -226,11 +228,15 @@ rcTrigger hazardsTrigger(100);
 rcTrigger indicatorLTrigger(100);
 rcTrigger indicatorRTrigger(100);
 
+// Other objects -----
 // Dashboard
 Dashboard dashboard;
 
 // Neopixel
 CRGB rgbLEDs[NEOPIXEL_COUNT];
+
+// Battery voltage
+ESP32AnalogRead battery;
 
 // Webserver for configuration
 WebServer server(80);
@@ -430,6 +436,12 @@ bool legsDown;
 bool rampsUp;
 bool rampsDown;
 bool trailerDetected;
+
+// Battery
+float batteryCutoffvoltage;
+float batteryVoltage;
+uint8_t numberOfCells;
+bool batteryProtection = false;
 
 // ESP NOW variables for wireless trailer communication ----------------------------
 #if defined WIRELESS_TRAILER
@@ -1252,7 +1264,7 @@ void setupMcpwmESC() {
 
 #else // Setup for RZ7886 motor driver ----
 
-// 1. set our ESC output pin
+  // 1. set our ESC output pin
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, RZ7886_PIN1);    //Set RZ7886 pin 1 as PWM0A
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0B, RZ7886_PIN2);    //Set RZ7886 pin 2 as PWM0B
 
@@ -1278,13 +1290,15 @@ void setupMcpwmESC() {
 //
 
 void setupEspNow() {
-  //#if defined WIRELESS_TRAILER
+  //#if defined WIRELESS_TRAILER TODO
   // Set device as a Wi-Fi Access point for configuration
   //WiFi.mode(WIFI_AP); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations TODO, causing clicking noise!
   // Output my MAC address - useful for later
-  Serial.printf("Sound controller MAC address is: %s\n", WiFi.macAddress().c_str());
+  //Serial.printf("Sound controller MAC address: %s\n", WiFi.macAddress().c_str());
 
 #if defined WIRELESS_TRAILER
+  Serial.printf("WIRELESS_TRAILER option enabled\n");
+  Serial.printf("Sound controller MAC address: %s\n", WiFi.macAddress().c_str());
   // Set device as a Wi-Fi Station for ESP-NOW
   WiFi.mode(WIFI_STA); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations
   WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
@@ -1327,10 +1341,42 @@ void setupEspNow() {
     return;
   }
 #endif
-
+  Serial.printf("-------------------------------------\n");
 #endif // WIRELESS_TRAILER
 
 } // setupEspNow()
+
+//
+// =======================================================================================================
+// BATTERY SETUP
+// =======================================================================================================
+//
+
+void setupBattery() {
+#if defined BATTERY_PROTECTION
+
+  Serial.printf("Battery voltage: %.2f V\n", batteryVolts());
+  Serial.printf("Cutoff voltage per cell: %.2f V\n", CUTOFF_VOLTAGE);
+  Serial.printf("Fully charged voltage per cell: %.2f V\n", FULLY_CHARGED_VOLTAGE);
+  
+#define CELL_SETPOINT (CUTOFF_VOLTAGE - ((FULLY_CHARGED_VOLTAGE - CUTOFF_VOLTAGE) /2))
+
+  if (batteryVolts() > CELL_SETPOINT) numberOfCells = 1;
+  if (batteryVolts() > CELL_SETPOINT * 2) numberOfCells = 2;
+  if (batteryVolts() > CELL_SETPOINT * 3) numberOfCells = 3;
+  batteryCutoffvoltage = CUTOFF_VOLTAGE * numberOfCells; // Calculate cutoff voltage for battery protection
+  if (numberOfCells > 0) {
+    Serial.printf("Number of cells: %i (%iS battery detected) Based on setpoint: %.2f V\n", numberOfCells, numberOfCells, (CELL_SETPOINT * numberOfCells));
+    Serial.printf("Battery cutoff voltage: %.2f V (%i * %.2f V) \n", batteryCutoffvoltage, numberOfCells, CUTOFF_VOLTAGE);
+  }
+  else {
+    Serial.printf("Error, no valid battery detected!\n");
+  }
+#else
+  Serial.printf("Warning, BATTERY_PROTECTION disabled! ESC with low discharge protection required!\n");
+#endif
+  Serial.printf("-------------------------------------\n");
+}
 
 //
 // =======================================================================================================
@@ -1355,13 +1401,16 @@ void setup() {
 
   // Serial setup
   Serial.begin(115200, SERIAL_8N1, DEBUG_RX, DEBUG_TX);// USB serial (for DEBUG) Mode, Rx pin (99 = not used), Tx pin
-  delay(1000); // Give serial port/connection some time to get ready
+
+  // ADC setup
+  battery.attach(BATTERY_DETECT_PIN);
 
   // Print some system and software info to serial monitor
+  delay(1000); // Give serial port/connection some time to get ready
   Serial.printf("\n\nTheDIYGuy999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
   Serial.printf("https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32\n");
   Serial.printf("Please read carefully: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/README.md\n");
-  Serial.printf("XTAL Frequency: %i Mhz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
+  Serial.printf("XTAL Frequency: %i MHz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
   Serial.printf("Internal RAM size: %i Byte, Free: %i Byte\n", ESP.getHeapSize(), ESP.getFreeHeap());
   Serial.printf("WiFi MAC address: %s\n", WiFi.macAddress().c_str());
   for (uint8_t coreNum = 0; coreNum < 2; coreNum++) {
@@ -1370,6 +1419,9 @@ void setup() {
       Serial.printf("Core %i reset reason: %i: %s\n", coreNum, rtc_get_reset_reason(coreNum), RESET_REASONS[resetReason - 1]);
     }
   }
+  Serial.printf("-------------------------------------\n");
+
+  setupBattery();
 
   setupEspNow();
 
@@ -1461,9 +1513,9 @@ void setup() {
 
 #else
   // PWM ----
-  #define PWM_COMMUNICATION
+#define PWM_COMMUNICATION
   if (MAX_RPM_PERCENTAGE > maxPwmRpmPercentage) MAX_RPM_PERCENTAGE = maxPwmRpmPercentage; // Limit RPM range
-   for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++) {
+  for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++) {
     pinMode(PWM_PINS[i], INPUT_PULLDOWN);
   }
   // New: PWM read setup, using rmt. Thanks to croky-b
@@ -1580,7 +1632,7 @@ void setup() {
   escPulseMax = pulseZero[3] + escPulseSpan;
   escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; // Additional power for ESC with slow reverse
 
-// ESC setup
+  // ESC setup
   setupMcpwmESC(); // ESC now using mpcpwm
 }
 
@@ -2395,8 +2447,8 @@ void engineMassSimulation() {
 #if defined VIRTUAL_16_SPEED_SEQUENTIAL
         targetRpm = _currentThrottle; // This is working
 #else
-        //targetRpm = reMap(curveLinear, _currentThrottle); // TODO, not working with enabled WiFi!! Output is always 0, even with fixed 300 input!
-        targetRpm = _currentThrottle; // This is working
+        targetRpm = reMap(curveLinear, _currentThrottle); // TODO, not working with enabled WiFi!! Output is always 0, even with fixed 300 input!
+        //targetRpm = _currentThrottle; // This is working
         //Serial.printf(targetRpm);
 #endif
       }
@@ -2405,7 +2457,8 @@ void engineMassSimulation() {
 
 
 #if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL // Virtual 3 speed or sequential 16 speed transmission
-        targetRpm = currentSpeed * virtualManualGearRatio[selectedGear] / 10; // Add virtual gear ratios
+        //targetRpm = currentSpeed * virtualManualGearRatio[selectedGear] / 10; // Add virtual gear ratios TODO
+        targetRpm = reMap(curveLinear, (currentSpeed * virtualManualGearRatio[selectedGear] / 10)); // Add virtual gear ratios
         if (targetRpm > 500) targetRpm = 500;
 
 #else // Real 3 speed transmission           
@@ -2641,9 +2694,9 @@ void led() {
 
 
 #ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-  if (!hazard && !unlock5thWheel ) { // Hazards also active, if 5th wheel unlocked
+  if (!hazard && !unlock5thWheel && !batteryProtection) { // Hazards also active, if 5th wheel unlocked
 #else
-  if (!hazard) {
+  if (!hazard && !batteryProtection) {
 #endif
     if (indicatorLon) {
       if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness)) indicatorSoundOn = true; // Left indicator
@@ -2962,7 +3015,7 @@ void automaticGearSelector() {
 
 //
 // =======================================================================================================
-// ESC CONTROL
+// ESC CONTROL (including optional battery protection)
 // =======================================================================================================
 //
 
@@ -2971,6 +3024,23 @@ void automaticGearSelector() {
 // receiver is lost, but if the ESP32 crashes, the vehicle could get out of control!! ***
 
 void esc() {
+
+  // Battery protection --------------------------------
+#if defined BATTERY_PROTECTION
+  static unsigned long lastBatteryTime;
+  if (millis() - lastBatteryTime > 300) { // Check battery voltage every 300ms
+    lastBatteryTime = millis();
+    batteryVoltage = batteryVolts(); // Store voltage in global variable (also used in dashboard)
+    if (batteryVoltage < batteryCutoffvoltage) {
+      Serial.printf("Battery protection triggered, slowing down! Battery: %.2f V Threshold: %.2f V \n", batteryVoltage, batteryCutoffvoltage);
+      Serial.printf("Disconnect battery to prevent it from overdischarging!\n", batteryVoltage, batteryCutoffvoltage);
+      batteryProtection = true;
+    }
+    if (batteryVoltage > batteryCutoffvoltage + (0.05 * numberOfCells)) { // Recovery hysteresis
+      batteryProtection = false;
+    }
+  }
+#endif // --------------------------------------------  
 
 #if not defined TRACKED_MODE && not defined AIRPLANE_MODE // No ESC control in TRACKED_MODE or in AIRPLANE_MODE
   static uint16_t escPulseWidth = 1500;
@@ -3046,6 +3116,8 @@ void esc() {
       Serial.printf("motorDriverDuty:       %i\n", motorDriverDuty);
       Serial.printf("currentSpeed:          %i\n", currentSpeed);
       Serial.printf("speedLimit:            %i\n", speedLimit);
+      Serial.printf("batteryProtection:     %i\n", batteryProtection);
+      Serial.printf("batteryVoltage:        %i\n", batteryVoltage);
       Serial.printf("--------------------------------------\n");
     }
 #endif // ESC_DEBUG
@@ -3070,13 +3142,11 @@ void esc() {
         escIsBraking = false;
         escInReverse = false;
         escIsDriving = true;
-        //if (!gearUpShiftingPulse && !gearDownShiftingPulse) { // TODO!!
-        if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit) {
+        if (escPulseWidth < pulseWidth[3] && currentSpeed < speedLimit && !batteryProtection) {
           if (escPulseWidth >= escPulseMaxNeutral) escPulseWidth += (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMaxNeutral; // Initial boost
         }
-        if (escPulseWidth > pulseWidth[3] && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
-        //}
+        if ((escPulseWidth > pulseWidth[3] || batteryProtection) && escPulseWidth > pulseZero[3]) escPulseWidth -= (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed transmission        
@@ -3121,11 +3191,11 @@ void esc() {
         escIsBraking = false;
         escInReverse = true;
         escIsDriving = true;
-        if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit) {
+        if (escPulseWidth > pulseWidth[3] && currentSpeed < speedLimit && !batteryProtection) {
           if (escPulseWidth <= escPulseMinNeutral) escPulseWidth -= (driveRampRate * driveRampGain); //Faster
           else escPulseWidth = escPulseMinNeutral; // Initial boost
         }
-        if (escPulseWidth < pulseWidth[3] && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
+        if ((escPulseWidth < pulseWidth[3] || batteryProtection) && escPulseWidth < pulseZero[3]) escPulseWidth += (driveRampRate * driveRampGain); // Slower
 
         if (gearUpShiftingPulse && shiftingAutoThrottle && !automatic && !doubleClutch) { // lowering RPM, if shifting up transmission
 #if not defined VIRTUAL_3_SPEED && not defined VIRTUAL_16_SPEED_SEQUENTIAL // Only, if we have a real 3 speed transmission        
@@ -3181,7 +3251,6 @@ void esc() {
     escPulseWidthOut = escPulseWidth;
 #endif // --------------------------------------------
 
-
     // ESC range & direction calibration -------------
 #ifndef ESC_DIR
     //escSignal = escPulseWidthOut;
@@ -3195,11 +3264,11 @@ void esc() {
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
 
 #else // RZ 7886 motor driver mode ----
-  // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
-  // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
-  // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
+    // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
+    // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
+    // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
 
-  if (escSignal > 1500) { // Forward
+    if (escSignal > 1500) { // Forward
       motorDriverDuty = map(escSignal, 1500, 2000, 0, 100);
       mcpwm_set_signal_high(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A); // Pin A high!
       mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, motorDriverDuty);
@@ -3235,6 +3304,36 @@ void esc() {
 
   }
 #endif
+}
+
+//
+// =======================================================================================================
+// BATTERY MONITORING
+// =======================================================================================================
+//
+
+float batteryVolts() {
+  static float raw[6];
+  static bool initDone = false;
+#define VOLTAGE_CALIBRATION (RESISTOR_TO_BATTTERY_PLUS + RESISTOR_TO_GND) / RESISTOR_TO_GND + DIODE_DROP
+
+  if (!initDone) { // Init array, if first measurement (important for call in setup)!
+    for (uint8_t i = 0; i <= 5; i++) {
+      raw[i] = battery.readVoltage();
+    }
+    initDone = true;
+  }
+
+  raw[5] = raw[4]; // Move array content, then add latest measurement (averaging)
+  raw[4] = raw[3];
+  raw[3] = raw[2];
+  raw[2] = raw[1];
+  raw[1] = raw[0];
+
+  raw[0] = battery.readVoltage(); // read analog input
+
+  float voltage = (raw[0] + raw[1] + raw[2] + raw[3] + raw[4] + raw[5]) / 6 * VOLTAGE_CALIBRATION;
+  return voltage;
 }
 
 //
@@ -3604,7 +3703,7 @@ bool engineStartAnimation() {
   static uint32_t lastFrameTime = millis();
   static uint16_t rpm = 0;
   static uint16_t speed = 0;
-  static uint16_t fuel = 0;
+  static int16_t fuel = 0;
   static uint16_t adblue = 0;
   static int16_t currentStep = 0; // 50 in total
 
@@ -3666,10 +3765,18 @@ void updateDashboard() {
   }
 
   // Calculations
-  // RPM
+  // RPM, fuel, adblue
   if (engineState == STARTING || engineState == RUNNING) {
     rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
+
+#if defined BATTERY_PROTECTION
+  fuel = map_Generic <float, float, float, int16_t, int16_t> ((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
+  if (fuel > 100) fuel = 100;
+  if (fuel < 0) fuel = 0;
+  if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE) fuel = 0;
+#else
     fuel = 90;
+#endif    
     adblue = 80;
   }
   else {
@@ -3695,6 +3802,10 @@ void updateDashboard() {
   }
 
   // Central display
+#if defined BATTERY_PROTECTION
+  dashboard.setVolt(batteryVoltage, CUTOFF_VOLTAGE * numberOfCells);
+#endif
+
   if (neutralGear) {
     dashboard.setGear(0);
   }
@@ -3708,11 +3819,11 @@ void updateDashboard() {
 
   // Indicator lamps
 #ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel));
-  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel));
+  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
+  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
 #else
-  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard));
-  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard));
+  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
+  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
 #endif
   dashboard.setLowBeamIndicator(lightsOn);
   dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
@@ -4122,7 +4233,7 @@ void Task1code(void *pvParameters) {
     // Gearbox detection
     gearboxDetection();
 
-    // ESC control (Crawler ESC with direct brake on pin 33)
+    // ESC control & low discharge protection
     esc();
 
     // measure loop time
