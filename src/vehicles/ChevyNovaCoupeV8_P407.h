@@ -102,6 +102,7 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 //#include "sounds/siren01norskere22.h" // Norwegian siren
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
 #include "sounds/DixieSiren.h" // Dixie siren
+//#include "sounds/kittScanner.h" // Knight Rider KITT scanner. Use it in combination with Neopixel animation.
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)

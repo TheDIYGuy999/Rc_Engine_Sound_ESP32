@@ -9,15 +9,15 @@ volatile int startVolumePercentage = 140; // Adjust the start volume (usually = 
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used) 80
-volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineIdleVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 160; // Volume Percentage while full throttle (for rev sound as well)
 #include "sounds/Saurer2DMidle.h" // Saurer 2DM
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
 volatile int revVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound) 100
-volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-volatile const uint16_t revSwitchPoint = 5; // The rev sound is played instead of the idle sound above this point 150
+volatile int engineRevVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile const uint16_t revSwitchPoint = 100; // The rev sound is played instead of the idle sound above this point 5
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
@@ -35,14 +35,14 @@ volatile int jakeBrakeMinRpm = 250; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 250; // Adjust the Diesel knock volume (usually = 200 - 600%) 850
-volatile int dieselKnockIdleVolumePercentage = 20; // Diesel knock volume while no throttle is applied (usually = 20%)
+volatile int dieselKnockVolumePercentage = 300; // Adjust the Diesel knock volume (usually = 200 - 600%) 250
+volatile int dieselKnockIdleVolumePercentage = 30; // Diesel knock volume while no throttle is applied (usually = 20%)
 volatile int dieselKnockStartPoint = 20; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
 volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will be louder, because only 90° gap between exhaust cycles in same manifold
 #define R6_2 // 6th and 3rd Knock will be louder
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
-volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 25
+volatile int dieselKnockAdaptiveVolumePercentage = 30; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%) 30
 #define RPM_DEPENDENT_KNOCK // Knock volume also depending on engine RPM *****************
 #ifdef RPM_DEPENDENT_KNOCK // These parameters are for RPM dependent knock mode only:
 uint8_t minKnockVolumePercentage = 95; // percentage, if at knock start RPM (about 5 - 80)

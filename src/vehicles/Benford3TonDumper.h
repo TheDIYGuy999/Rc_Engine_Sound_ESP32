@@ -9,15 +9,15 @@ volatile int startVolumePercentage = 210; // Adjust the start volume (usually = 
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineIdleVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 180; // Volume Percentage while full throttle (for rev sound as well)
 #include "sounds/BENFORD3TONIdle.h" // Benford 3 Ton Dumper
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
 volatile int revVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
-volatile int engineRevVolumePercentage = 60; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
-volatile const uint16_t revSwitchPoint = 200; // The rev sound is played instead of the idle sound above this point
+volatile int engineRevVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile const uint16_t revSwitchPoint = 180; // The rev sound is played instead of the idle sound above this point 200
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 90; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
@@ -135,7 +135,7 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%)
+volatile int reversingVolumePercentage = 50; // Adjust the reversing sound volume (usually = 70%)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
@@ -164,7 +164,7 @@ const boolean doubleClutch = false; // do not activate it at the same time as au
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
+uint16_t clutchEngagingPoint = 150; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.

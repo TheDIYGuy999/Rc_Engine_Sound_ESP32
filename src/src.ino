@@ -1,7 +1,7 @@
-/* RC engine sound & LED controller for Arduino ESP32. Written by TheDIYGuy999
+/* RC engine sound & light controller for Arduino ESP32. Written by TheDIYGuy999
     Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
- *  ***** ESP32 CPU frequency must be set to 240MHz! *****
+    ***** ESP32 CPU frequency must be set to 240MHz! *****
     ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 
    Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/tools/Audio2Header.html
@@ -11,11 +11,14 @@
 
    Dashboard, Neopixel and SUMD support by Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 
+   Contributors:
+   - Christian Fiebig https://github.com/fiechr
+
    NEW: Visual Studio Code IDE support added (you need to install PlatformIO)
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-const float codeVersion = 9.5; // Software revision.
+char codeVersion[] = "9.6.0"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -28,15 +31,22 @@ void readPwmSignals();
 void processRawChannels();
 void failsafeRcSignals();
 void channelZero();
+float batteryVolts();
 
 //
 // =======================================================================================================
-// ERROR CODES (INDICATOR LIGHTS)
+// ERROR CODES (INDICATOR LIGHTS, BEEPS)
 // =======================================================================================================
 //
-/* Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
+/*
+   Indicators:
+   Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
    Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated
    (check channel trim settings)
+
+   Beeps (only, if "#define BATTERY_PROTECTION" in "3_adjustmentsESC.h"):
+   - Number of beeps = number of detected battery cells in series
+   - 10 fast beeps = battery error, disconnect it!
 */
 
 //
@@ -86,6 +96,7 @@ void channelZero();
 #include <TFT_eSPI.h>       // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard. Use v2.3.70
 #include <FastLED.h>        // https://github.com/FastLED/FastLED        <<------- required for Neopixel support. Use V3.3.3
 #include <ESP32AnalogRead.h>// https://github.com/madhephaestus/ESP32AnalogRead <<------- required for battery voltage measurement
+#include <Tone32.h>         // https://github.com/lbernstone/Tone32      <<------- required for battery cell detection beeps
 
 // Additional headers (included)
 #include "src/curves.h"    // Nonlinear throttle curve arrays
@@ -103,10 +114,14 @@ void channelZero();
 #include <WebServer.h>
 #include <Esp.h>           // for displaying memory information
 
-// The following tasks are not required for Visual Studio Code IDE! ----
+// The following tasks only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-// Warning: do not use Espressif ESP32 board definition v1.05, its causing crash & reboot loops! Use v1.04 instead.
+// Warning: Espressif ESP32 board definition v1.06! v2.x is not working
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
+
+// Visual Studio Code IDE instructions: ----
+// - General settings are done in platformio.ini
+// - !!IMPORTANT!! Rename src.ini to scr.cpp -> This will prevent potential compiler errors
 
 // Make sure to remove -master from your sketch folder name
 
@@ -348,6 +363,7 @@ volatile boolean couplingTrigger = false;                // Trigger for trailer 
 volatile boolean uncouplingTrigger = false;              // Trigger for trailer uncoupling  sound
 volatile boolean bucketRattleTrigger = false;            // Trigger for bucket rattling  sound
 volatile boolean indicatorSoundOn = false;               // active, if indicator bulb is on
+volatile boolean outOfFuelMessageTrigger = false;         // Trigger for out of fuel message
 
 // Sound latches
 volatile boolean hornLatch = false;                      // Horn latch bit
@@ -370,6 +386,8 @@ volatile uint16_t hydraulicFlowVolume = 0;               // hydraulic flow volum
 volatile uint16_t trackRattleVolume = 0;                 // track rattling volume
 volatile uint16_t hydraulicDependentKnockVolume = 100;   // engine Diesel knock volume according to hydraulic load
 volatile uint16_t hydraulicLoad = 0;                     // Hydraulic load dependent RPM drop
+
+volatile uint64_t dacDebug = 0;                           // DAC debug variable TODO
 
 volatile int16_t masterVolume = 100;                     // Master volume percentage
 volatile uint8_t dacOffset = 0;  // 128, but needs to be ramped up slowly to prevent popping noise, if switched on
@@ -756,10 +774,11 @@ void IRAM_ATTR fixedPlaybackTimer() {
   static uint32_t curTrackRattleSample = 0;                    // Index of currently loaded track rattle sample
   static uint32_t curBucketRattleSample = 0;                   // Index of currently loaded bucket rattle sample
   static uint32_t curTireSquealSample = 0;                     // Index of currently loaded tire squeal sample
+  static uint32_t curOutOfFuelSample = 0;                      // Index of currently loaded out of fuel sample
   static int32_t a, a1, a2 = 0;                                // Input signals "a" for mixer
   static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = 0;// Input signals "b" for mixer
   static int32_t c, c1, c2, c3 = 0;                            // Input signals "c" for mixer
-  static int32_t d = 0;                                        // Input signals "d" for mixer
+  static int32_t d, d1, d2 = 0;                                // Input signals "d" for mixer
   static boolean knockSilent = 0;                              // This knock will be more silent
   static boolean knockMedium = 0;                              // This knock will be medium
   static uint8_t curKnockCylinder = 0;                         // Index of currently ignited zylinder
@@ -1059,14 +1078,31 @@ void IRAM_ATTR fixedPlaybackTimer() {
   // Group "d" (additional sounds) **********************************************************************
 
 #if defined TIRE_SQUEAL
-
   // Tire squeal sound -----------------------
   if (curTireSquealSample < tireSquealSampleCount - 1) {
-    d = (tireSquealSamples[curTireSquealSample] * tireSquealVolumePercentage / 100 * tireSquealVolume / 100);
+    d1 = (tireSquealSamples[curTireSquealSample] * tireSquealVolumePercentage / 100 * tireSquealVolume / 100);
     curTireSquealSample ++;
   }
   else {
+    d1 = 0;
     curTireSquealSample = 0;
+  }
+#endif
+
+#if defined BATTERY_PROTECTION
+  // Out of fuel sound, triggered by battery voltage -----------------------------------------------
+  if (outOfFuelMessageTrigger) {
+    if (curOutOfFuelSample < outOfFuelSampleCount - 1) {
+      d2 = (outOfFuelSamples[curOutOfFuelSample] * outOfFuelVolumePercentage / 100);
+      curOutOfFuelSample ++;
+    }
+    else {
+      outOfFuelMessageTrigger = false;
+    }
+  }
+  else {
+    d2 = 0;
+    curOutOfFuelSample = 0; // ensure, next sound will start @ first sample
   }
 #endif
 
@@ -1074,9 +1110,11 @@ void IRAM_ATTR fixedPlaybackTimer() {
   a = a1 + a2; // Horn & siren
   b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8 + b9; // Other sounds
   c = c1 + c2 + c3; // Excavator sounds
+  d = d1 + d2; // Additional sounds
 
   // DAC output (groups mixed together) ****************************************************************************
 
+  //dacDebug = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255); // Mix signals, add 128 offset, write result to DAC
   dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC2, constrain( c * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
   //dacWrite(DAC2, 0);
@@ -1247,6 +1285,7 @@ void setupMcpwm() {
 
 void setupMcpwmESC() {
 #if not defined RZ7886_DRIVER_MODE // Setup for classic crawler style RC ESC ----
+  Serial.printf("Standard ESC mode configured. Connect crawler ESC to ESC header. RZ7886 motor driver not usable!\n");
 
   // 1. set our ESC output pin
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, ESC_OUT_PIN);    //Set ESC as PWM0A
@@ -1263,6 +1302,7 @@ void setupMcpwmESC() {
   mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
 
 #else // Setup for RZ7886 motor driver ----
+  Serial.printf("RZ7886 motor driver mode configured. Don't connect ESC to ESC header!\n");
 
   // 1. set our ESC output pin
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, RZ7886_PIN1);    //Set RZ7886 pin 1 as PWM0A
@@ -1278,9 +1318,8 @@ void setupMcpwmESC() {
 
   // 3. configure channels with settings above
   mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config);    //Configure PWM0A & PWM0B
-
-
 #endif
+  Serial.printf("-------------------------------------\n");
 }
 
 //
@@ -1341,8 +1380,10 @@ void setupEspNow() {
     return;
   }
 #endif
-  Serial.printf("-------------------------------------\n");
+#else
+  Serial.printf("WIRELESS_TRAILER option disabled\n");
 #endif // WIRELESS_TRAILER
+  Serial.printf("-------------------------------------\n");
 
 } // setupEspNow()
 
@@ -1358,19 +1399,33 @@ void setupBattery() {
   Serial.printf("Battery voltage: %.2f V\n", batteryVolts());
   Serial.printf("Cutoff voltage per cell: %.2f V\n", CUTOFF_VOLTAGE);
   Serial.printf("Fully charged voltage per cell: %.2f V\n", FULLY_CHARGED_VOLTAGE);
-  
+
 #define CELL_SETPOINT (CUTOFF_VOLTAGE - ((FULLY_CHARGED_VOLTAGE - CUTOFF_VOLTAGE) /2))
 
-  if (batteryVolts() > CELL_SETPOINT) numberOfCells = 1;
+  if (batteryVolts() <= CELL_SETPOINT * 2) numberOfCells = 1;
   if (batteryVolts() > CELL_SETPOINT * 2) numberOfCells = 2;
   if (batteryVolts() > CELL_SETPOINT * 3) numberOfCells = 3;
+  if (batteryVolts() > FULLY_CHARGED_VOLTAGE * 3) numberOfCells = 4;
   batteryCutoffvoltage = CUTOFF_VOLTAGE * numberOfCells; // Calculate cutoff voltage for battery protection
-  if (numberOfCells > 0) {
+  if (numberOfCells > 1 && numberOfCells < 4) { // Only 2S & 3S batteries are supported!
     Serial.printf("Number of cells: %i (%iS battery detected) Based on setpoint: %.2f V\n", numberOfCells, numberOfCells, (CELL_SETPOINT * numberOfCells));
     Serial.printf("Battery cutoff voltage: %.2f V (%i * %.2f V) \n", batteryCutoffvoltage, numberOfCells, CUTOFF_VOLTAGE);
+    for (uint8_t beeps = 0; beeps < numberOfCells; beeps++) { // Number of beeps = number of cells in series
+      tone(26, 3000, 4, 0);
+      delay(200);
+    }
   }
   else {
-    Serial.printf("Error, no valid battery detected!\n");
+    Serial.printf("Error, no valid battery detected! Only 2S & 3S batteries are supported!\n");
+    Serial.printf("REMOVE BATTERY, CONTROLLER IS LOCKED!\n");
+    bool locked = true;
+    for (uint8_t beeps = 0; beeps < 10; beeps++) { // Number of beeps = number of cells in series
+      tone(26, 3000, 4, 0);
+      delay(30);
+    }
+    while (locked) {
+      // wait here forever!
+    }
   }
 #else
   Serial.printf("Warning, BATTERY_PROTECTION disabled! ESC with low discharge protection required!\n");
@@ -1407,7 +1462,8 @@ void setup() {
 
   // Print some system and software info to serial monitor
   delay(1000); // Give serial port/connection some time to get ready
-  Serial.printf("\n\nTheDIYGuy999 RC engine sound & light controller for ESP32 software version %.2f\n", codeVersion);
+  Serial.printf("\n**************************************************************************************************\n");
+  Serial.printf("TheDIYGuy999 RC engine sound & light controller for ESP32 software version %s\n", codeVersion);
   Serial.printf("https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32\n");
   Serial.printf("Please read carefully: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/README.md\n");
   Serial.printf("XTAL Frequency: %i MHz, CPU Clock: %i MHz, APB Bus Clock: %i Hz\n", getXtalFrequencyMhz(), getCpuFrequencyMhz(), getApbFrequency());
@@ -1419,7 +1475,7 @@ void setup() {
       Serial.printf("Core %i reset reason: %i: %s\n", coreNum, rtc_get_reset_reason(coreNum), RESET_REASONS[resetReason - 1]);
     }
   }
-  Serial.printf("-------------------------------------\n");
+  Serial.printf("**************************************************************************************************\n\n");
 
   setupBattery();
 
@@ -1477,6 +1533,8 @@ void setup() {
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
+  Serial.printf("SPI_DASHBOARD enabled. Pins 18 (sidelights), 19 (beacon2), 21 (beacon1), 23 (shaker) not usable!\n");
+  Serial.printf("-------------------------------------\n");
   dashboard.init(dashRotation);
 #endif
 
@@ -1610,7 +1668,9 @@ void setup() {
 #else
   // measure PWM RC signals mark space ratio
   readPwmSignals();
+  Serial.printf("... PWM communication mode active.\n");
 #endif
+  Serial.printf("-------------------------------------\n");
 
   // Calculate RC input signal ranges for all channels
   for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) {
@@ -1887,6 +1947,8 @@ void processRawChannels() {
 
   static unsigned long lastOutOfRangeMillis;
   static int channel;
+  static bool exThrottlePrint;
+  static bool exSteeringPrint;
 
 #ifdef TRACKED_MODE // If tracked mode: enable CH2 auto zero adjustment as well, if it is enabled for CH3
   if (channelAutoZero[3]) channelAutoZero[2] = true;
@@ -1896,7 +1958,7 @@ void processRawChannels() {
   channelAutoZero[3] = false;
 #endif
   if (!autoZeroDone) {
-    Serial.printf("Transmitter channel offsets: \n"); // Print offsets, if switching on the controller
+    Serial.printf("\nTransmitter channel offsets (calculated, if channelAutoZero[] = true):\n"); // Print offsets, if switching on the controller
   }
   if (millis() - lastOutOfRangeMillis > 500) {
     for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
@@ -1913,6 +1975,10 @@ void processRawChannels() {
 
       // Exponential throttle compensation ------------------
 #ifdef EXPONENTIAL_THROTTLE
+      if (!exThrottlePrint) {
+        Serial.printf("EXPONENTIAL_THROTTLE mode configured\n");
+        exThrottlePrint = true;
+      }
       if (i == 3) { // Throttle CH only
         pulseWidthRaw2[i] = reMap(curveExponentialThrottle, pulseWidthRaw[i]);
       }
@@ -1925,6 +1991,10 @@ void processRawChannels() {
 
       // Exponential steering compensation ------------------
 #ifdef EXPONENTIAL_STEERING
+      if (!exSteeringPrint) {
+        Serial.printf("EXPONENTIAL_STEERING mode configured\n");
+        exSteeringPrint = true;
+      }
       if (i == 1) { // Throttle CH only
         pulseWidthRaw2[i] = reMap(curveExponentialThrottle, pulseWidthRaw[i]);
       }
@@ -2304,49 +2374,61 @@ void mapThrottle() {
   if (micros() - throttleFaderMicros > 500) { // Every 0.5ms
     throttleFaderMicros = micros();
 
-    if (currentThrottleFaded < currentThrottle && currentThrottleFaded < 499) currentThrottleFaded += 2;
-    if (currentThrottleFaded > currentThrottle && currentThrottleFaded > 2) currentThrottleFaded -= 2;
+    if (currentThrottleFaded < currentThrottle && !escIsBraking && currentThrottleFaded < 499) currentThrottleFaded += 2;
+    if ((currentThrottleFaded > currentThrottle || escIsBraking) && currentThrottleFaded > 2) currentThrottleFaded -= 2;
     //Serial.printf("currentThrottleFaded: %i\n", currentThrottleFaded);
-  }
 
-  // Calculate throttle dependent engine idle volume
-  if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottleFaded, 0, 500, engineIdleVolumePercentage, fullThrottleVolumePercentage);
-  else throttleDependentVolume = engineIdleVolumePercentage;
 
-  // Calculate throttle dependent engine rev volume
-  if (!escIsBraking && engineRunning) throttleDependentRevVolume = map(currentThrottleFaded, 0, 500, engineRevVolumePercentage, fullThrottleVolumePercentage);
-  else throttleDependentRevVolume = engineRevVolumePercentage;
+    // Calculate throttle dependent engine idle volume
+    if (!escIsBraking && engineRunning) throttleDependentVolume = map(currentThrottleFaded, 0, 500, engineIdleVolumePercentage, fullThrottleVolumePercentage);
+    //else throttleDependentVolume = engineIdleVolumePercentage; // TODO
+    else {
+      if (throttleDependentVolume > engineIdleVolumePercentage) throttleDependentVolume--;
+      else throttleDependentVolume = engineIdleVolumePercentage;
+    }
 
-  // Calculate engine rpm dependent jake brake volume
-  if (engineRunning) rpmDependentJakeBrakeVolume = map(currentRpm, 0, 500, jakeBrakeIdleVolumePercentage, 100);
-  else rpmDependentJakeBrakeVolume = jakeBrakeIdleVolumePercentage;
+    // Calculate throttle dependent engine rev volume
+    if (!escIsBraking && engineRunning) throttleDependentRevVolume = map(currentThrottleFaded, 0, 500, engineRevVolumePercentage, fullThrottleVolumePercentage);
+    //else throttleDependentRevVolume = engineRevVolumePercentage; // TODO
+    else {
+      if (throttleDependentRevVolume > engineRevVolumePercentage) throttleDependentRevVolume--;
+      else throttleDependentRevVolume = engineRevVolumePercentage;
+    }
 
-  // Calculate throttle dependent Diesel knock volume
-  if (!escIsBraking && engineRunning && (currentThrottleFaded > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottleFaded, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
-  else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
+    // Calculate throttle dependent Diesel knock volume
+    if (!escIsBraking && engineRunning && (currentThrottleFaded > dieselKnockStartPoint)) throttleDependentKnockVolume = map(currentThrottleFaded, dieselKnockStartPoint, 500, dieselKnockIdleVolumePercentage, 100);
+    //else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
+    else {
+      if (throttleDependentKnockVolume > dieselKnockIdleVolumePercentage) throttleDependentKnockVolume--;
+      else throttleDependentKnockVolume = dieselKnockIdleVolumePercentage;
+    }
+
+    // Calculate engine rpm dependent jake brake volume
+    if (engineRunning) rpmDependentJakeBrakeVolume = map(currentRpm, 0, 500, jakeBrakeIdleVolumePercentage, 100);
+    else rpmDependentJakeBrakeVolume = jakeBrakeIdleVolumePercentage;
 
 #if defined RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
-  // Calculate RPM dependent Diesel knock volume
-  if (currentRpm > 400) rpmDependentKnockVolume = map(currentRpm, knockStartRpm, 500, minKnockVolumePercentage, 100);
-  else rpmDependentKnockVolume = minKnockVolumePercentage;
+    // Calculate RPM dependent Diesel knock volume
+    if (currentRpm > 400) rpmDependentKnockVolume = map(currentRpm, knockStartRpm, 500, minKnockVolumePercentage, 100);
+    else rpmDependentKnockVolume = minKnockVolumePercentage;
 #endif
 
-  // Calculate engine rpm dependent turbo volume
-  if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
-  else throttleDependentTurboVolume = turboIdleVolumePercentage;
+    // Calculate engine rpm dependent turbo volume
+    if (engineRunning) throttleDependentTurboVolume = map(currentRpm, 0, 500, turboIdleVolumePercentage, 100);
+    else throttleDependentTurboVolume = turboIdleVolumePercentage;
 
-  // Calculate engine rpm dependent cooling fan volume
-  if (engineRunning && (currentRpm > fanStartPoint)) throttleDependentFanVolume = map(currentRpm, fanStartPoint, 500, fanIdleVolumePercentage, 100);
-  else throttleDependentFanVolume = fanIdleVolumePercentage;
+    // Calculate engine rpm dependent cooling fan volume
+    if (engineRunning && (currentRpm > fanStartPoint)) throttleDependentFanVolume = map(currentRpm, fanStartPoint, 500, fanIdleVolumePercentage, 100);
+    else throttleDependentFanVolume = fanIdleVolumePercentage;
 
-  // Calculate throttle dependent supercharger volume
-  if (!escIsBraking && engineRunning && (currentRpm > chargerStartPoint)) throttleDependentChargerVolume = map(currentThrottleFaded, chargerStartPoint, 500, chargerIdleVolumePercentage, 100);
-  else throttleDependentChargerVolume = chargerIdleVolumePercentage;
+    // Calculate throttle dependent supercharger volume
+    if (!escIsBraking && engineRunning && (currentRpm > chargerStartPoint)) throttleDependentChargerVolume = map(currentThrottleFaded, chargerStartPoint, 500, chargerIdleVolumePercentage, 100);
+    else throttleDependentChargerVolume = chargerIdleVolumePercentage;
 
-  // Calculate engine rpm dependent wastegate volume
-  if (engineRunning) rpmDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);
-  else rpmDependentWastegateVolume = wastegateIdleVolumePercentage;
-
+    // Calculate engine rpm dependent wastegate volume
+    if (engineRunning) rpmDependentWastegateVolume = map(currentRpm, 0, 500, wastegateIdleVolumePercentage, 100);
+    else rpmDependentWastegateVolume = wastegateIdleVolumePercentage;
+  }
 
   // Calculate engine load (used for torque converter slip simulation)
   engineLoad = currentThrottle - currentRpm;
@@ -2865,6 +2947,7 @@ void gearboxDetection() {
   static boolean sequentialLock;
   static unsigned long upShiftingMillis;
   static unsigned long downShiftingMillis;
+  static unsigned long lastShiftingMillis;
 
 #if defined TRACKED_MODE // CH2 is used for left throttle in TRACKED_MODE --------------------------------
   selectedGear = 2;
@@ -2893,9 +2976,23 @@ void gearboxDetection() {
 #endif // End of VIRTUAL_16_SPEED_SEQUENTIAL ----
 
 #if defined SEMI_AUTOMATIC // gears not controlled by the 3 position switch but by RPM limits ----
-  if (currentRpm > 490 && selectedGear < 3 && !gearUpShiftingInProgress && !gearDownShiftingInProgress && engineLoad < 5 && currentThrottle > 490) selectedGear ++;
-  if (currentRpm < 200 && selectedGear > 1 && !gearUpShiftingInProgress && !gearDownShiftingInProgress) selectedGear --; //
-  if (neutralGear) selectedGear = 1;
+  if (currentRpm > 490 && selectedGear < 3 && !gearUpShiftingInProgress && !gearDownShiftingInProgress && engineLoad < 5 && currentThrottle > 490) {
+    selectedGear ++;
+    lastShiftingMillis = millis();
+  } // Lower downshift point, if not braking
+  if (!escIsBraking) {
+    if (currentRpm < 200 && selectedGear > 1 && !gearUpShiftingInProgress && !gearDownShiftingInProgress && millis() - lastShiftingMillis > 2000) {
+      selectedGear --; //
+      lastShiftingMillis = millis();
+    }
+  }
+  else { // Higher downshift point, if braking
+    if ((currentRpm < 400 || engineLoad > 150) && selectedGear > 1 && !gearUpShiftingInProgress && !gearDownShiftingInProgress && millis() - lastShiftingMillis > 2000) {
+      selectedGear --; // Higher downshift point, if braking
+      lastShiftingMillis = millis();
+    }
+  }
+  if (neutralGear || escInReverse) selectedGear = 1;
 #endif // End of SEMI_AUTOMATIC ----
 
   // Gear upshifting detection
@@ -2944,6 +3041,7 @@ void gearboxDetection() {
     Serial.printf("MANUAL_TRANS_DEBUG:\n");
     Serial.printf("currentThrottle: %i\n", currentThrottle);
     Serial.printf("selectedGear: %i\n", selectedGear);
+    Serial.printf("engineLoad: %i\n", engineLoad);
     Serial.printf("sequentialLock: %s\n", sequentialLock ? "true" : "false");
     Serial.printf("currentRpm: %i\n", currentRpm);
     Serial.printf("currentSpeed: %i\n", currentSpeed);
@@ -3028,6 +3126,7 @@ void esc() {
   // Battery protection --------------------------------
 #if defined BATTERY_PROTECTION
   static unsigned long lastBatteryTime;
+  static bool outOfFuelMessageLock;
   if (millis() - lastBatteryTime > 300) { // Check battery voltage every 300ms
     lastBatteryTime = millis();
     batteryVoltage = batteryVolts(); // Store voltage in global variable (also used in dashboard)
@@ -3038,6 +3137,11 @@ void esc() {
     }
     if (batteryVoltage > batteryCutoffvoltage + (0.05 * numberOfCells)) { // Recovery hysteresis
       batteryProtection = false;
+    }
+    // Out of fuel message triggering
+    if (batteryProtection && !outOfFuelMessageLock) {
+      outOfFuelMessageTrigger = true;
+      outOfFuelMessageLock = true; // only trigger message once
     }
   }
 #endif // --------------------------------------------  
@@ -3289,9 +3393,7 @@ void esc() {
       mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
       mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
     }
-
 #endif
-
 
     // Calculate a speed value from the pulsewidth signal (used as base for engine sound RPM while clutch is engaged)
     if (escPulseWidth > pulseMaxNeutral[3]) {
@@ -3770,13 +3872,13 @@ void updateDashboard() {
     rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
 
 #if defined BATTERY_PROTECTION
-  fuel = map_Generic <float, float, float, int16_t, int16_t> ((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
-  if (fuel > 100) fuel = 100;
-  if (fuel < 0) fuel = 0;
-  if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE) fuel = 0;
+    fuel = map_Generic <float, float, float, int16_t, int16_t> ((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
+    if (fuel > 100) fuel = 100;
+    if (fuel < 0) fuel = 0;
+    if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE) fuel = 0;
 #else
     fuel = 90;
-#endif    
+#endif
     adblue = 80;
   }
   else {
@@ -3879,17 +3981,19 @@ void updateRGBLEDs() {
   }
 #endif
 
-#ifdef NEOPIXEL_KNIGHT_RIDER // Knight Rider ---------------------------------------------
+#ifdef NEOPIXEL_KNIGHT_RIDER // Knight Rider scanner -------------------------------------
   static int16_t increment = 1;
   static int16_t counter = 0;
 
-  if (millis() - lastNeopixelTime > 100) { // Every 100 ms
+  if (millis() - lastNeopixelTime > 98) { // Every 98 ms (must match with sound)
     lastNeopixelTime = millis();
 
-    counter += increment;
-    if (counter == NEOPIXEL_COUNT - 1) increment = -1;
-    if (counter == 0) increment = 1;
-    rgbLEDs[counter] = CRGB::Red;
+    if (sirenTrigger) { // Only active, if siren signal!
+      counter += increment;
+      if (counter == NEOPIXEL_COUNT - 1) increment = -1;
+      if (counter == 0) increment = 1;
+      rgbLEDs[counter] = CRGB::Red;
+    }
     for (int i = 0; i < NEOPIXEL_COUNT; i++) {
       rgbLEDs[i].nscale8(190);  //190
     }

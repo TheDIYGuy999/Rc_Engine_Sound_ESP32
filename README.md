@@ -514,6 +514,13 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 9.6.0:
+- New version numbering: mainVersion.subVersion.patch It is also displayed in Serial Monitor, so you always know, which version you have on your vehicle
+- "Out of fuel" voice message in many languages in "3_adjustmentsESC.h"
+- Number of battery cells in series indicated by number of beeps after powering up the controller (#define BATTERY_PROTECTION mode only). This lets you always know, if your battery was detected properly.
+- Knight Rider KITT scanner Neopixel animation now with sound (select it as siren in vehicle file). Scanner is now only on, if siren is on.
+- Optimized "#define SEMI_AUTOMATIC" mode: Transmission is now downshifting earlier, if brake is applied
+
 ### New in V 9.5:
 - Battery low discharge protection options added to "3_adjustmentsESC.h". Used in combination with ESC's without protection or internal RZ7886 motor driver
 - Battery level is shown on LCD dashboard (bottom left instrument and central display).

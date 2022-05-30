@@ -10,7 +10,7 @@ volatile int startVolumePercentage = 140; // Adjust the start volume (usually = 
 
 // Choose the motor idle sound (uncomment the one you want) --------
 volatile int idleVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
-volatile int engineIdleVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineIdleVolumePercentage = 55; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!) 50
 volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full throttle (for rev sound as well)
 #include "sounds/URAL375idle.h" // Ural 375D
 
@@ -18,7 +18,7 @@ volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
 volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
-volatile int engineRevVolumePercentage = 50; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
+volatile int engineRevVolumePercentage = 55; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!) 50
 volatile const uint16_t revSwitchPoint = 150; // The rev sound is played instead of the idle sound above this point
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
@@ -28,7 +28,7 @@ volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound 
 
 // Choose the jake brake sound (uncomment the one you want) --------
 #define JAKE_BRAKE_SOUND // uncomment this, if you want to use the jake brake sound
-volatile int jakeBrakeVolumePercentage = 160; // Adjust the max. volume (usually = 150%)
+volatile int jakeBrakeVolumePercentage = 180; // Adjust the max. volume (usually = 150%)
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
 #ifdef JAKE_BRAKE_SOUND
@@ -65,7 +65,7 @@ volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, af
 //#include "sounds/ScaniaR730V8TurboWastegate.h"
 
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------
-volatile int fanVolumePercentage = 40; // Adjust the fan volume (250% for Tatra 813, else 0%)
+volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%) 40
 volatile int fanIdleVolumePercentage = 10; // the fan volume will be engine rpm dependent (usually = 10%)
 volatile int fanStartPoint = 0; // Volume will raise above this point (250 for Tatra 813)
 //#define GEARBOX_WHINING // Disables sound, if gearbox in neutral. Fan noise is used to simulate gearbox whining (set fanStartPoint above clutchEngagingPoint)
@@ -167,7 +167,7 @@ uint16_t clutchEngagingPoint = 100; // CEP. The "clutch" is engaging above this 
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 250; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 275; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage! 250
 
 // Engine mass simulation
 const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
