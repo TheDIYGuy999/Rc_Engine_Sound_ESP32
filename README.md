@@ -514,6 +514,17 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 9.7.0:
+- NEOPIXEL_KNIGHT_RIDER scanner optimized, synchrone with sound
+- NEOPIXEL_BLUELIGHT: red & blue bluelight animation for fire trucks etc.
+- NEOPIXEL_HIGHBEAM: Neopixel bar now also usable for full beam and headlight flasher. Also working in combination with NEOPIXEL_KNIGHT_RIDER & NEOPIXEL_BLUELIGHT
+- "Audio2Header.html" tool now able to remove noise in silent passages (option "remove noise floor")
+- ESC state machine hanging in case 1 or 3, if throttle trigger direction changed qickly: bug solved
+- Engine volume raising, if throttle trigger direction changed qickly: bug solved
+- Improved ESC_DEBUG messages
+- 3_adjustmentsESC.h: options better organized, OVERDRIVE now also usable with VIRTUAL_3_SPEED. In this case, the 4th (overdrive) gear is engaged @ full throttle & high RPM in 3rd gear
+- 2_adjustmentsRemote.h: CHANNEL_AVERAGING option (recommended, if you have issues with unstable channels)
+
 ### New in V 9.6.0:
 - New version numbering: mainVersion.subVersion.patch It is also displayed in Serial Monitor, so you always know, which version you have on your vehicle
 - "Out of fuel" voice message in many languages in "3_adjustmentsESC.h"

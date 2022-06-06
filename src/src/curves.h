@@ -41,7 +41,7 @@ uint8_t torqueconverterSlipPercentage = 100;
 // Use it, if your vecicle does't have a real shifting transmission and you still want to shift
 // your gears manually, using the 3 position switch
 #if defined VIRTUAL_3_SPEED
-int32_t virtualManualGearRatio[4] = {10, 23, 14, 10}; // unused, 1st, 2nd, 3rd gear 23, 14, 10
+int32_t virtualManualGearRatio[5] = {10, 23, 14, 10, 8}; // unused, 1st, 2nd, 3rd, (4rd overdrive) gear 23, 14, 10, 8
 #endif
 
 // Virtual 16 speed sequential transmission gear ratios (times 10!, for example 15 means 1.5) ----------------

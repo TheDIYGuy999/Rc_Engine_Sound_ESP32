@@ -3,7 +3,7 @@
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
-function audioBufferToText(audioBuffer, normalize, resample, sampleRate, fileType)
+function audioBufferToText(audioBuffer, normalize, resample, removeNoiseFloor, sampleRate, fileType)
 {
 	var buffer = audioBuffer.getChannelData(0);
 		
@@ -51,14 +51,23 @@ function audioBufferToText(audioBuffer, normalize, resample, sampleRate, fileTyp
 
 	var max = 0;
 	if(normalize)
+	{
 		for(var i = 0; i < buffer.length; i++)
 			max = Math.max(Math.abs(buffer[i]), max);
+	}
 	if(max == 0) max = 1;
 
+	// Array output
+	var out = 0;
 	for(var i = 0; i < buffer.length; i++)
 	{
-		if((i & 15) == 0) text += "//" + i + "\r\n";
-		text += Math.round(buffer[i] / max * 127) + ", ";
+		out = Math.round(buffer[i] / max * 127);
+		if(removeNoiseFloor) //removeNoiseFloor
+		{
+			if (out < 2 && out > -2) out = 0;
+		}
+		if((i & 15) == 0) text += "//" + i + "\r\n"; // new line with sample number
+		text += out + ", ";
 	}	
 	text += "};\r\n";
 	return text;
@@ -75,7 +84,7 @@ function convert(event)
 			var link = document.createElement("a");
 			link.download = file.name.split('.', 1)[0] + ".h";
 			link.href = URL.createObjectURL(new Blob(
-			[audioBufferToText(buffer, document.getElementById("normalize").checked, document.getElementById("resample").checked, document.getElementById("samplerate").value)], {type: "text/plain"}));
+			[audioBufferToText(buffer, document.getElementById("normalize").checked, document.getElementById("resample").checked, document.getElementById("removeNoiseFloor").checked, document.getElementById("samplerate").value)], {type: "text/plain"}));
 			document.body.appendChild(document.createElement("br"));
 			document.body.appendChild(link);
 			link.innerHTML = link.download;
@@ -92,7 +101,7 @@ function convert(event)
 
 <style>
 	body {
-	  background-color: lightblue;
+	  background-color: rgb(60, 161, 120);
 	}
 	</style>
 
@@ -101,13 +110,18 @@ function convert(event)
 <h1><a href="https://youtube.com/bitlunislab">bitluni</a>'s audio to header converter</h1>
 Modified by <a href="https://www.youtube.com/channel/UCqWO3PNCSjHmYiACDMLr23w">TheDIYGuy999</a> for my <a href="https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32">ESP32 RC Engine Sound & Light Controller</a> <br><br>
 
-1. Select the export file format (it is recommended to leave the settings as they are):<br>
-<input id="normalize" type="checkbox" checked>normalize
+<h4>1. Select the export file format (it is recommended to leave the settings as they are):</h4>
+<input id="normalize" type="checkbox" unchecked>normalize (Use this, if your wav file does not use the entire dynamic range and is too silent)
+<br>
 <input id="resample" type="checkbox" checked>resample
-<input id="samplerate" value="22050">
+<input id="samplerate" value="22050">Hz (22050 Hz is standard)
 <br><br>
 
-2. Select the export file type you want (for idle, rev, horn etc. sound):<br>
+<h4>2. Select noise reduction options:</h4>
+<input id="removeNoiseFloor" type="checkbox" unchecked>remove noise floor (recommended for sounds with silent passages)
+<br><br>
+
+<h4>3. Select the export file type you want (for idle, rev, horn etc. sound):</h4>
 	<select name="fileTypeSelect" id="fileTypeSelect">
 		<option value="startS">start (Anlasser)</option>
 		<option selected value="s">idle (Leerlauf)</option>
@@ -136,9 +150,11 @@ Modified by <a href="https://www.youtube.com/channel/UCqWO3PNCSjHmYiACDMLr23w">T
 	</select>
 <br><br>
 
-3. Open the unsigned 8bit PCM, 22050Hz wav file, which was previously made with Audacity:<br>
+<h4>4. Open the unsigned 8bit PCM, 22050Hz wav file, which was previously made with Audacity:</h4>
 <input type="file" onchange="convert(event)"><br><br>
 
-4. Your .h file is generated and downloaded. -> Save it in /vehicles/sounds<br>
+<h4>5. Your .h file is generated and downloaded.</h4>
+	-> Save it in /vehicles/sounds<br>
+	-> Add link to your vehicle file
 
 </body></html>

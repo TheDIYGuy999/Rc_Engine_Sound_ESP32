@@ -58,7 +58,7 @@
 
 // General options
 //#define QUICRUN_FUSION // Linearity compensation for HOBBYWING Quicrun Fusion motor / ESC combo
-//#define ESC_DIR // uncomment this, if your motor is spinning in the wrong direction
+#define ESC_DIR // uncomment this, if your motor is spinning in the wrong direction
 
 /* RZ7886 motor driver IC instead of ESC. Not in combination with #define THIRD_BRAKELIGHT or #define TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT
   Wiring:
@@ -108,23 +108,24 @@ const uint16_t escTakeoffPunch = 0;
 const uint16_t escReversePlus = 0;
 
 // Brake margin: (Experimental!)
-// This setting prevents the ESC to go completely back to zero / neutral as long as the braker trigger is pulled.
+// This setting prevents the ESC from going completely back to zero / neutral as long as the braker trigger is pulled.
 // This prevents the vehicle from rolling back as long as brake is applied. 0 = no effect, ca. 20 = strong effect.
 // How it works? Prevents the ESC from entering the "drag brake range"
-// Warning: vehicle may be unable to stop, if too high, especially when driving downhill!
-const uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10
+// Warning: vehicle may be unable to stop, if too high, especially when driving downhill! NEVER more than 20!
+const uint16_t brakeMargin = 0; // For RZ7886 motor driver and 370 motor = 10
 
 // Battery low discharge protection (only for boards with voltage divider resistors):
+// IMPORTANT: adjust RESISTOR_TO_BATTTERY_PLUS & DIODE_DROP until your readings are correct!
 //#define BATTERY_PROTECTION // This will disable the ESC output, if the battery cutout voltage is reached
 const float CUTOFF_VOLTAGE = 3.3; // Usually 3.3 V per LiPo cell. NEVER below 3.2 V!
 const float FULLY_CHARGED_VOLTAGE = 4.2; // Usually 4.2 V per LiPo cell, NEVER above!
-const uint16_t RESISTOR_TO_BATTTERY_PLUS = 9650; // 10000 Ohms (9900 for switch mode test board, 9650 for Ural)
+const uint16_t RESISTOR_TO_BATTTERY_PLUS = 10000; // 10000 Ohms (9900 for switch mode test board, 9650 for Ural, 9500 for Landy)
 const uint16_t RESISTOR_TO_GND = 1000; // 1000 Ohms
-const float DIODE_DROP = 0.0; // About 0.34V for SS34 diode (0 for Ural)
+const float DIODE_DROP = 0.34; // About 0.34V for SS34 diode on switch mode board (0 for Ural & Landy)
 volatile int outOfFuelVolumePercentage = 80; // Adjust the message volume in %
 // Select the out of fuel message you want:
-//#include "vehicles/sounds/OutOfFuelEnglish.h"
-#include "vehicles/sounds/OutOfFuelGerman.h"
+#include "vehicles/sounds/OutOfFuelEnglish.h"
+//#include "vehicles/sounds/OutOfFuelGerman.h"
 //#include "vehicles/sounds/OutOfFuelFrench.h"
 //#include "vehicles/sounds/OutOfFuelDutch.h"
 //#include "vehicles/sounds/OutOfFuelSpanish.h"

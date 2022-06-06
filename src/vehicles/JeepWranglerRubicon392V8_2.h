@@ -93,7 +93,7 @@ volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 10
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 60; // Adjust the siren volume (usually = 100%)
+volatile int sirenVolumePercentage = 30; // Adjust the siren volume (usually = 100%)
 //#include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)

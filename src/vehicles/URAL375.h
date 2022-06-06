@@ -17,13 +17,14 @@ volatile int fullThrottleVolumePercentage = 130; // Volume Percentage while full
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int revVolumePercentage = 150; // Adjust the idle volume (usually = 100%, more also working, depending on sound) 150
 volatile int engineRevVolumePercentage = 55; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!) 50
 volatile const uint16_t revSwitchPoint = 150; // The rev sound is played instead of the idle sound above this point
 volatile const uint16_t idleEndPoint = 400; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
 volatile const uint16_t idleVolumeProportionPercentage = 100; // The idle sound volume proportion (rest is rev proportion) below "revSwitchPoint" (about 90 - 100%, never more than 100)
 #ifdef REV_SOUND
 #include "sounds/URAL375rev.h" // Ural 375D
+//#include "sounds/URAL375rev3.h" // Ural 375D
 #endif
 
 // Choose the jake brake sound (uncomment the one you want) --------
