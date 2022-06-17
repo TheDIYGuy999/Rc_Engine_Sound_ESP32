@@ -71,6 +71,7 @@ LCD dashboard (original by Gamadril)
 - ESP-NOW based 2.4 GHz wireless trailer control support
 - An An RZ7886 motor driver IC can be used instead of a standard crawler type RC ESC
 - Battery low discharge protection options
+- Switchable crawler mode (with just minimal virtual inertia)
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
@@ -513,6 +514,11 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ### More to come...
 
 ## Changelog (newest on top):
+
+### New in V 9.8.0:
+- Adjustable RECOVERY_HYSTERESIS for battery protection
+- 8_adjustmentsSound.h (masterVolumeCrawlerThreshold) and 3_adjustmentsESC.h (crawlerEscRampTime): switchable crawler mode with just minimal inertia for gearbox protection. Allows to have a "show mode" and a "competition mode"
+- 3_adjustmentsESC.h: Additional comments in battery low dischgarge section, according to neo2001
 
 ### New in V 9.7.0:
 - NEOPIXEL_KNIGHT_RIDER scanner optimized, synchrone with sound

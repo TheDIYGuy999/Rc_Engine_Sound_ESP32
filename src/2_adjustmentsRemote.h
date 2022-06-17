@@ -38,7 +38,7 @@ uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your chan
 
 // CHANNEL LINEARITY SETTINGS  ****************************************************************************************************************
 
-//#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
+#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
 //#define EXPONENTIAL_STEERING // Exponential steering curve. More steering accuracy around center position
 
 // CHANNEL AVERAGING (EXPERIMENTAL!) **********************************************************************************************************

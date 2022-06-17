@@ -18,7 +18,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-char codeVersion[] = "9.7.0"; // Software revision.
+char codeVersion[] = "9.8.0"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -69,7 +69,7 @@ float batteryVolts();
 #include "10_adjustmentsTrailer.h"      // <<------- Trailer related adjustments
 
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
+//#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
 //#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
@@ -438,6 +438,7 @@ uint16_t escPulseMin = 1000;
 uint16_t escPulseMaxNeutral = 1500;
 uint16_t escPulseMinNeutral = 1500;
 uint16_t currentSpeed = 0;                               // 0 - 500 (current ESC power)
+volatile bool crawlerMode = false;                       // Crawler mode intended for crawling competitons (withouth sound and virtual inertia)
 
 // Lights
 int8_t lightsState = 0;                                  // for lights state machine
@@ -2983,21 +2984,23 @@ void gearboxDetection() {
 #else // only active, if not in TRACKED_MODE -------------------------------------------------------------
 
 #if defined OVERDRIVE && defined VIRTUAL_3_SPEED // Additional 4th gear mode for virtual 3 speed ********************************
-  // The 4th gear (overdrive) is engaged automatically, if driving @ full throttle in 3rd gear
-  if (currentRpm > 490 && selectedGear == 3 && engineLoad < 5 && currentThrottle > 490 && millis() - lastShiftingMillis > 2000) {
-    overdrive = true;
-  }
-  if (!escIsBraking) { // Lower downshift point, if not braking
-    if (currentRpm < 200 && millis() - lastShiftingMillis > 2000) {
-      overdrive = false;
+  if (!crawlerMode) {
+    // The 4th gear (overdrive) is engaged automatically, if driving @ full throttle in 3rd gear
+    if (currentRpm > 490 && selectedGear == 3 && engineLoad < 5 && currentThrottle > 490 && millis() - lastShiftingMillis > 2000) {
+      overdrive = true;
     }
-  }
-  else { // Higher downshift point, if braking
-    if ((currentRpm < 400 || engineLoad > 150) && millis() - lastShiftingMillis > 2000) {
-      overdrive = false;
+    if (!escIsBraking) { // Lower downshift point, if not braking
+      if (currentRpm < 200 && millis() - lastShiftingMillis > 2000) {
+        overdrive = false;
+      }
     }
+    else { // Higher downshift point, if braking
+      if ((currentRpm < 400 || engineLoad > 150) && millis() - lastShiftingMillis > 2000) {
+        overdrive = false;
+      }
+    }
+    if (selectedGear < 3) overdrive = false;
   }
-  if (selectedGear < 3) overdrive = false;
 #endif // End of overdrive ******************************************************************************************************
 
 #if not defined VIRTUAL_16_SPEED_SEQUENTIAL && not defined SEMI_AUTOMATIC// 3 gears, selected by 3 position switch **************
@@ -3210,7 +3213,7 @@ void esc() { // ESC main function ================================
       Serial.printf("Disconnect battery to prevent it from overdischarging!\n", batteryVoltage, batteryCutoffvoltage);
       batteryProtection = true;
     }
-    if (batteryVoltage > batteryCutoffvoltage + (0.05 * numberOfCells)) { // Recovery hysteresis
+    if (batteryVoltage > batteryCutoffvoltage + (FULLY_CHARGED_VOLTAGE * numberOfCells)) { // Recovery hysteresis
       batteryProtection = false;
     }
     // Out of fuel message triggering
@@ -3227,7 +3230,6 @@ void esc() { // ESC main function ================================
   escRampTime = escRampTimeThirdGear * 10 / virtualManualGearRatio[selectedGear];
 
 #elif defined VIRTUAL_16_SPEED_SEQUENTIAL
-  //escRampTime = escRampTimeThirdGear;// * 10 / map(virtualManualGearRatio[selectedGear], 155, 10, 23, 10);
   escRampTime = escRampTimeThirdGear * virtualManualGearRatio[selectedGear] / 5;
 
 #else // TAMIYA 3 speed shifting transmission
@@ -3241,9 +3243,20 @@ void esc() { // ESC main function ================================
     if (escInReverse) escRampTime = escRampTime * 100 / automaticReverseAccelerationPercentage; // faster acceleration in automatic reverse, EXPERIMENTAL, TODO!
   }
 
-  // calulate throttle dependent brake & acceleration steps
-  brakeRampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
-  driveRampRate = map (currentThrottle, 0, 500, 1, escAccelerationSteps);
+  // Drive mode -------------------------------------------
+  // Crawler mode for direct control -----
+  crawlerMode = (masterVolume <= masterVolumeCrawlerThreshold); // Direct control, depending on master volume
+
+  if (crawlerMode) { // almost no virtual inertia (just for drive train protection), for crawling competitions
+    escRampTime = crawlerEscRampTime;
+    brakeRampRate = map (currentThrottle, 0, 500, 1, 10);
+    driveRampRate = 10;
+  }
+  else { // Virtual inertia mode -----
+    // calulate throttle dependent brake & acceleration steps
+    brakeRampRate = map (currentThrottle, 0, 500, 1, escBrakeSteps);
+    driveRampRate = map (currentThrottle, 0, 500, 1, escAccelerationSteps);
+  } // ----------------------------------------------------
 
   // Emergency ramp rates for falisafe
   if (failSafe) {
@@ -4079,7 +4092,7 @@ void updateRGBLEDs() {
         rgbLEDs[6] = CRGB::Red;
         rgbLEDs[7] = CRGB::Blue;
       }
-      if (millis() - lastNeopixelBluelightTime > 80) { // Step 2
+      if (millis() - lastNeopixelBluelightTime > 160) { // Step 2
         fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
       }
       if (millis() - lastNeopixelBluelightTime > 300) { // Step 3
@@ -4090,7 +4103,7 @@ void updateRGBLEDs() {
         rgbLEDs[6] = CRGB::Blue;
         rgbLEDs[7] = CRGB::Red;
       }
-      if (millis() - lastNeopixelBluelightTime > 380) { // Step 4
+      if (millis() - lastNeopixelBluelightTime > 460) { // Step 4
         fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
       }
       if (millis() - lastNeopixelBluelightTime > 600) { // Step 5

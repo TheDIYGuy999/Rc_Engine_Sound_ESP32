@@ -56,7 +56,7 @@ const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoothe
 // WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
 
 // Servo limits 
-const uint16_t CH1L = 1880, CH1C = 1480, CH1R = 1080; // CH1 steering left 1875, center 1475, right 1075
+const uint16_t CH1L = 1840, CH1C = 1485, CH1R = 1090; // CH1 steering left 1880, center 1480, right 1080
 const uint16_t CH2L = 978, CH2C = 1833, CH2R = 1833; // CH2 transmission gear 1 978, 2 1833, 3 1833
 const uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, release
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked

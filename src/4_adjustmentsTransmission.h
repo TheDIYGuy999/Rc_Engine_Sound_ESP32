@@ -20,7 +20,7 @@
 // Additional transmission options =========================================================================================================
 // Automatic transmission with overdrive (lower RPM in top gear, gear ratio lower than 1:1, 4 & 6 speed only)
 // Also usable in combination with VIRTUAL_3_SPEED. The 4th gear is switched automatically in this case, if driving in 3rd gear @ full throttle
-//#define OVERDRIVE // Don't use it for: doubleClutch. Not working with SEMI_AUTOMATIC, but you can leave it on in this case.
+#define OVERDRIVE // Don't use it for: doubleClutch. Not working with SEMI_AUTOMATIC, but you can leave it on in this case.
 
 // In some cases we want a different reverse acceleration for automatic transmission vehicles.
 uint16_t automaticReverseAccelerationPercentage = 100;

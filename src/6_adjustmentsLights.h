@@ -7,7 +7,7 @@
  */
 
 // Neopixel settings ----------------------------------------------------------------------------------------------------------------------------- 
-#define NEOPIXEL_ENABLED // GPIO0 used for WS2812 Neopixel control, if defined!
+//#define NEOPIXEL_ENABLED // GPIO0 used for WS2812 Neopixel control, if defined!
 #define NEOPIXEL_COUNT 8 // How many Neopixels? 8 for Knight Rider, 3 for B33lz3bub
 #define NEOPIXEL_BRIGHTNESS  127 // Brightness (255 is the maximum)
 
@@ -15,7 +15,7 @@
 //#define NEOPIXEL_DEMO // Demo
 //#define NEOPIXEL_KNIGHT_RIDER // Knight Rider scanner animation for 8 LED (use it in combination with "kittScanner.h" "siren" sound in your vehicle file)
 #define NEOPIXEL_BLUELIGHT // Bluelight animation for 8 LED
-#define NEOPIXEL_HIGHBEAM // Neopixel bar is used as high beam as well, if defined. Also usable in combination with NEOPIXEL_KNIGHT_RIDER & NEOPIXEL_BLUELIGHT
+//#define NEOPIXEL_HIGHBEAM // Neopixel bar is used as high beam as well, if defined. Also usable in combination with NEOPIXEL_KNIGHT_RIDER & NEOPIXEL_BLUELIGHT
 //#define NEOPIXEL_B33LZ3BUB // B33lz3bub Austria animation for 3 LED: https://www.rc-modellbau-portal.de/index.php?threads/baubericht-mercedes-actros-1851-gigaspace-tamiya.14349/page-3
 
 
