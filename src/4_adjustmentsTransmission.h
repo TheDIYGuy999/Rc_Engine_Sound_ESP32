@@ -25,6 +25,9 @@
 // In some cases we want a different reverse acceleration for automatic transmission vehicles.
 uint16_t automaticReverseAccelerationPercentage = 100;
 
+// Low range percentage is used for MODE1_SHIFTING (off road reducer)
+uint16_t lowRangePercentage = 58;// WPL 2 speed ratios = 29:1, 17:1 = 58% in low range. You may want to change this for other 2 speed transmissions
+
 // Transmission controls options ===========================================================================================================
 // #define SEMI_AUTOMATIC This will simulate a semi automatic transmission. Shifting is not controlled by the 3 position switch in this mode!
 //#define SEMI_AUTOMATIC // Works for VIRTUAL_3_SPEED or real 3 speed transmission. Don't select this @ the same time as VIRTUAL_16_SPEED_SEQUENTIAL

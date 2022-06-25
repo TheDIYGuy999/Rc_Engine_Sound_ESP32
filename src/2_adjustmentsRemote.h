@@ -7,7 +7,7 @@
 //#define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
 //#define GRAUPNER_MZ_12          // <------- Graupner MZ-12 PRO
 #define MICRO_RC                // <------- The car style DIY "Micro RC" remote. Don't use this with standard remotes!
-//#define MICRO_RC_STICK            // <------- The stick based DIY "Micro RC" remote. Don't use this with standard remotes!
+//#define MICRO_RC_STICK          // <------- The stick based DIY "Micro RC" remote. Don't use this with standard remotes!
 
 // For testing only!
 //#define FLYSKY_FS_I6S_EXCAVATOR_TEST // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator
@@ -23,9 +23,12 @@
 // PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
 
 // SBUS communication (RX header, 13 channels. This is my preferred communication protocol)--------
+/* NOTE! SBUS is causing weird issues with Flysky remotes. Use IBUS instead! */
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-boolean sbusInverted = false; // false = wired to non standard (inverted) SBUS signal (for example from my "Micro RC" receiver)
+// NOTE: "boolean sbusInverted = true / false" was moved to the remote configuration profiles, so you don't have to change it
 uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
+#define EMBEDDED_SBUS // SBUS library not used, if defined (It is working fine with MICRO_RC, but still unstable with Flysky remotes, use IBUS for them)
+uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout in milliseconds (about 100, was 50)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
 //#define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
@@ -38,7 +41,7 @@ uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your chan
 
 // CHANNEL LINEARITY SETTINGS  ****************************************************************************************************************
 
-#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
+//#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
 //#define EXPONENTIAL_STEERING // Exponential steering curve. More steering accuracy around center position
 
 // CHANNEL AVERAGING (EXPERIMENTAL!) **********************************************************************************************************
@@ -145,6 +148,9 @@ const uint16_t pulseSpan = 480;
 //#define AUTO_ENGINE_ON_OFF
 //#define AUTO_INDICATORS
 
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
 #endif
 
 // Flysky FS-i6S remote configuration profile (for excavators only) ---------------------------------------------------------------------------------
@@ -213,6 +219,9 @@ const uint16_t pulseSpan = 480;
 //#define AUTO_ENGINE_ON_OFF
 //#define AUTO_INDICATORS
 
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
 #endif
 
 // Flysky FS-i6S remote configuration profile (for excavators only) ---------------------------------------------------------------------------------
@@ -280,6 +289,9 @@ const uint16_t pulseSpan = 480;
 //#define AUTO_LIGHTS
 //#define AUTO_ENGINE_ON_OFF
 //#define AUTO_INDICATORS
+
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 #endif
 
@@ -373,6 +385,9 @@ const uint16_t pulseSpan = 480;
 //#define AUTO_ENGINE_ON_OFF
 #define AUTO_INDICATORS
 
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
 #endif
 
 // RGT MT-305 configuration profile (comes with EX86100) -----------------------
@@ -460,6 +475,9 @@ const uint16_t pulseSpan = 500;
 #define AUTO_ENGINE_ON_OFF
 #define AUTO_INDICATORS
 
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
 #endif
 
 // Graupner mz-12 PRO remote configuration profile ---------------------------------------------------------------------------------------------------
@@ -525,6 +543,9 @@ const uint16_t pulseSpan = 480;
 //#define AUTO_LIGHTS
 //#define AUTO_ENGINE_ON_OFF
 #define AUTO_INDICATORS
+
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 #endif
 
@@ -592,6 +613,9 @@ const uint16_t pulseSpan = 480;
 //#define AUTO_ENGINE_ON_OFF
 #define AUTO_INDICATORS
 
+// SBUS mode ----
+boolean sbusInverted = false; // false = non standard (inverted) SBUS signal
+
 #endif
 
 // "Micro RC" (The stick based one) DIY Arduino remote configuration profile -------------------------------------------------------------------------------------------
@@ -657,5 +681,8 @@ const uint16_t pulseSpan = 480;
 #define AUTO_LIGHTS
 //#define AUTO_ENGINE_ON_OFF
 #define AUTO_INDICATORS
+
+// SBUS mode ----
+boolean sbusInverted = false; // false = non standard (inverted) SBUS signal
 
 #endif

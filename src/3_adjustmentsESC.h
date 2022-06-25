@@ -115,7 +115,10 @@ const uint16_t escReversePlus = 0;
 const uint16_t brakeMargin = 0; // For RZ7886 motor driver and 370 motor = 10
 
 // Crawler mode escRampTime (see "8_adjustmentsSound.h") WARNING: a very low setting may damage your transmission!
-const uint8_t crawlerEscRampTime = 10; // about 10, less = more direct control = less virtual inertia
+const uint8_t crawlerEscRampTime = 10; // about 10 (15 for Jeep), less = more direct control = less virtual inertia
+
+// Allows to scale vehicle file dependent acceleration
+uint16_t globalAccelerationPercentage = 100; // about 100 - 200% (200 for Jeep) Experimental, may cause automatic transmission shifting issues!
 
 /* Battery low discharge protection (only for boards with voltage divider resistors):
 *  IMPORTANT: Enter used resistor values in Ohms (Ω) and THEN adjust DIODE_DROP, until your readings match the actual battery voltage! */
@@ -127,9 +130,9 @@ const float RECOVERY_HYSTERESIS = 0.2; // around 0.2 V
  * When selecting resistors, always use two of the same magnitude: Like, for example, 10k/2k, 20k/4k or 100k/20k. NEVER exceed a ratio LOWER than (4:1 = 4)!
  * WARNING: If the ratio is too LOW, like 10k/5k (2:1 = 2), the battery voltage will most likely DAMAGE the controller permanently!
  * Example calculation: 2000 / (2000 + 10000) = 0.166 666 666 7; 7.4 V * 0.167 = 1.2358 V (of 3.3 V maximum on GPIO Pin). */
-const uint16_t RESISTOR_TO_BATTTERY_PLUS = 10000; // Value in Ohms (Ω), for example 10000
-const uint16_t RESISTOR_TO_GND = 2000; // Value in Ohms (Ω), for example 1000. Measuring exact resistor values before soldering, if possible is recommended!
-const float DIODE_DROP = 0.34; // Fine adjust measured value and/or consider diode voltage drop (about 0.34V for SS34 diode)
+uint16_t RESISTOR_TO_BATTTERY_PLUS = 10000; // Value in Ohms (Ω), for example 10000
+uint16_t RESISTOR_TO_GND = 2000; // Value in Ohms (Ω), for example 2000. Measuring exact resistor values before soldering, if possible is recommended!
+float DIODE_DROP = 0.34; // Fine adjust measured value and/or consider diode voltage drop (about 0.34V for SS34 diode)
 /* It is recommended to add a sticker to your ESP32, which includes the 3 calibration values above */
 volatile int outOfFuelVolumePercentage = 80; // Adjust the message volume in %
 // Select the out of fuel message you want:

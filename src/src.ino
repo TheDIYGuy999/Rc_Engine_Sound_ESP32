@@ -18,7 +18,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-char codeVersion[] = "9.8.0"; // Software revision.
+char codeVersion[] = "9.9.0"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -90,7 +90,9 @@ float batteryVolts();
 // !! Do NOT install the libraries in the sketch folder.
 // No manual library download is required in Visual Studio Code IDE (see platformio.ini)
 #include <statusLED.h>      // https://github.com/TheDIYGuy999/statusLED <<------- required for LED control
+#if not defined EMBEDDED_SBUS // SBUS library only required, if not embedded SBUS code is used -----------
 #include <SBUS.h>           // https://github.com/TheDIYGuy999/SBUS      <<------- you need to install my fork of this library!
+#endif // ------------------------------------------------------------------------------------------------
 #include <rcTrigger.h>      // https://github.com/TheDIYGuy999/rcTrigger <<------- required for RC signal processing
 #include <IBusBM.h>         // https://github.com/bmellink/IBusBM        <<------- required for IBUS interface
 #include <TFT_eSPI.h>       // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard. Use v2.3.70
@@ -103,6 +105,9 @@ float batteryVolts();
 #include "src/helper.h"    // Various stuff
 #include "src/dashboard.h" // For LCD dashboard. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 #include "src/SUMD.h"      // For Graupner SUMD interface. See: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
+#if defined EMBEDDED_SBUS
+#include "src/sbus.h"       // For SBUS interface
+#endif
 
 // No need to install these, they come with the ESP32 board definition
 #include "driver/rmt.h"    // for PWM signal detection
@@ -281,11 +286,16 @@ unsigned long timelastloop;
 uint32_t maxPpmRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
 // SBUS signal processing variables
+#if not defined EMBEDDED_SBUS // ------------------------
 SBUS sBus(Serial2); // SBUS object on Serial 2 port
 // channel, fail safe, and lost frames data
 uint16_t SBUSchannels[16];
 bool SBUSfailSafe;
 bool SBUSlostFrame;
+#else // ------------------------------------------------
+bfs::SbusRx sBus(&Serial2);
+std::array<int16_t, bfs::SbusRx::NUM_CH()> SBUSchannels;
+#endif // -----------------------------------------------
 bool sbusInit;
 uint32_t maxSbusRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
 
@@ -302,7 +312,7 @@ uint32_t maxSumdRpmPercentage = 390; // Limit required to prevent controller fro
 // IBUS signal processing variables
 IBusBM iBus;    // IBUS object
 bool ibusInit;
-uint32_t maxIbusRpmPercentage = 340; // Limit required to prevent controller from crashing @ high engine RPM (was 350, but sometimes crashing)
+uint32_t maxIbusRpmPercentage = 320; // Limit required to prevent controller from crashing @ high engine RPM (was 350, but sometimes crashing)
 
 // Interrupt latches
 volatile boolean couplerSwitchInteruptLatch; // this is enabled, if the coupler switch pin change interrupt is detected
@@ -426,6 +436,7 @@ boolean gearDownShiftingInProgress;                      // Active while shiftin
 boolean gearUpShiftingPulse;                             // Active, if shifting upwards begins
 boolean gearDownShiftingPulse;                           // Active, if shifting downwards begins
 volatile boolean neutralGear = false;                    // Transmission in neutral
+boolean lowRange = false;                                // Transmission range (off road reducer)
 
 // ESC
 volatile boolean escIsBraking = false;                   // ESC is in a braking state
@@ -1479,6 +1490,13 @@ void setup() {
       Serial.printf("Core %i reset reason: %i: %s\n", coreNum, rtc_get_reset_reason(coreNum), RESET_REASONS[resetReason - 1]);
     }
   }
+#if defined BATTERY_PROTECTION
+  Serial.printf("Battery protection calibration data:\n");
+  Serial.printf("RESISTOR_TO_BATTTERY_PLUS: %i Ω\n", RESISTOR_TO_BATTTERY_PLUS);
+  Serial.printf("RESISTOR_TO_GND: %i Ω\n", RESISTOR_TO_GND);
+  Serial.printf("DIODE_DROP: %.2f V\n", DIODE_DROP);
+#endif
+
   Serial.printf("**************************************************************************************************\n\n");
 
   setupBattery();
@@ -1545,7 +1563,9 @@ void setup() {
   // Neopixel setup
 #ifdef NEOPIXEL_ENABLED
   FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
+  FastLED.setCorrection( TypicalLEDStrip );
   FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
+  FastLED.setMaxPowerInVoltsAndMilliamps( 5, MAX_POWER_MILLIAMPS);
 #endif
 
   // Communication setup --------------------------------------------
@@ -1802,36 +1822,52 @@ void readSbusCommands() {
   // Signals are coming in via SBUS protocol
 
   static unsigned long lastSbusFailsafe;
+  static unsigned long lastSbusRead;
 
-  // look for a good SBUS packet from the receiver
-  if (sBus.read(&SBUSchannels[0], &SBUSfailSafe, &SBUSlostFrame)) {
-    sbusInit = true;
-    lastSbusFailsafe = millis();
+  if (millis() - lastSbusRead > 20) { // TODO, test for Flysky SBUS bugfix. 20 is not bad, but still a bit unstable! USE IBUS for Flysky!
+    // look for a good SBUS packet from the receiver
+#if not defined EMBEDDED_SBUS // ------------------------
+    if (sBus.read(&SBUSchannels[0], &SBUSfailSafe, &SBUSlostFrame)) {
+#else // ------------------------------------------------
+    if (sBus.read() && !sBus.failsafe() && !sBus.lost_frame()) {
+#endif // -----------------------------------------------
+      sbusInit = true;
+      lastSbusFailsafe = millis();
+      lastSbusRead = millis();
+    }
   }
+
+  // Failsafe triggering (works, if SBUS wire is unplugged, but SBUSfailSafe signal from the receiver is untested!)
+#if not defined EMBEDDED_SBUS // ------------------------
+  if (millis() - lastSbusFailsafe > sbusFailsafeTimeout && !SBUSfailSafe  && !SBUSlostFrame) {
+#else // ------------------------------------------------
+  if (millis() - lastSbusFailsafe > sbusFailsafeTimeout) {
+#endif // -----------------------------------------------  
+    failSafe = true; // if timeout (signal loss)
+  }
+  else failSafe = false;
 
   //SBUSchannels[NONE - 1] = 991; // The NONE channel needs to be on neutral (991 = 1500ms) TODO
 
   // Proportional channels (in Microseconds)
-  pulseWidthRaw[1] = map(SBUSchannels[STEERING - 1], 172, 1811, 1000, 2000); // CH1 steering
-  pulseWidthRaw[2] = map(SBUSchannels[GEARBOX - 1], 172, 1811, 1000, 2000); // CH2 3 position switch for gearbox (left throttle in tracked mode)
-  pulseWidthRaw[3] = map(SBUSchannels[THROTTLE - 1], 172, 1811, 1000, 2000); // CH3 throttle & brake
-  pulseWidthRaw[4] = map(SBUSchannels[HORN - 1], 172, 1811, 1000, 2000); // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-  pulseWidthRaw[5] = map(SBUSchannels[FUNCTION_R - 1], 172, 1811, 1000, 2000); // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-  pulseWidthRaw[6] = map(SBUSchannels[FUNCTION_L - 1], 172, 1811, 1000, 2000); // CH6 indicators, hazards
-  pulseWidthRaw[7] = map(SBUSchannels[POT2 - 1], 172, 1811, 1000, 2000); // CH7 pot 2
-  pulseWidthRaw[8] = map(SBUSchannels[MODE1 - 1], 172, 1811, 1000, 2000); // CH8 mode 1 switch
-  pulseWidthRaw[9] = map(SBUSchannels[MODE2 - 1], 172, 1811, 1000, 2000); // CH9 mode 2 switch
-  pulseWidthRaw[10] = map(SBUSchannels[MOMENTARY1 - 1], 172, 1811, 1000, 2000); // CH10
-  pulseWidthRaw[11] = map(SBUSchannels[HAZARDS - 1], 172, 1811, 1000, 2000); // CH11
-  pulseWidthRaw[12] = map(SBUSchannels[INDICATOR_LEFT - 1], 172, 1811, 1000, 2000); // CH12
-  pulseWidthRaw[13] = map(SBUSchannels[INDICATOR_RIGHT - 1], 172, 1811, 1000, 2000); // CH13
-
-  // Failsafe triggering (works, if SBUS wire is unplugged, but SBUSfailSafe signal from the receiver is untested!)
-  if (millis() - lastSbusFailsafe > 50 && !SBUSfailSafe  && !SBUSlostFrame) {
-    failSafe = true; // if timeout (signal loss)
-    //Serial.printf("SBUS failsafe!\n");
+  if (!failSafe) {
+#if defined EMBEDDED_SBUS // ----------------------------
+    SBUSchannels = sBus.ch();
+#endif // -----------------------------------------------   
+    pulseWidthRaw[1] = map(SBUSchannels[STEERING - 1], 172, 1811, 1000, 2000); // CH1 steering
+    pulseWidthRaw[2] = map(SBUSchannels[GEARBOX - 1], 172, 1811, 1000, 2000); // CH2 3 position switch for gearbox (left throttle in tracked mode)
+    pulseWidthRaw[3] = map(SBUSchannels[THROTTLE - 1], 172, 1811, 1000, 2000); // CH3 throttle & brake
+    pulseWidthRaw[4] = map(SBUSchannels[HORN - 1], 172, 1811, 1000, 2000); // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+    pulseWidthRaw[5] = map(SBUSchannels[FUNCTION_R - 1], 172, 1811, 1000, 2000); // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+    pulseWidthRaw[6] = map(SBUSchannels[FUNCTION_L - 1], 172, 1811, 1000, 2000); // CH6 indicators, hazards
+    pulseWidthRaw[7] = map(SBUSchannels[POT2 - 1], 172, 1811, 1000, 2000); // CH7 pot 2
+    pulseWidthRaw[8] = map(SBUSchannels[MODE1 - 1], 172, 1811, 1000, 2000); // CH8 mode 1 switch
+    pulseWidthRaw[9] = map(SBUSchannels[MODE2 - 1], 172, 1811, 1000, 2000); // CH9 mode 2 switch
+    pulseWidthRaw[10] = map(SBUSchannels[MOMENTARY1 - 1], 172, 1811, 1000, 2000); // CH10
+    pulseWidthRaw[11] = map(SBUSchannels[HAZARDS - 1], 172, 1811, 1000, 2000); // CH11
+    pulseWidthRaw[12] = map(SBUSchannels[INDICATOR_LEFT - 1], 172, 1811, 1000, 2000); // CH12
+    pulseWidthRaw[13] = map(SBUSchannels[INDICATOR_RIGHT - 1], 172, 1811, 1000, 2000); // CH13
   }
-  else failSafe = false;
 
   if (sbusInit) {
     // Normalize, auto zero and reverse channels
@@ -1961,16 +1997,14 @@ void processRawChannels() {
 #ifdef AIRPLANE_MODE // If airplane mode: always disable CH3 auto zero adjustment
   channelAutoZero[3] = false;
 #endif
-  if (!autoZeroDone) {
-    Serial.printf("\nTransmitter channel offsets (calculated, if channelAutoZero[] = true):\n"); // Print offsets, if switching on the controller
-  }
+
   if (millis() - lastOutOfRangeMillis > 500) {
     for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) { // For each channel:
 
       // Position valid for auto calibration? Must be between 1400 and 1600 microseconds
       if (channelAutoZero[i] && !autoZeroDone && (pulseWidthRaw[i] > 1600 || pulseWidthRaw[i] < 1400)) {
         channel = i;
-        Serial.printf("CH%i signal out of auto calibration range, check transmitter & receiver!\n", channel);
+        Serial.printf(" CH%i: signal out of auto calibration range, check transmitter & receiver!\n", channel);
         channelZero();
         lastOutOfRangeMillis = millis();
         i--;
@@ -1980,7 +2014,7 @@ void processRawChannels() {
       // Exponential throttle compensation ------------------
 #ifdef EXPONENTIAL_THROTTLE
       if (!exThrottlePrint) {
-        Serial.printf("EXPONENTIAL_THROTTLE mode configured\n");
+        Serial.printf("EXPONENTIAL_THROTTLE mode enabled\n");
         exThrottlePrint = true;
       }
       if (i == 3) { // Throttle CH only
@@ -1996,7 +2030,7 @@ void processRawChannels() {
       // Exponential steering compensation ------------------
 #ifdef EXPONENTIAL_STEERING
       if (!exSteeringPrint) {
-        Serial.printf("EXPONENTIAL_STEERING mode configured\n");
+        Serial.printf("EXPONENTIAL_STEERING mode enabled\n");
         exSteeringPrint = true;
       }
       if (i == 1) { // Throttle CH only
@@ -2026,7 +2060,8 @@ void processRawChannels() {
       // Compensate pulsewidth with auto zero offset
       pulseWidthRaw3[i] += pulseOffset[i];
       if (!autoZeroDone) { // Print offsets, if switching on the controller
-        Serial.printf(" CH%i: %i µs\n", i, pulseOffset[i]);
+        if (i == 1) Serial.printf("\nTransmitter channel offsets (calculated, if channelAutoZero[] = true):\n");
+        if (channelAutoZero[i]) Serial.printf(" CH%i: %i µs\n", i, pulseOffset[i]);
       }
 
       // Set auto zero done flag
@@ -2083,8 +2118,10 @@ void processRawChannels() {
     Serial.printf(" HAZARDS:          %s\n", hazard ? "true" : "false");
     Serial.printf(" INDICATOR_LEFT:   %s\n", indicatorLon ? "true" : "false");
     Serial.printf(" INDICATOR_RIGHT:  %s\n", indicatorRon ? "true" : "false");
+#if not defined EMBEDDED_SBUS // ------------------------   
     Serial.printf(" SBUS Failsafe:    %s\n", SBUSfailSafe ? "true" : "false");
     Serial.printf(" SBUS Lost frames: %s\n", SBUSlostFrame ? "true" : "false");
+#endif // -----------------------------------------------
     Serial.printf(" Failsafe state:   %s\n", failSafe ? "true" : "false");
     Serial.printf("Misc:\n");
     Serial.printf(" MAX_RPM_PERCENTAGE: %i\n", MAX_RPM_PERCENTAGE);
@@ -2110,7 +2147,11 @@ void channelZero() {
 void failsafeRcSignals() {
 
   // Failsafe actions --------
-  if (failSafe) pulseWidth[3] = pulseZero[3]; // Throttle to zero position!
+  if (failSafe) {
+    for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++) {
+      if (i != 1 && i != 2 && i != 8 && i != 9) pulseWidth[i] = pulseZero[i]; // Channels to zero position, but never for CH1 (Steering), CH8, CH9
+    }
+  }
 }
 
 //
@@ -2196,8 +2237,14 @@ void mcpwmOutput() {
 #else
 #undef TRANSMISSION_NEUTRAL // Not usable in this case!
   if (currentSpeed > 50 && currentSpeed < 150) { // Only shift WPL gearbox, if vehicle is moving slowly, so it's engaging properly
-    if (!mode1) shiftingServoMicros = CH2L;
-    else shiftingServoMicros = CH2C;
+    if (!mode1) {
+      shiftingServoMicros = CH2L;
+      lowRange = true;
+    }
+    else {
+      shiftingServoMicros = CH2C;
+      lowRange = false;
+    }
   }
 #endif
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, shiftingServoMicros);
@@ -3176,7 +3223,7 @@ static unsigned long lastStateTime;
 static int8_t driveRampRate;
 static int8_t driveRampGain;
 static int8_t brakeRampRate;
-uint8_t escRampTime;
+uint16_t escRampTime;
 
 // ESC sub functions =============================================
 // We always need the data up to date, so these comparators are programmed as sub functions!
@@ -3243,6 +3290,12 @@ void esc() { // ESC main function ================================
     if (escInReverse) escRampTime = escRampTime * 100 / automaticReverseAccelerationPercentage; // faster acceleration in automatic reverse, EXPERIMENTAL, TODO!
   }
 
+  // Allows to scale vehicle file dependent acceleration
+  escRampTime = escRampTime * 100 / globalAccelerationPercentage;
+
+  // ESC ramp time compensation in low range
+  if (lowRange) escRampTime = escRampTime * lowRangePercentage / 100;
+
   // Drive mode -------------------------------------------
   // Crawler mode for direct control -----
   crawlerMode = (masterVolume <= masterVolumeCrawlerThreshold); // Direct control, depending on master volume
@@ -3280,6 +3333,7 @@ void esc() { // ESC main function ================================
     Serial.printf("escPulseMaxNeutral:    %i\n", escPulseMaxNeutral);
     Serial.printf("escPulseMax:           %i\n", escPulseMax);
     Serial.printf("brakeRampRate:         %i\n", brakeRampRate);
+    Serial.printf("lowRange:              %s\n", lowRange ? "true" : "false");
     Serial.printf("currentRpm:            %i\n", currentRpm);
     Serial.printf("escPulseWidth:         %i\n", escPulseWidth);
     Serial.printf("escPulseWidthOut:      %i\n", escPulseWidthOut);
@@ -4039,6 +4093,8 @@ void updateRGBLEDs() {
 
   static uint32_t lastNeopixelTime = millis();
   static bool knightRiderLatch = false;
+  static bool unionJackLatch = false;
+  static bool neopixelShow = false;
 
 #ifdef NEOPIXEL_DEMO // Demo -------------------------------------------------------------
   if (millis() - lastNeopixelTime > 20) { // Every 20 ms
@@ -4052,6 +4108,7 @@ void updateRGBLEDs() {
     rgbLEDs[3] = CRGB::Yellow;
     rgbLEDs[4] = CRGB::Blue;
     rgbLEDs[5] = CRGB::Green;
+    neopixelShow = true;
   }
 #endif
 
@@ -4075,6 +4132,7 @@ void updateRGBLEDs() {
     for (int i = 0; i < NEOPIXEL_COUNT; i++) {
       rgbLEDs[i].nscale8(160);  //160
     }
+    neopixelShow = true;
   }
 #endif
 
@@ -4111,6 +4169,70 @@ void updateRGBLEDs() {
       }
     }
     else fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black); // Off
+    neopixelShow = true;
+  }
+#endif
+
+#ifdef NEOPIXEL_UNION_JACK // United Kingdom animation ---------------------------------------
+  static uint32_t lastNeopixelUnionJackTime = millis();
+  static uint8_t animationStep = 1;
+
+  if (sirenTrigger || unionJackLatch) {
+    unionJackLatch = true;
+    if (millis() - lastNeopixelUnionJackTime > 789) { // Every 789 ms (must match with sound "BritishNationalAnthemSiren.h")
+      lastNeopixelUnionJackTime = millis();
+      if (animationStep == 1 || animationStep == 9) { // Step 1 or 9
+        rgbLEDs[0] = CRGB::Red;
+        rgbLEDs[1] = CRGB::Blue;
+        rgbLEDs[2] = CRGB::Blue;
+        rgbLEDs[3] = CRGB::Red;
+        rgbLEDs[4] = CRGB::Red;
+        rgbLEDs[5] = CRGB::Blue;
+        rgbLEDs[6] = CRGB::Blue;
+        rgbLEDs[7] = CRGB::Red;
+      }
+      if (animationStep == 2 || animationStep == 8) { // Step 2 or 8
+        rgbLEDs[0] = CRGB::White;
+        rgbLEDs[1] = CRGB::Red;
+        rgbLEDs[2] = CRGB::Blue;
+        rgbLEDs[3] = CRGB::Red;
+        rgbLEDs[4] = CRGB::Red;
+        rgbLEDs[5] = CRGB::Blue;
+        rgbLEDs[6] = CRGB::Red;
+        rgbLEDs[7] = CRGB::White;
+      }
+      if (animationStep == 3 || animationStep == 7) { // Step 3 or 7
+        rgbLEDs[0] = CRGB::Blue;
+        rgbLEDs[1] = CRGB::White;
+        rgbLEDs[2] = CRGB::Red;
+        rgbLEDs[3] = CRGB::Red;
+        rgbLEDs[4] = CRGB::Red;
+        rgbLEDs[5] = CRGB::Red;
+        rgbLEDs[6] = CRGB::White;
+        rgbLEDs[7] = CRGB::Blue;
+      }
+      if (animationStep == 4 || animationStep == 5 || animationStep == 6) { // Step 4
+        rgbLEDs[0] = CRGB::Red;
+        rgbLEDs[1] = CRGB::Red;
+        rgbLEDs[2] = CRGB::Red;
+        rgbLEDs[3] = CRGB::Red;
+        rgbLEDs[4] = CRGB::Red;
+        rgbLEDs[5] = CRGB::Red;
+        rgbLEDs[6] = CRGB::Red;
+        rgbLEDs[7] = CRGB::Red;
+      }
+      if (animationStep == 10) { // Step 10
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+        animationStep = 0;
+        unionJackLatch = false;
+      }
+      animationStep ++;
+      neopixelShow = true;
+    }
+  }
+  else {
+    animationStep = 1;
+    lastNeopixelUnionJackTime = millis();
   }
 #endif
 
@@ -4119,10 +4241,11 @@ void updateRGBLEDs() {
   if (millis() - lastNeopixelHighbeamTime > 20) { // Every 20 ms
     lastNeopixelHighbeamTime = millis();
 
-    if (!knightRiderLatch && !sirenTrigger && !blueLightTrigger) {
+    if (!knightRiderLatch && !sirenTrigger && !blueLightTrigger && !unionJackLatch) {
       if (headLightsHighBeamOn || headLightsFlasherOn) fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White);
       else fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
     }
+    neopixelShow = true;
   }
 #endif
 
@@ -4147,14 +4270,16 @@ void updateRGBLEDs() {
     else {
       fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White);  // only white
     }
+    neopixelShow = true;
   }
 #endif
 
-  // Neopixel refresh for all option above ------------------------------------------------
+  // Neopixel refresh for all options above ------------------------------------------------
   static uint32_t lastNeopixelRefreshTime = millis();
-  if (millis() - lastNeopixelRefreshTime > 20) { // Every 20 ms
+  if (millis() - lastNeopixelRefreshTime > 20 && neopixelShow) { // Every 20 ms
     lastNeopixelRefreshTime = millis();
     FastLED.show();
+    neopixelShow = false;
   }
 }
 

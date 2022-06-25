@@ -515,6 +515,15 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 9.9.0:
+- New NEOPIXEL_UNION_JACK animation for Land Rover ;-)
+- New MAX_POWER_MILLIAMPS setting for Neopixels. This and other optimizations is eliminating the flickering Neopixels issue
+- 3_adjustmentsESC.h: globalAccelerationPercentage allows to adjust the acceleration, if vehicle setting is not OK
+- 4_adjustmentsTransmission.h: lowRangePercentage allows to adjust the acceleration in low transmission (off road) range. Used for MODE1_SHIFTING and WPL 2 speed transmission
+- Channel failsafe changed
+- 2_adjustmentsRemote.h: External SBUS library not required anymore. See option #define EMBEDDED_SBUS. "sbusInverted" moved to remote configuration profiles, so you don't have to change it anymore
+- SBUS still unstable with Flysky remotes! Especially in combination with WIRELESS_TRAILER. Use IBUS in this case! I'm thankful for hints about this bug. Differences: Micro RC is sending an SBUS packet every 14ms, Flysky every 7ms
+
 ### New in V 9.8.0:
 - Adjustable RECOVERY_HYSTERESIS for battery protection
 - 8_adjustmentsSound.h (masterVolumeCrawlerThreshold) and 3_adjustmentsESC.h (crawlerEscRampTime): switchable crawler mode with just minimal inertia for gearbox protection. Allows to have a "show mode" and a "competition mode"
