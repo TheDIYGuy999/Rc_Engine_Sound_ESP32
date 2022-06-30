@@ -55,26 +55,22 @@ bool SbusRx::read() {
     /* Parse new data, if available */
     if (new_data_) {
         /* Grab the channel data */
-        ch_[0]  = static_cast<int16_t>(buf_[1]       | buf_[2]  << 8 & 0x07FF);
-        ch_[1]  = static_cast<int16_t>(buf_[2]  >> 3 | buf_[3]  << 5 & 0x07FF);
-        ch_[2]  = static_cast<int16_t>(buf_[3]  >> 6 | buf_[4]  << 2  |
-                                       buf_[5] << 10 & 0x07FF);
-        ch_[3]  = static_cast<int16_t>(buf_[5]  >> 1 | buf_[6]  << 7 & 0x07FF);
-        ch_[4]  = static_cast<int16_t>(buf_[6]  >> 4 | buf_[7]  << 4 & 0x07FF);
-        ch_[5]  = static_cast<int16_t>(buf_[7]  >> 7 | buf_[8]  << 1  |
-                                       buf_[9] << 9 & 0x07FF);
-        ch_[6]  = static_cast<int16_t>(buf_[9]  >> 2 | buf_[10] << 6 & 0x07FF);
-        ch_[7]  = static_cast<int16_t>(buf_[10] >> 5 | buf_[11] << 3 & 0x07FF);
-        ch_[8]  = static_cast<int16_t>(buf_[12]      | buf_[13] << 8 & 0x07FF);
-        ch_[9]  = static_cast<int16_t>(buf_[13] >> 3 | buf_[14] << 5 & 0x07FF);
-        ch_[10] = static_cast<int16_t>(buf_[14] >> 6 | buf_[15] << 2  |
-                                       buf_[16] << 10 & 0x07FF);
-        ch_[11] = static_cast<int16_t>(buf_[16] >> 1 | buf_[17] << 7 & 0x07FF);
-        ch_[12] = static_cast<int16_t>(buf_[17] >> 4 | buf_[18] << 4 & 0x07FF);
-        ch_[13] = static_cast<int16_t>(buf_[18] >> 7 | buf_[19] << 1  |
-                                       buf_[20] << 9 & 0x07FF);
-        ch_[14] = static_cast<int16_t>(buf_[20] >> 2 | buf_[21] << 6 & 0x07FF);
-        ch_[15] = static_cast<int16_t>(buf_[21] >> 5 | buf_[22] << 3 & 0x07FF);
+        ch_[0]  = static_cast<uint16_t>(buf_[1]       | buf_[2]  << 8                    & 0x07FF);
+        ch_[1]  = static_cast<uint16_t>(buf_[2]  >> 3 | buf_[3]  << 5                    & 0x07FF);
+        ch_[2]  = static_cast<uint16_t>(buf_[3]  >> 6 | buf_[4]  << 2  |buf_[5] << 10    & 0x07FF);
+        ch_[3]  = static_cast<uint16_t>(buf_[5]  >> 1 | buf_[6]  << 7                    & 0x07FF);
+        ch_[4]  = static_cast<uint16_t>(buf_[6]  >> 4 | buf_[7]  << 4                    & 0x07FF);
+        ch_[5]  = static_cast<uint16_t>(buf_[7]  >> 7 | buf_[8]  << 1  |buf_[9] << 9     & 0x07FF);
+        ch_[6]  = static_cast<uint16_t>(buf_[9]  >> 2 | buf_[10] << 6                    & 0x07FF);
+        ch_[7]  = static_cast<uint16_t>(buf_[10] >> 5 | buf_[11] << 3                    & 0x07FF);
+        ch_[8]  = static_cast<uint16_t>(buf_[12]      | buf_[13] << 8                    & 0x07FF);
+        ch_[9]  = static_cast<uint16_t>(buf_[13] >> 3 | buf_[14] << 5                    & 0x07FF);
+        ch_[10] = static_cast<uint16_t>(buf_[14] >> 6 | buf_[15] << 2  |buf_[16] << 10   & 0x07FF);
+        ch_[11] = static_cast<uint16_t>(buf_[16] >> 1 | buf_[17] << 7                    & 0x07FF);
+        ch_[12] = static_cast<uint16_t>(buf_[17] >> 4 | buf_[18] << 4                    & 0x07FF);
+        ch_[13] = static_cast<uint16_t>(buf_[18] >> 7 | buf_[19] << 1  |buf_[20] << 9    & 0x07FF);
+        ch_[14] = static_cast<uint16_t>(buf_[20] >> 2 | buf_[21] << 6                    & 0x07FF);
+        ch_[15] = static_cast<uint16_t>(buf_[21] >> 5 | buf_[22] << 3                    & 0x07FF);
         /* CH 17 */
         ch17_ = buf_[23] & CH17_MASK_;
         /* CH 18 */
@@ -89,23 +85,24 @@ bool SbusRx::read() {
 
 // -----------------------------------------------------------------------------------
 bool SbusRx::parse() {
-    /* Parse messages */
-    while (uart_->available()) {
+    /* Parse (analyze) messages */
+    while (uart_->available() > 0) {
         cur_byte_ = uart_->read();
-        if (state_ == 0) {
-            if ((cur_byte_ == HEADER_) && ((prev_byte_ == FOOTER_) ||
-                                           ((prev_byte_ & 0x0F) == FOOTER2_))) {
-                buf_[state_++] = cur_byte_;
+        if (state_ == 0) { // First byte -----
+            if ((cur_byte_ == HEADER_) && ((prev_byte_ == FOOTER_) || ((prev_byte_ & 0x0F) == FOOTER2_))) {
+                state_++;
+                _sbusMicros = micros();
             } else {
-                state_ = 0;
+                state_ = 0; // Go back, if header incorrect
             }
-        } else {
-            if (state_ < BUF_LEN_) {
+        } else { // Following bytes (read data) -----
+            if (state_ < BUF_LEN_ - 1) {
                 buf_[state_++] = cur_byte_;
-            } else {
+            }
+            // End byte & no timeout -----
+            if (state_ == BUF_LEN_ - 1) {
                 state_ = 0;
-                if ((buf_[BUF_LEN_ - 1] == FOOTER_) ||
-                    ((buf_[BUF_LEN_ - 1] & 0x0F) == FOOTER2_)) {
+                if (((cur_byte_ == FOOTER_) || ((cur_byte_ & 0x0F) == FOOTER2_)) && (micros() - _sbusMicros < SBUS_PACKET_TIMEOUT_US)) {
                     return true;
                 } else {
                     return false;

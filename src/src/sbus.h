@@ -45,6 +45,7 @@ class SbusRx {
   uint32_t BAUD_ = 100000;
   /* Message len */
   static constexpr int8_t BUF_LEN_ = 25;
+  static constexpr uint32_t SBUS_PACKET_TIMEOUT_US = 7000; // 3000 is the minimum working, but causing failsafe in noisy vehicles, so 7000 is recommended
   /* SBUS message defs */
   static constexpr int8_t NUM_SBUS_CH_ = 16;
   static constexpr uint8_t HEADER_ = 0x0F;
@@ -55,6 +56,7 @@ class SbusRx {
   static constexpr uint8_t LOST_FRAME_MASK_ = 0x04;
   static constexpr uint8_t FAILSAFE_MASK_ = 0x08;
   /* Parsing state tracking */
+  uint32_t _sbusMicros = micros();
   int8_t state_ = 0;
   uint8_t prev_byte_ = FOOTER_;
   uint8_t cur_byte_;

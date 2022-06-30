@@ -12,11 +12,11 @@
  */
 
 //#define SPI_DASHBOARD // A 0.96" SPI LCD is used as dashboard: https://www.ebay.ch/itm/174458054566?hash=item289e82a7a6:g:LpAAAOSwtL1fdDtI 
-
-// WARNING:
-// Pins 18 (SCL), 19 (DC), 21 (RES) & 23 (SDA) are used for the dashboard in this case!
-// The dispay CS pin needs to be connected to GND.
-// Shaker, sidelights and both beacon flashers will not work!
+/* WARNING:
+ * Pins 18 (SCL), 19 (DC), 21 (RES) & 23 (SDA) are used for the dashboard in this case!
+ * The dispay CS pin needs to be connected to GND.
+ * Shaker, sidelights and both beacon flashers will not work!
+*/
 
 uint8_t dashRotation = 3; // 3 = normal, 1 = upside down
  

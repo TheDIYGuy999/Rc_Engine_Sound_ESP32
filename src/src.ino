@@ -18,7 +18,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-char codeVersion[] = "9.9.0"; // Software revision.
+char codeVersion[] = "9.9.1"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -1822,19 +1822,15 @@ void readSbusCommands() {
   // Signals are coming in via SBUS protocol
 
   static unsigned long lastSbusFailsafe;
-  static unsigned long lastSbusRead;
 
-  if (millis() - lastSbusRead > 20) { // TODO, test for Flysky SBUS bugfix. 20 is not bad, but still a bit unstable! USE IBUS for Flysky!
-    // look for a good SBUS packet from the receiver
+  // look for a good SBUS packet from the receiver
 #if not defined EMBEDDED_SBUS // ------------------------
-    if (sBus.read(&SBUSchannels[0], &SBUSfailSafe, &SBUSlostFrame)) {
+  if (sBus.read(&SBUSchannels[0], &SBUSfailSafe, &SBUSlostFrame)) {
 #else // ------------------------------------------------
-    if (sBus.read() && !sBus.failsafe() && !sBus.lost_frame()) {
+  if (sBus.read() && !sBus.failsafe() && !sBus.lost_frame()) {
 #endif // -----------------------------------------------
-      sbusInit = true;
-      lastSbusFailsafe = millis();
-      lastSbusRead = millis();
-    }
+    sbusInit = true;
+    lastSbusFailsafe = millis();
   }
 
   // Failsafe triggering (works, if SBUS wire is unplugged, but SBUSfailSafe signal from the receiver is untested!)

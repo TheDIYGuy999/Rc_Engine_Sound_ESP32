@@ -515,6 +515,10 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 ## Changelog (newest on top):
 
+### New in V 9.9.1:
+- Flysky SBUS should now be stable with #define EMBEDDED_SBUS. Please let me know, if not.
+- BATTERY_PROTECTION: scaling bug with higher resistor values fixed.
+
 ### New in V 9.9.0:
 - New NEOPIXEL_UNION_JACK animation for Land Rover ;-)
 - New MAX_POWER_MILLIAMPS setting for Neopixels. This and other optimizations is eliminating the flickering Neopixels issue
