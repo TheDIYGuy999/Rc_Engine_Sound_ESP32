@@ -18,7 +18,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-char codeVersion[] = "9.9.1"; // Software revision.
+char codeVersion[] = "9.10.0"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -554,11 +554,13 @@ void IRAM_ATTR variablePlaybackTimer() {
   static uint32_t curStartSample = 0;               // Index of currently loaded start sample
   static uint32_t curJakeBrakeSample = 0;           // Index of currently loaded jake brake sample
   static uint32_t curHydraulicPumpSample = 0;       // Index of currently loaded hydraulic pump sample
+  static uint32_t curTrackRattleSample = 0;         // Index of currently loaded train track rattle sample
   static uint32_t lastDieselKnockSample = 0;        // Index of last Diesel knock sample
   static uint16_t attenuator = 0;                   // Used for volume adjustment during engine switch off
   static uint16_t speedPercentage = 0;              // slows the engine down during shutdown
   static int32_t a, a1, a2, a3, b, c, d, e = 0;     // Input signals for mixer: a = engine, b = additional sound, c = turbo sound, d = fan sound, e = supercharger sound
   static int32_t f = 0;                             // Input signals for mixer: f = hydraulic pump
+  static int32_t g = 0;                             // Input signals for mixer: g = train track rattle
   uint8_t a1Multi = 0;                              // Volume multipliers
 
   //portENTER_CRITICAL_ISR(&variableTimerMux); // disables C callable interrupts (on the current core) and locks the mutex by the current core.
@@ -581,7 +583,11 @@ void IRAM_ATTR variablePlaybackTimer() {
       timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
 
       if (curStartSample < startSampleCount - 1) {
+#if defined STEAM_LOCOMOTIVE_MODE
+        a = (startSamples[curStartSample] * startVolumePercentage / 100);
+#else
         a = (startSamples[curStartSample] * throttleDependentVolume / 100 * startVolumePercentage / 100);
+#endif
         curStartSample ++;
       }
       else {
@@ -707,6 +713,17 @@ void IRAM_ATTR variablePlaybackTimer() {
       }
 #endif
 
+#if defined STEAM_LOCOMOTIVE_MODE
+      // Track rattle sound -----------------------
+      if (curTrackRattleSample < trackRattleSampleCount - 1) {
+        g = (trackRattleSamples[curTrackRattleSample] * trackRattleVolumePercentage / 100 * trackRattleVolume / 100);
+        curTrackRattleSample ++;
+      }
+      else {
+        curTrackRattleSample = 0;
+      }
+#endif
+
       if (!engineOn) {
         speedPercentage = 100;
         attenuator = 1;
@@ -755,7 +772,7 @@ void IRAM_ATTR variablePlaybackTimer() {
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
+  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
   //dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
   //dacWrite(DAC1, constrain(a + 128, 0, 255));
 
@@ -878,6 +895,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
   }
 
   // Indicator tick sound "b2" ----------------------------------------------------------------------
+#if not defined NO_INDICATOR_SOUND
   if (indicatorSoundOn) {
     fixedTimerTicks = 4000000 / indicatorSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
@@ -894,6 +912,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curIndicatorSample = 0; // ensure, next sound will start @ first sample
     b2 = 0;
   }
+#endif
 
   // Wastegate (blowoff) sound, triggered after rapid throttle drop -----------------------------------
   if (wastegateTrigger) {
@@ -1073,7 +1092,7 @@ void IRAM_ATTR fixedPlaybackTimer() {
     curTrackRattleSample = 0;
   }
 
-  // Track rattle sound -----------------------
+  // Bucket rattle sound -----------------------
   if (bucketRattleTrigger) {
     if (curBucketRattleSample < bucketRattleSampleCount - 1) {
       c3 = (bucketRattleSamples[curBucketRattleSample] * bucketRattleVolumePercentage / 100);
@@ -2568,9 +2587,9 @@ void engineMassSimulation() {
     targetRpm = _currentThrottle - hydraulicLoad;
     targetRpm = constrain(targetRpm, 0, 500);
 
-
 #else   // Normal mode ---
-    if ((currentSpeed < clutchEngagingPoint && _currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear || _currentRpm < 200) {
+    //if ((currentSpeed < clutchEngagingPoint && _currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear || _currentRpm < 200) { // TODO Bug?
+    if ((currentSpeed < clutchEngagingPoint && _currentRpm < maxClutchSlippingRpm) || gearUpShiftingInProgress || gearDownShiftingInProgress || neutralGear) {
       clutchDisengaged = true;
     }
     else {
@@ -2599,20 +2618,20 @@ void engineMassSimulation() {
       // Manual transmission ----
       if (clutchDisengaged) { // Clutch disengaged: Engine revving allowed
 #if defined VIRTUAL_16_SPEED_SEQUENTIAL
-        targetRpm = _currentThrottle; // This is working
+        targetRpm = _currentThrottle;
 #else
-        targetRpm = reMap(curveLinear, _currentThrottle); // TODO, not working with enabled WiFi!! Output is always 0, even with fixed 300 input!
-        //targetRpm = _currentThrottle; // This is working
-        //Serial.printf(targetRpm);
+        targetRpm = reMap(curveLinear, _currentThrottle);
+
 #endif
       }
       else { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
 
-
-
 #if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL // Virtual 3 speed or sequential 16 speed transmission
         targetRpm = reMap(curveLinear, (currentSpeed * virtualManualGearRatio[selectedGear] / 10)); // Add virtual gear ratios
         if (targetRpm > 500) targetRpm = 500;
+
+#elif defined STEAM_LOCOMOTIVE_MODE
+        targetRpm = currentSpeed;
 
 #else // Real 3 speed transmission           
         targetRpm = reMap(curveLinear, currentSpeed);
@@ -2642,7 +2661,7 @@ void engineMassSimulation() {
       if (_currentRpm < minRpm) _currentRpm = minRpm;
     }
 
-#if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL
+#if (defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL) and not defined STEAM_LOCOMOTIVE_MODE
     // Limit top speed, depending on manual gear ratio. Ensures, that the engine will not blow up!
     if (!automatic && !doubleClutch) speedLimit = maxRpm * 10 / virtualManualGearRatio[selectedGear];
 #endif
@@ -3021,7 +3040,7 @@ void gearboxDetection() {
   static unsigned long downShiftingMillis;
   static unsigned long lastShiftingMillis; // This timer is used to prevent transmission from oscillating!
 
-#if defined TRACKED_MODE // CH2 is used for left throttle in TRACKED_MODE --------------------------------
+#if defined TRACKED_MODE or defined STEAM_LOCOMOTIVE_MODE// CH2 is used for left throttle in TRACKED_MODE --------------------------------
   selectedGear = 2;
 
 #else // only active, if not in TRACKED_MODE -------------------------------------------------------------
@@ -3275,6 +3294,9 @@ void esc() { // ESC main function ================================
 #elif defined VIRTUAL_16_SPEED_SEQUENTIAL
   escRampTime = escRampTimeThirdGear * virtualManualGearRatio[selectedGear] / 5;
 
+#elif defined STEAM_LOCOMOTIVE_MODE
+  escRampTime = escRampTimeSecondGear;
+
 #else // TAMIYA 3 speed shifting transmission
   if (selectedGear == 1) escRampTime = escRampTimeFirstGear; // about 20
   if (selectedGear == 2) escRampTime = escRampTimeSecondGear; // about 50
@@ -3473,6 +3495,8 @@ void esc() { // ESC main function ================================
     // ESC linearity compensation ---------------------
 #ifdef QUICRUN_FUSION
     escPulseWidthOut = reMap(curveQuicrunFusion, escPulseWidth);
+#elif defined QUICRUN_16BL30
+    escPulseWidthOut = reMap(curveQuicrun16BL30, escPulseWidth);
 #else
     escPulseWidthOut = escPulseWidth;
 #endif // --------------------------------------------
@@ -3502,7 +3526,7 @@ void esc() { // ESC main function ================================
     }
     else if (escSignal < 1500) { // Reverse
       motorDriverDuty = map(escSignal, 1500, 1000, 0, 100);
-      mcpwm_set_signal_high(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B);
+      mcpwm_set_signal_high(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_B); // Pin B high!
       mcpwm_set_duty(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, motorDriverDuty);
       mcpwm_set_duty_type(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, MCPWM_DUTY_MODE_1);
     }
@@ -4014,7 +4038,7 @@ void updateDashboard() {
   // Speed
   uint16_t speed;
 
-#if defined VIRTUAL_3_SPEED or defined VIRTUAL_16_SPEED_SEQUENTIAL
+#if defined VIRTUAL_3_SPEED or defined VIRTUAL_16_SPEED_SEQUENTIAL or defined STEAM_LOCOMOTIVE_MODE
   speed = currentSpeed; // for all transmissions
 #else
   if (!automatic) speed = currentSpeed * 100 / manualGearRatios[selectedGear - 1]; // Manual transmission
@@ -4377,6 +4401,25 @@ void excavatorControl() {
 
 //
 // =======================================================================================================
+// STEAM LOCOMOTIVE CONTROL
+// =======================================================================================================
+//
+
+void steamLocomotiveControl() {
+#if defined STEAM_LOCOMOTIVE_MODE
+  static uint32_t lastFrameTime = millis();
+  if (millis() - lastFrameTime > 4) { // every 4ms
+    lastFrameTime = millis();
+
+    // Calculate speed dependent track rattle volume ----
+    if (currentSpeed > 1 ) trackRattleVolume = map(currentSpeed, 1, 500, 10, trackRattleVolumePercentage);
+    else trackRattleVolume = 0;
+  }
+#endif
+}
+
+//
+// =======================================================================================================
 // TRAILER CONTROL (ESP NOW)
 // =======================================================================================================
 //
@@ -4514,6 +4557,11 @@ void loop() {
     // Excavator specific controls
 #if defined EXCAVATOR_MODE
     excavatorControl();
+#endif
+
+    // Steam locomotive specific controls
+#if defined STEAM_LOCOMOTIVE_MODE
+    steamLocomotiveControl();
 #endif
 
     // Dashboard control

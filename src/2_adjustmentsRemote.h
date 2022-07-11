@@ -27,7 +27,7 @@
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 // NOTE: "boolean sbusInverted = true / false" was moved to the remote configuration profiles, so you don't have to change it
 uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
-#define EMBEDDED_SBUS // SBUS library not used, if defined (It is working fine with MICRO_RC, but still unstable with Flysky remotes, use IBUS for them)
+#define EMBEDDED_SBUS // SBUS library not used, if defined (let me know, if Flysky remotes are still unstable)
 uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout in milliseconds (about 100)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
@@ -41,7 +41,7 @@ uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout 
 
 // CHANNEL LINEARITY SETTINGS  ****************************************************************************************************************
 
-//#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
+#define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
 //#define EXPONENTIAL_STEERING // Exponential steering curve. More steering accuracy around center position
 
 // CHANNEL AVERAGING (EXPERIMENTAL!) **********************************************************************************************************

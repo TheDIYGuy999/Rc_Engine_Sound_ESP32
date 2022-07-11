@@ -12,7 +12,8 @@
 // #define VIRTUAL_3_SPEED allows to simulate a 3 speed shifing transmission, if your vehicle doesn't have a real one.
 // Gears are virtually shifted, using the 3 position switch. Example: your crawler has a 2 speed transmission, which is used as off road reducer,
 // but no real 3 speed shifting transmission. Don't uncomment if for vehicles with electric or hydrostatic drive or automatic transmissions!
-#define VIRTUAL_3_SPEED
+// Also don't use it for STEAM_LOCOMOTIVE_MODE
+//#define VIRTUAL_3_SPEED
 
 //#define VIRTUAL_16_SPEED_SEQUENTIAL will enable a sequencial transmission, shifted by up / down impulses via 3 position switch
 //#define VIRTUAL_16_SPEED_SEQUENTIAL // This is still experimental and not working properly! Don't use it.
@@ -46,4 +47,4 @@ uint16_t maxClutchSlippingRpm = 250; // The clutch will never slip above this li
 
 //#define DOUBLE_CLUTCH // Double-clutch (Zwischengas) Enable this for older manual transmission trucks without synchronised gears
 
-#define HIGH_SLIPPINGPOINT // Clutch will engage @ higher RPM, if defined (EXPERIMENTAL). Comment this out for heavy vehicles like semi trucks
+#define HIGH_SLIPPINGPOINT // Clutch will engage @ higher RPM, if defined. Comment this out for heavy vehicles like semi trucks

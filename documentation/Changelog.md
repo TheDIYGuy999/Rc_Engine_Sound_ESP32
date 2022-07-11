@@ -1,5 +1,10 @@
 # Changelog
 
+### 9.10.0:
+- First quick and dirty STEAM_LOCOMOTIVE_MODE implementation (see vehicles/Adler.h). Note, that you need to disable VIRTUAL_3_SPEED
+- Steam whistle on horn channel
+- In 8_adjustmentsSound.h: #define NO_INDICATOR_SOUND option, if you don't want the tic - tac sound
+
 ### 9.9.1:
 - Flysky SBUS should now be stable with #define EMBEDDED_SBUS. Please let me know, if not.
 - BATTERY_PROTECTION: scaling bug with higher resistor values fixed.

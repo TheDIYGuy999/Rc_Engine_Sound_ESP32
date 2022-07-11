@@ -20,8 +20,9 @@
  */
  
  // Select the vehicle configuration you have:
-#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
+//#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 //#define SERVOS_LANDY
+#define SERVOS_C34
 //#define SERVOS_URAL
 //#define SERVOS_RGT_EX86100
 //#define SERVOS_ACTROS
@@ -59,6 +60,25 @@ const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoothe
 // Servo limits 
 const uint16_t CH1L = 1840, CH1C = 1485, CH1R = 1090; // CH1 steering left 1880, center 1480, right 1080
 const uint16_t CH2L = 978, CH2C = 1833, CH2R = 1833; // CH2 transmission gear 1 978, 2 1833, 3 1833
+const uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, release
+const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
+
+// Servo ramp time 
+const uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+
+#endif
+
+// WPL C34 Toyota Land Cruiser configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_C34
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+ 
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits 
+const uint16_t CH1L = 1940, CH1C = 1600, CH1R = 1140; // CH1 steering left 1990, center 1640, right 1090
+const uint16_t CH2L = 670, CH2C = 1800, CH2R = 1800; // CH2 transmission gear 1 978, 2 1800, 3 1800
 const uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, release
 const uint16_t CH4L = 1300, CH4R = 1700; // CH4 trailer coupler (5th. wheel) locked, unlocked
 
