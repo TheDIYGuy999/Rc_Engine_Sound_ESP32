@@ -87,6 +87,7 @@
 //#include "vehicles/DefenderV8OpenPipe.h" // Land Rover Defender 90 V8 manual, open pipes (optimised for smaller speakers)
 //#include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
 //#include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
+#include "vehicles/Defender62LS3.h" // Land Rover Defender "Spectre" with Chevy LS3 V8
 
 // Asian SUV --------
 //#include "vehicles/LandcruiserFJ40.h" // Landcruiser Fj40 with inline 6 petrol engine
@@ -95,7 +96,7 @@
 //#include "vehicles/HiluxDiesel.h" // Hilux Diesel with inline 6 12H Turbo Diesel engine (for HG-P407)
 
 // EU locomotives --------
-#include "vehicles/Adler.h" // German Adler steam locomotive
+//#include "vehicles/Adler.h" // German Adler steam locomotive
 
 // US locomotives --------
 //#include "vehicles/UnionPacific2002.h" // Union Pacific 2002 SD70M locomotive with enormous, low revving 16 cylinder Diesel

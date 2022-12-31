@@ -1,12 +1,12 @@
 #include <Arduino.h>
 
 // Select (remove //) the remote configuration profile you have:
-//#define FLYSKY_FS_I6X           // <------- Flysky FS-i6x
+#define FLYSKY_FS_I6X           // <------- Flysky FS-i6x
 //#define FLYSKY_FS_I6S_EXCAVATOR // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
 //#define FLYSKY_GT5              // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 //#define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
 //#define GRAUPNER_MZ_12          // <------- Graupner MZ-12 PRO
-#define MICRO_RC                // <------- The car style DIY "Micro RC" remote. Don't use this with standard remotes!
+//#define MICRO_RC                // <------- The car style DIY "Micro RC" remote. Don't use this with standard remotes!
 //#define MICRO_RC_STICK          // <------- The stick based DIY "Micro RC" remote. Don't use this with standard remotes!
 
 // For testing only!
@@ -19,15 +19,14 @@
 // COMMUNICATION SETTINGS  ********************************************************************************************************************
 // Choose the receiver communication mode (never uncomment more than one!) !!! ADJUST THEM BEFORE CONNECTING YOUR RECEIVER AND ESC !!!
 
-// PWM servo signal communication (CH1 - CH4, 35, PPM headers, 6 channels) --------
-// PWM mode active, if SBUS, IBUS, and PPM are disabled (// in front of #define)
+// PWM servo signal communication (CH1 - CH6 headers, 6 channels) --------
+// PWM mode active, if SBUS, IBUS, SUMD and PPM are disabled (// in front of #define)
 
 // SBUS communication (RX header, 13 channels. This is my preferred communication protocol)--------
-/* NOTE! SBUS is causing weird issues with Flysky remotes. Use IBUS instead! */
 #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 // NOTE: "boolean sbusInverted = true / false" was moved to the remote configuration profiles, so you don't have to change it
 uint32_t sbusBaud = 100000; // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
-#define EMBEDDED_SBUS // SBUS library not used, if defined (let me know, if Flysky remotes are still unstable)
+#define EMBEDDED_SBUS // Embedded SBUS code is used instead of SBUS library, if defined (recommended)
 uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout in milliseconds (about 100)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------

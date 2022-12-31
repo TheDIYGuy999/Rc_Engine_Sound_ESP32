@@ -1,5 +1,10 @@
 # Changelog
 
+### 9.11.0:
+- LS3 Engine added, used in James Bond Spectre Defender: Defender62LS3.h
+- Changes in ESP32 trailer sketch. Mac addresses which are not working (causing engine revving issues) were discovered thanks to FrikkieBester. Unfortunately I still don't know why.
+- In 7_adjustmentsServos.h: NO_WINCH_DELAY option added, servo signal for wincn is changed immediately in this case
+
 ### 9.10.0:
 - First quick and dirty STEAM_LOCOMOTIVE_MODE implementation (see vehicles/Adler.h). Note, that you need to disable VIRTUAL_3_SPEED
 - Steam whistle on horn channel

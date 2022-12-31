@@ -18,7 +18,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-char codeVersion[] = "9.10.0"; // Software revision.
+char codeVersion[] = "9.11.0"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -121,7 +121,7 @@ float batteryVolts();
 
 // The following tasks only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-// Warning: Use Espressif ESP32 board definition v1.06! v2.x is not working
+// Warning: Use Espressif ESP32 board definition v1.05 or 10.6! v2.x is not working
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
 
 // Visual Studio Code IDE instructions: ----
@@ -840,6 +840,14 @@ void IRAM_ATTR fixedPlaybackTimer() {
     fixedTimerTicks = 4000000 / sirenSampleRate; // our fixed sampling rate
     timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
+#if defined SIREN_STOP
+    if (!sirenTrigger) {
+      sirenLatch = false;
+      curSirenSample = 0;
+      a2 = 0;
+    }
+#endif
+
     if (curSirenSample < sirenSampleCount - 1) {
       a2 = (sirenSamples[curSirenSample] * sirenVolumePercentage / 100);
       curSirenSample ++;
@@ -1391,7 +1399,7 @@ void setupEspNow() {
   peerInfo.encrypt = false;
 
   // Add peer 1 (1st trailer)
-  memcpy(peerInfo.peer_addr, broadcastAddress1, ESP_NOW_ETH_ALEN);
+  memcpy(peerInfo.peer_addr, broadcastAddress1, 6); // TODO!
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
     Serial.printf("Failed to add peer #1 (1st trailer)\n");
     return;
@@ -1399,7 +1407,7 @@ void setupEspNow() {
 
   // Add peer 2 (2nd trailer)
 #ifdef TRAILER_2
-  memcpy(peerInfo.peer_addr, broadcastAddress2, ESP_NOW_ETH_ALEN);
+  memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
     Serial.printf("Failed to add peer #2 (2nd trailer)\n");
     return;
@@ -2265,11 +2273,17 @@ void mcpwmOutput() {
   mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, shiftingServoMicros);
 
   // Winch CH3 **********************
+#if defined NO_WINCH_DELAY
+  uint16_t winchDelayTarget = 0; // Servo signal for winch is changed immediately
+#else
+  uint16_t winchDelayTarget = 12000; // Servo signal for winch is changed slowly
+#endif
+
 #if defined MODE2_WINCH
   static uint16_t winchServoMicrosTarget = CH3C;
   static uint16_t winchServoMicros = CH3C;
   static unsigned long winchDelayMicros;
-  if (micros() - winchDelayMicros > 12000) {
+  if (micros() - winchDelayMicros > winchDelayTarget) {
     winchDelayMicros = micros();
     if (winchPull) winchServoMicrosTarget = CH3L;
     else if (winchRelease) winchServoMicrosTarget = CH3R;

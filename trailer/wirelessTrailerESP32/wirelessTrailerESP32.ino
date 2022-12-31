@@ -4,7 +4,7 @@
     ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 */
 
-const float codeVersion = 0.4; // Software revision.
+const float codeVersion = 0.5; // Software revision.
 
 //
 // =======================================================================================================
@@ -12,6 +12,15 @@ const float codeVersion = 0.4; // Software revision.
 // (ADJUST THEM BEFORE CODE UPLOAD), DO NOT CHANGE ANYTHING IN THIS TAB EXCEPT THE DEBUG OPTIONS
 // =======================================================================================================
 //
+
+// Uncomment the following line, if you want to specify your own trailer MAC address
+//#define CUSTOM_MAC_ADDRESS
+//uint8_t customMACAddress[] = {0xFF, 0x00, 0x00, 0x00, 0x99, 0x01}; // not working!
+//uint8_t customMACAddress[] = {0xFE, 0x00, 0x00, 0x00, 0x99, 0x01}; // working!
+//uint8_t customMACAddress[] = {0x7F, 0x7F, 0x7F, 0x7F, 0x99, 0x01}; // not working!
+uint8_t customMACAddress[] = {0x00, 0x00, 0x00, 0x00, 0x99, 0x01}; // working
+
+#define LOW_POWER_MODE // Uncommenting this will lower the clock to 80MHz and will increase battery life
 
 // All the required user settings are done in the following .h files:
 #include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
@@ -31,6 +40,7 @@ const float codeVersion = 0.4; // Software revision.
 #include "driver/mcpwm.h"  // for servo PWM output
 #include <esp_now.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
 
 // The following tasks are not required for Visual Studio Code IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -166,13 +176,21 @@ void setupMcpwm() {
 void setupEspNow() {
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
-  WiFi.setTxPower (WIFI_POWER_MINUS_1dBm);
-  WiFi.disconnect();
+
+  // Set custom MAC address
+#if defined CUSTOM_MAC_ADDRESS
+  esp_wifi_set_mac(WIFI_IF_STA, &customMACAddress[0]);
+  //esp_wifi_set_mac(ESP_IF_WIFI_STA, &customMACAddress[0]); // Board before 1.0.5
+#endif
 
   // Print MAC address (this is the required MAC address in the sender)
-
   Serial.println("Trailer MAC address (you need to add it in '10_adjustmentsTrailer.h' in the sound controller): ");
   Serial.println(WiFi.macAddress());
+
+  delay(500);
+
+  WiFi.disconnect();
+  WiFi.setTxPower (WIFI_POWER_MINUS_1dBm);
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -191,6 +209,10 @@ void setupEspNow() {
 //
 
 void setup() {
+
+#if defined LOW_POWER_MODE
+  setCpuFrequencyMhz(80); // Lower CPU clock frequency to 80MHz to save energy
+#endif
 
   // Serial setup
   Serial.begin(115200); // USB serial (for DEBUG)
@@ -213,7 +235,7 @@ void setup() {
   indicatorL.pwm(255);
   indicatorR.pwm(255);
 
-  delay(500); // LED test 0.5s (all on)
+  delay(500); // LED test during 0.5s (all on)
 
   tailLight.pwm(0);
   sideLight.pwm(0);

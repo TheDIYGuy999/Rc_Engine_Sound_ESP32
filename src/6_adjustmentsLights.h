@@ -14,9 +14,9 @@
 
 // Choose the animation you want
 //#define NEOPIXEL_DEMO // Demo
-//#define NEOPIXEL_KNIGHT_RIDER // Knight Rider scanner animation for 8 LED (use it in combination with "kittScanner.h" "siren" sound in your vehicle file)
+#define NEOPIXEL_KNIGHT_RIDER // Knight Rider scanner animation for 8 LED (use it in combination with "kittScanner.h" "siren" sound in your vehicle file)
 //#define NEOPIXEL_BLUELIGHT // Bluelight animation for 8 LED
-#define NEOPIXEL_UNION_JACK // United Kingdom animation for 8 LED (use it in combination with "BritishNationalAnthemSiren.h" sound in your vehicle file)
+//#define NEOPIXEL_UNION_JACK // United Kingdom animation for 8 LED (use it in combination with "BritishNationalAnthemSiren.h" sound in your vehicle file)
 #define NEOPIXEL_HIGHBEAM // Neopixel bar is used as high beam as well, if defined. Also usable in combination with NEOPIXEL_KNIGHT_RIDER & NEOPIXEL_BLUELIGHT
 //#define NEOPIXEL_B33LZ3BUB // B33lz3bub Austria animation for 3 LED: https://www.rc-modellbau-portal.de/index.php?threads/baubericht-mercedes-actros-1851-gigaspace-tamiya.14349/page-3
 
