@@ -11,7 +11,8 @@ You can find the changes in the [Changelog](documentation/Changelog.md).
 
 Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
-New: fully assembled, tested and working 30 pin SMD version with switch mode PSU & display connector, manufactured and pre-assembled by https://www.pcbway.com
+New: fully assembled, tested and working 30 pin SMD version with switch mode PSU & display connector.
+Order it here: https://www.pcbway.com/project/shareproject/Arduino_RC_engine_sound_light_controller_for_ESP32_a9334731.html
 ![](documentation/pictures/30pinSmdSwitchModeVersion.jpg)
 
 Fully assembled, tested and working 30 pin SMD version, manufactured and pre-assembled by https://www.pcbway.com
@@ -135,9 +136,12 @@ https://forum.arduino.cc/t/mac-os-update-killed-esp32-sketch/969580/24
 ![](pictures/pcbTop.jpg)
 ![](pictures/pcbBottom.jpg)
 
-### Recommended manufacturor:
+### Recommended manufacturer:
 https://www.pcbway.com (including SMD assembling service, use Gerbers.zip for board, it also includes BOM. xlsx and CPL.xlsx, if you want to use the SMT assembling service)
 How to order pre assembled boards see /Eagle_PCB/How To Order Your PCB.pdf
+
+### The easiest way to order the 30pin SMD version with display connector:
+https://www.pcbway.com/project/shareproject/Arduino_RC_engine_sound_light_controller_for_ESP32_a9334731.html
 
 ### Assembling tutorial (for the 36 pin version):
 https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so&index=13
