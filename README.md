@@ -7,13 +7,18 @@ Arduino IDE or Visual Studio Code (with Platform IO extension) are supported.
 
 Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so
 
+************************************************************************
 You can find the changes in the [Changelog](documentation/Changelog.md).
+************************************************************************
 
 Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
 New: fully assembled, tested and working 30 pin SMD version with switch mode PSU & display connector.
 Order it here: https://www.pcbway.com/project/shareproject/Arduino_RC_engine_sound_light_controller_for_ESP32_a9334731.html
 ![](documentation/pictures/30pinSmdSwitchModeVersion.jpg)
+
+New: wireless built-in configuration website 192.168.4.1
+![](documentation/pictures/Configuration.png)
 
 Fully assembled, tested and working 30 pin SMD version, manufactured and pre-assembled by https://www.pcbway.com
 ![](documentation/pictures/30pinSmdVersion.jpg)
@@ -75,11 +80,11 @@ LCD dashboard (original by Gamadril)
 - An An RZ7886 motor driver IC can be used instead of a standard crawler type RC ESC
 - Battery low discharge protection options
 - Switchable crawler mode (with just minimal virtual inertia)
+- Wireless configuration website 192.168.4.1
 
 ## On the todo list:
 - cornering lights (on the beacon outputs)
 - Hazards switching on, if engine off in AUTO_LIGHTS mode
-- Wireless configuration?
 
 ## Known issues:
 - Arduino IDE 1.8.7 or older is not supported and will cause compiler errors!
@@ -531,4 +536,4 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 ![](documentation/pictures/unten.jpg)
 
 
-2019 - 2020, TheDIYGuy999
+2019 - 2023, TheDIYGuy999
