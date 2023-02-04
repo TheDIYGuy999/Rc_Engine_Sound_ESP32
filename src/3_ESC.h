@@ -123,7 +123,7 @@ uint16_t globalAccelerationPercentage = 150; // about 100 - 200% (200 for Jeep, 
 
 /* Battery low discharge protection (only for boards with voltage divider resistors):
 *  IMPORTANT: Enter used resistor values in Ohms (Ω) and THEN adjust DIODE_DROP, until your readings match the actual battery voltage! */
-#define BATTERY_PROTECTION // This will disable the ESC output, if the battery cutout voltage is reached
+//#define BATTERY_PROTECTION // This will disable the ESC output, if the battery cutout voltage is reached
 const float CUTOFF_VOLTAGE = 3.3; // Usually 3.3 V per LiPo cell. NEVER below 3.2 V!
 const float FULLY_CHARGED_VOLTAGE = 4.2; // Usually 4.2 V per LiPo cell, NEVER above!
 const float RECOVERY_HYSTERESIS = 0.2; // around 0.2 V

@@ -1,5 +1,9 @@
 # Changelog
 
+### 9.12.0 beta:
+- WiFi based configuration website for trailer options added
+- Settings files renamed
+
 ### 9.11.0:
 - LS3 Engine added, used in James Bond Spectre Defender: Defender62LS3.h
 - Changes in ESP32 trailer sketch. Mac addresses which are not working (causing engine revving issues) were discovered thanks to FrikkieBester. Unfortunately I still don't know why.

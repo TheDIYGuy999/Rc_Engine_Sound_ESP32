@@ -18,7 +18,7 @@
    Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
 */
 
-char codeVersion[] = "9.11.0"; // Software revision.
+char codeVersion[] = "9.12.0 beta"; // Software revision.
 
 // This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
 #include <Arduino.h>
@@ -32,6 +32,9 @@ void processRawChannels();
 void failsafeRcSignals();
 void channelZero();
 float batteryVolts();
+void eepromDebugRead();
+void eepromRead();
+void eepromInit();
 
 //
 // =======================================================================================================
@@ -57,26 +60,17 @@ float batteryVolts();
 //
 
 // All the required user settings are done in the following .h files:
-#include "1_adjustmentsVehicle.h"       // <<------- Select the vehicle you want to simulate
-#include "2_adjustmentsRemote.h"        // <<------- Remote control system related adjustments
-#include "3_adjustmentsESC.h"           // <<------- ESC related adjustments
-#include "4_adjustmentsTransmission.h"  // <<------- Transmission related adjustments
-#include "5_adjustmentsShaker.h"        // <<------- Shaker related adjustments
-#include "6_adjustmentsLights.h"        // <<------- Lights related adjustments
-#include "7_adjustmentsServos.h"        // <<------- Servo output related adjustments
-#include "8_adjustmentsSound.h"         // <<------- Sound related adjustments
-#include "9_adjustmentsDashboard.h"     // <<------- Dashboard related adjustments
-#include "10_adjustmentsTrailer.h"      // <<------- Trailer related adjustments
-
-// DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-//#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
-//#define ESC_DEBUG // uncomment it to debug the ESC
-//#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission
-//#define MANUAL_TRANS_DEBUG // uncomment it to debug the manual transmission
-//#define TRACKED_DEBUG // debugging tracked vehicle mode
-//#define SERVO_DEBUG // uncomment it for servo calibration in BUS communication mode
-//#define ESPNOW_DEBUG  // uncomment for additional ESP-NOW messages
-//#define CORE_DEBUG // Don't use this!
+#include "0_generalSettings.h"          // <<------- general settings
+#include "1_Vehicle.h"                  // <<------- Select the vehicle you want to simulate
+#include "2_Remote.h"                   // <<------- Remote control system related adjustments
+#include "3_ESC.h"                      // <<------- ESC related adjustments
+#include "4_Transmission.h"             // <<------- Transmission related adjustments
+#include "5_Shaker.h"                   // <<------- Shaker related adjustments
+#include "6_Lights.h"                   // <<------- Lights related adjustments
+#include "7_Servos.h"                   // <<------- Servo output related adjustments
+#include "8_Sound.h"                    // <<------- Sound related adjustments
+#include "9_Dashboard.h"                // <<------- Dashboard related adjustments
+#include "10_Trailer.h"                 // <<------- Trailer related adjustments
 
 // TODO = Things to clean up!
 
@@ -114,10 +108,11 @@ float batteryVolts();
 #include "driver/mcpwm.h"  // for servo PWM output
 #include "rom/rtc.h"       // for displaying reset reason
 #include "soc/rtc_wdt.h"   // for watchdog timer
-#include <esp_now.h>
+#include <esp_now.h>       // for wireless trailer
 #include <WiFi.h>
-#include <WebServer.h>
+#include <esp_wifi.h>
 #include <Esp.h>           // for displaying memory information
+#include <EEPROM.h>        // for non volatile variable storage
 
 // The following tasks only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -258,10 +253,25 @@ CRGB rgbLEDs[NEOPIXEL_COUNT];
 // Battery voltage
 ESP32AnalogRead battery;
 
-// Webserver for configuration
-WebServer server(80);
+// Webserver on port 80
+WiFiServer server(80);
 
 // Global variables **********************************************************************
+
+// WiFi variables
+String ssid;
+String password;
+
+// MAC address for communication with tractor TODO
+uint8_t customMACAddress[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+// HTTP request memory
+String header;
+
+// For HTTP GET value
+String valueString = "";
+int pos1 = 0;
+int pos2 = 0;
 
 // PWM processing variables
 #define RMT_TICK_PER_US 1
@@ -476,7 +486,7 @@ uint8_t numberOfCells;
 bool batteryProtection = false;
 
 // ESP NOW variables for wireless trailer communication ----------------------------
-#if defined WIRELESS_TRAILER
+#if defined ENABLE_WIRELESS
 
 volatile uint16_t pollRate = 20;
 
@@ -498,6 +508,55 @@ typedef struct struct_message { // This is the data packet
 // Create a struct_message called trailerData
 struct_message trailerData;
 #endif // --------------------------------------------------------------------------
+
+// The following variables are buffered in the eeprom an can be modified, using the web interface -----
+// 5th wheel switch enable / disable
+bool fifthWhweelDetectionActive = true;
+
+bool useTrailer1;
+bool useTrailer2;
+bool useTrailer3;
+
+uint8_t broadcastAddress1[6];
+uint8_t broadcastAddress2[6];
+uint8_t broadcastAddress3[6];
+
+// Eeprom size and storage addresses ----------------------------------------------
+#define EEPROM_SIZE 256 // 256 Bytes (512 is maximum)
+
+#define adr_eprom_init 0                          // Eeprom initialized or not?
+
+#define adr_eprom_useTrailer1 4 // Trailer 1
+#define adr_eprom_Trailer1Mac0 8
+#define adr_eprom_Trailer1Mac1 12
+#define adr_eprom_Trailer1Mac2 16
+#define adr_eprom_Trailer1Mac3 20
+#define adr_eprom_Trailer1Mac4 24
+#define adr_eprom_Trailer1Mac5 28
+
+#define adr_eprom_useTrailer2 32 // Trailer 2
+#define adr_eprom_Trailer2Mac0 36
+#define adr_eprom_Trailer2Mac1 40
+#define adr_eprom_Trailer2Mac2 44
+#define adr_eprom_Trailer2Mac3 48
+#define adr_eprom_Trailer2Mac4 52
+#define adr_eprom_Trailer2Mac5 56
+
+#define adr_eprom_useTrailer3 60 // Trailer 3
+#define adr_eprom_Trailer3Mac0 64
+#define adr_eprom_Trailer3Mac1 68
+#define adr_eprom_Trailer3Mac2 72
+#define adr_eprom_Trailer3Mac3 76
+#define adr_eprom_Trailer3Mac4 80
+#define adr_eprom_Trailer3Mac5 84
+
+#define adr_eprom_fifthWhweelDetectionActive 88
+#define adr_eprom_tailLightBrightness 92
+#define adr_eprom_sideLightBrightness 96
+#define adr_eprom_reversingLightBrightness 100
+#define adr_eprom_indicatorLightBrightness 104
+#define adr_eprom_ssid 192  //192
+#define adr_eprom_password 224 //224
 
 // DEBUG stuff
 volatile uint8_t coreId = 99;
@@ -1371,20 +1430,33 @@ void setupMcpwmESC() {
 //
 
 void setupEspNow() {
-  //#if defined WIRELESS_TRAILER TODO
-  // Set device as a Wi-Fi Access point for configuration
-  //WiFi.mode(WIFI_AP); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations TODO, causing clicking noise!
-  // Output my MAC address - useful for later
-  //Serial.printf("Sound controller MAC address: %s\n", WiFi.macAddress().c_str());
 
-#if defined WIRELESS_TRAILER
-  Serial.printf("WIRELESS_TRAILER option enabled\n");
-  Serial.printf("Sound controller MAC address: %s\n", WiFi.macAddress().c_str());
+#if defined ENABLE_WIRELESS
+  Serial.printf("ENABLE_WIRELESS option enabled\n");
+  //Serial.printf("Sound controller MAC address: %s\n", WiFi.macAddress().c_str());
   // Set device as a Wi-Fi Station for ESP-NOW
-  WiFi.mode(WIFI_STA); // WIFI_STA = Station (router required) WIFI_AP = ESP32 is an access point for stations
+  WiFi.mode(WIFI_STA); // WIFI_STA = Station
   WiFi.setTxPower (WIFI_POWER_MINUS_1dBm); // Set power to lowest possible value WIFI_POWER_MINUS_1dBm  WIFI_POWER_19_5dBm
+
+  // Set IP address
+  IPAddress IP = WiFi.softAPIP();
+
+  Serial.printf("\nInformations for web configuration via your cell phone or computer *******************************\n");
+  Serial.print("SSID: ");
+  Serial.println(ssid);
+  Serial.print("Password: ");
+  Serial.println(password);
+  Serial.print("IP address: ");
+  Serial.println(IP);
+
   // shut down wifi
   WiFi.disconnect();
+
+  // Start access point
+  WiFi.softAP(ssid.c_str(), password.c_str());
+
+  server.begin();  // Start Webserver
+
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
     Serial.printf("Error initializing ESP-NOW!\n");
@@ -1398,33 +1470,39 @@ void setupEspNow() {
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
 
+  Serial.printf("The following trailers are currently enabled:\n");
   // Add peer 1 (1st trailer)
-  memcpy(peerInfo.peer_addr, broadcastAddress1, 6); // TODO!
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.printf("Failed to add peer #1 (1st trailer)\n");
-    return;
+  if (useTrailer1) {
+    memcpy(peerInfo.peer_addr, broadcastAddress1, 6); // TODO!
+    Serial.printf("Trailer 1 MAC address: %02X:%02X:%02X:%02X:%02X:%02X\n", broadcastAddress1[0], broadcastAddress1[1], broadcastAddress1[2], broadcastAddress1[3], broadcastAddress1[4], broadcastAddress1[5]);
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.printf("Failed to add peer #1 (1st trailer)\n");
+      return;
+    }
   }
 
   // Add peer 2 (2nd trailer)
-#ifdef TRAILER_2
-  memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.printf("Failed to add peer #2 (2nd trailer)\n");
-    return;
+  if (useTrailer2) {
+    memcpy(peerInfo.peer_addr, broadcastAddress2, 6);
+    Serial.printf("Trailer 2 MAC address: %02X:%02X:%02X:%02X:%02X:%02X\n", broadcastAddress2[0], broadcastAddress2[1], broadcastAddress2[2], broadcastAddress2[3], broadcastAddress2[4], broadcastAddress2[5]);
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.printf("Failed to add peer #2 (2nd trailer)\n");
+      return;
+    }
   }
-#endif
 
   // Add peer 3 (3rd trailer)
-#ifdef TRAILER_3
-  memcpy(peerInfo.peer_addr, broadcastAddress3, ESP_NOW_ETH_ALEN);
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.printf("Failed to add peer #3 (3rd trailer)\n");
-    return;
+  if (useTrailer3) {
+    memcpy(peerInfo.peer_addr, broadcastAddress3, 6);
+    Serial.printf("Trailer 3 MAC address: %02X:%02X:%02X:%02X:%02X:%02X\n", broadcastAddress3[0], broadcastAddress3[1], broadcastAddress3[2], broadcastAddress3[3], broadcastAddress3[4], broadcastAddress3[5]);
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+      Serial.printf("Failed to add peer #3 (3rd trailer)\n");
+      return;
+    }
   }
-#endif
 #else
-  Serial.printf("WIRELESS_TRAILER option disabled\n");
-#endif // WIRELESS_TRAILER
+  Serial.printf("ENABLE_WIRELESS option disabled, no WiFi configuration or ESP-Now Trailer!\n");
+#endif // ENABLE_WIRELESS
   Serial.printf("-------------------------------------\n");
 
 } // setupEspNow()
@@ -1473,6 +1551,25 @@ void setupBattery() {
   Serial.printf("Warning, BATTERY_PROTECTION disabled! ESC with low discharge protection required!\n");
 #endif
   Serial.printf("-------------------------------------\n");
+}
+
+//
+// =======================================================================================================
+// EEPROM SETUP
+// =======================================================================================================
+//
+
+void setupEeprom() {
+  EEPROM.begin(EEPROM_SIZE);
+#if defined  ERASE_EEPROM_ON_BOOT
+  eepromErase(); // uncomment this option, if you want to erase all stored settings!
+# endif
+  eepromInit(); // Init new board with default values
+  eepromRead(); // Read settings from Eeprom
+  Serial.print("current eeprom_id: ");
+  Serial.println(EEPROM.read(adr_eprom_init));
+  Serial.print(" change it for default value upload!");
+  eepromDebugRead(); // Shows content of entire eeprom, except of empty areas
 }
 
 //
@@ -1526,8 +1623,13 @@ void setup() {
 
   Serial.printf("**************************************************************************************************\n\n");
 
+  // Eeprom Setup
+  setupEeprom();
+
+  // Battery setup
   setupBattery();
 
+  // ESP NOW setup
   setupEspNow();
 
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
@@ -2350,6 +2452,734 @@ void mcpwmOutput() {
     Serial.printf("-------------------------------------\n");
   }
 #endif // SERVO_DEBUG
+}
+
+//
+// =======================================================================================================
+// DISABLE INTERRUPTS
+// =======================================================================================================
+//
+
+// it is required to disable interrupts prior to EEPROM access!
+void disableAllInterrupts() {
+
+  timerDetachInterrupt(variableTimer);
+  timerDetachInterrupt(fixedTimer);
+
+  Serial.print("Interrupts disabled, reboot required!");
+}
+
+//
+// =======================================================================================================
+// EEPROM
+// =======================================================================================================
+//
+
+// Write string to EEPROM ------
+// https://roboticsbackend.com/arduino-write-string-in-eeprom/#Write_the_String
+
+int writeStringToEEPROM(int addrOffset, const String &strToWrite) {
+  byte len = strToWrite.length();
+  EEPROM.write(addrOffset, len);
+  for (int i = 0; i < len; i++) {
+    EEPROM.write(addrOffset + 1 + i, strToWrite[i]);
+  }
+  return addrOffset + 1 + len;
+}
+
+// Read string from EEPROM ------
+int readStringFromEEPROM(int addrOffset, String *strToRead) {
+  int newStrLen = EEPROM.read(addrOffset);
+  char data[newStrLen + 1];
+  for (int i = 0; i < newStrLen; i++) {
+    data[i] = EEPROM.read(addrOffset + 1 + i);
+  }
+  data[newStrLen] = '\0';
+  *strToRead = String(data);
+  return addrOffset + 1 + newStrLen;
+}
+
+// Erase EEPROM ------
+void eepromErase() {
+  for (int i = 0; i < EEPROM_SIZE; i++) {
+    EEPROM.write(i, 0);
+  }
+  EEPROM.commit();
+  Serial.println("EEPROM erased!");
+  delay(500);
+  eepromDebugRead();
+}
+
+// Init new board with the default values you want ------
+void eepromInit() {
+  if (EEPROM.read(adr_eprom_init) != eeprom_id) { // Only do init, if ID has changed!
+    EEPROM.write(adr_eprom_init, eeprom_id);
+
+    EEPROM.write(adr_eprom_useTrailer1, defaultUseTrailer1);
+    EEPROM.write(adr_eprom_Trailer1Mac0, defaultBroadcastAddress1[0]); // Should always be 0xFE!
+    EEPROM.write(adr_eprom_Trailer1Mac1, defaultBroadcastAddress1[1]); // Country number
+    EEPROM.write(adr_eprom_Trailer1Mac2, defaultBroadcastAddress1[2]); // Region number
+    EEPROM.write(adr_eprom_Trailer1Mac3, defaultBroadcastAddress1[3]); // User Number 1
+    EEPROM.write(adr_eprom_Trailer1Mac4, defaultBroadcastAddress1[4]); // User Number 2
+    EEPROM.write(adr_eprom_Trailer1Mac5, defaultBroadcastAddress1[5]); // 0x01 = trailer #1
+
+    EEPROM.write(adr_eprom_useTrailer2, defaultUseTrailer2);
+    EEPROM.write(adr_eprom_Trailer2Mac0, defaultBroadcastAddress2[0]); // Should always be 0xFE!
+    EEPROM.write(adr_eprom_Trailer2Mac1, defaultBroadcastAddress2[1]); // Country number
+    EEPROM.write(adr_eprom_Trailer2Mac2, defaultBroadcastAddress2[2]); // Region number
+    EEPROM.write(adr_eprom_Trailer2Mac3, defaultBroadcastAddress2[3]); // User Number 1
+    EEPROM.write(adr_eprom_Trailer2Mac4, defaultBroadcastAddress2[4]); // User Number 2
+    EEPROM.write(adr_eprom_Trailer2Mac5, defaultBroadcastAddress2[5]); // 0x02 = trailer #2
+
+    EEPROM.write(adr_eprom_useTrailer3, defaultUseTrailer3);
+    EEPROM.write(adr_eprom_Trailer3Mac0, defaultBroadcastAddress3[0]); // Should always be 0xFE!
+    EEPROM.write(adr_eprom_Trailer3Mac1, defaultBroadcastAddress3[1]); // Country number
+    EEPROM.write(adr_eprom_Trailer3Mac2, defaultBroadcastAddress3[2]); // Region number
+    EEPROM.write(adr_eprom_Trailer3Mac3, defaultBroadcastAddress3[3]); // User Number 1
+    EEPROM.write(adr_eprom_Trailer3Mac4, defaultBroadcastAddress3[4]); // User Number 2
+    EEPROM.write(adr_eprom_Trailer3Mac5, defaultBroadcastAddress3[5]); // 0x02 = trailer #2
+
+    //EEPROM.write(adr_eprom_fifthWhweelDetectionActive, defaulFifthWhweelDetectionActive);
+    //EEPROM.write(adr_eprom_tailLightBrightness, defaultLightsBrightness);
+    //EEPROM.write(adr_eprom_sideLightBrightness, defaultLightsBrightness);
+    //EEPROM.write(adr_eprom_reversingLightBrightness, defaultLightsBrightness);
+    //EEPROM.write(adr_eprom_indicatorLightBrightness, defaultLightsBrightness);
+    writeStringToEEPROM(adr_eprom_ssid, default_ssid);
+    writeStringToEEPROM(adr_eprom_password, default_password);
+    EEPROM.commit();
+    Serial.println("EEPROM initialized.");
+  }
+}
+
+// Write new values to EEPROM ------
+void eepromWrite() {
+
+  disableAllInterrupts();
+
+  EEPROM.write(adr_eprom_useTrailer1, useTrailer1);
+  EEPROM.write(adr_eprom_Trailer1Mac0, broadcastAddress1[0]); // Should always be 0xFE!
+  EEPROM.write(adr_eprom_Trailer1Mac1, broadcastAddress1[1]); // Country number
+  EEPROM.write(adr_eprom_Trailer1Mac2, broadcastAddress1[2]); // Region number
+  EEPROM.write(adr_eprom_Trailer1Mac3, broadcastAddress1[3]); // User Number 1
+  EEPROM.write(adr_eprom_Trailer1Mac4, broadcastAddress1[4]); // User Number 2
+  EEPROM.write(adr_eprom_Trailer1Mac5, broadcastAddress1[5]); // 0x01 = trailer #1
+
+  EEPROM.write(adr_eprom_useTrailer2, useTrailer2);
+  EEPROM.write(adr_eprom_Trailer2Mac0, broadcastAddress2[0]); // Should always be 0xFE!
+  EEPROM.write(adr_eprom_Trailer2Mac1, broadcastAddress2[1]); // Country number
+  EEPROM.write(adr_eprom_Trailer2Mac2, broadcastAddress2[2]); // Region number
+  EEPROM.write(adr_eprom_Trailer2Mac3, broadcastAddress2[3]); // User Number 1
+  EEPROM.write(adr_eprom_Trailer2Mac4, broadcastAddress2[4]); // User Number 2
+  EEPROM.write(adr_eprom_Trailer2Mac5, broadcastAddress2[5]); // 0x02 = trailer #2
+
+  EEPROM.write(adr_eprom_useTrailer3, useTrailer3);
+  EEPROM.write(adr_eprom_Trailer3Mac0, broadcastAddress3[0]); // Should always be 0xFE!
+  EEPROM.write(adr_eprom_Trailer3Mac1, broadcastAddress3[1]); // Country number
+  EEPROM.write(adr_eprom_Trailer3Mac2, broadcastAddress3[2]); // Region number
+  EEPROM.write(adr_eprom_Trailer3Mac3, broadcastAddress3[3]); // User Number 1
+  EEPROM.write(adr_eprom_Trailer3Mac4, broadcastAddress3[4]); // User Number 2
+  EEPROM.write(adr_eprom_Trailer3Mac5, broadcastAddress3[5]); // 0x02 = trailer #2
+
+  //EEPROM.write(adr_eprom_fifthWhweelDetectionActive, fifthWhweelDetectionActive);
+  //EEPROM.write(adr_eprom_tailLightBrightness, tailLightBrightness);
+  //EEPROM.write(adr_eprom_sideLightBrightness, sideLightBrightness);
+  //EEPROM.write(adr_eprom_reversingLightBrightness, reversingLightBrightness);
+  //EEPROM.write(adr_eprom_indicatorLightBrightness, indicatorLightBrightness);
+  writeStringToEEPROM(adr_eprom_ssid, ssid);
+  writeStringToEEPROM(adr_eprom_password, password);
+  EEPROM.commit();
+  Serial.println("EEPROM written.");
+  eepromDebugRead();
+}
+
+// Read values from EEPROM ------
+void eepromRead() {
+  useTrailer1 = EEPROM.read(adr_eprom_useTrailer1);
+  broadcastAddress1[0] = EEPROM.read(adr_eprom_Trailer1Mac0);
+  broadcastAddress1[1] = EEPROM.read(adr_eprom_Trailer1Mac1);
+  broadcastAddress1[2] = EEPROM.read(adr_eprom_Trailer1Mac2);
+  broadcastAddress1[3] = EEPROM.read(adr_eprom_Trailer1Mac3);
+  broadcastAddress1[4] = EEPROM.read(adr_eprom_Trailer1Mac4);
+  broadcastAddress1[5] = EEPROM.read(adr_eprom_Trailer1Mac5);
+
+  useTrailer2 = EEPROM.read(adr_eprom_useTrailer2);
+  broadcastAddress2[0] = EEPROM.read(adr_eprom_Trailer2Mac0);
+  broadcastAddress2[1] = EEPROM.read(adr_eprom_Trailer2Mac1);
+  broadcastAddress2[2] = EEPROM.read(adr_eprom_Trailer2Mac2);
+  broadcastAddress2[3] = EEPROM.read(adr_eprom_Trailer2Mac3);
+  broadcastAddress2[4] = EEPROM.read(adr_eprom_Trailer2Mac4);
+  broadcastAddress2[5] = EEPROM.read(adr_eprom_Trailer2Mac5);
+
+  useTrailer3 = EEPROM.read(adr_eprom_useTrailer3);
+  broadcastAddress3[0] = EEPROM.read(adr_eprom_Trailer3Mac0);
+  broadcastAddress3[1] = EEPROM.read(adr_eprom_Trailer3Mac1);
+  broadcastAddress3[2] = EEPROM.read(adr_eprom_Trailer3Mac2);
+  broadcastAddress3[3] = EEPROM.read(adr_eprom_Trailer3Mac3);
+  broadcastAddress3[4] = EEPROM.read(adr_eprom_Trailer3Mac4);
+  broadcastAddress3[5] = EEPROM.read(adr_eprom_Trailer3Mac5);
+
+  //fifthWhweelDetectionActive = EEPROM.read(adr_eprom_fifthWhweelDetectionActive);
+  //tailLightBrightness = EEPROM.read(adr_eprom_tailLightBrightness);
+  //sideLightBrightness = EEPROM.read(adr_eprom_sideLightBrightness);
+  //reversingLightBrightness = EEPROM.read(adr_eprom_reversingLightBrightness);
+  //indicatorLightBrightness = EEPROM.read(adr_eprom_indicatorLightBrightness);
+  readStringFromEEPROM(adr_eprom_ssid, &ssid);
+  readStringFromEEPROM(adr_eprom_password, &password);
+
+  Serial.println("EEPROM read.");
+}
+
+void eepromDebugRead() {
+# if defined DEBUG
+  String eepromDebug;
+  Serial.println("EEPROM debug dump begin **********************************************");
+  eepromDebug = "";
+  for (int i = 0; i < EEPROM_SIZE; ++i) {
+    eepromDebug += char(EEPROM.read(i));
+  }
+  Serial.println(eepromDebug);
+  Serial.println("");
+  Serial.println("EEPROM debug dump end ************************************************");
+# endif
+}
+
+//
+// =======================================================================================================
+// WEB INTERFACE
+// =======================================================================================================
+//
+
+void webInterface() {
+
+  static unsigned long currentTime = millis();   // Current time
+  static unsigned long previousTime = 0;         // Previous time
+  const long timeoutTime = 2000;          // Define timeout time in milliseconds (example: 2000ms = 2s)
+
+  static bool Mode = false; // TODO
+
+
+
+  if (true) {     //Wifi on
+    //if (WIFI_ON == 1) {     //Wifi on
+    WiFiClient client = server.available();   // Listen for incoming clients
+
+    if (client) {                             // If a new client connects,
+      currentTime = millis();
+      previousTime = currentTime;
+      Serial.println("New Client.");          // print a message out in the serial port
+      String currentLine = "";                // make a String to hold incoming data from the client
+      while (client.connected() && currentTime - previousTime <= timeoutTime) { // loop while the client's connected
+        currentTime = millis();
+        if (client.available()) {             // if there's bytes to read from the client,
+          char c = client.read();             // read a byte, then
+          Serial.write(c);                    // print it out the serial monitor
+          header += c;
+          if (c == '\n') {                    // if the byte is a newline character
+            // if the current line is blank, you got two newline characters in a row.
+            // that's the end of the client HTTP request, so send a response:
+            if (currentLine.length() == 0) {
+              // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+              // and a content-type so the client knows what's coming, then a blank line:
+              client.println("HTTP/1.1 200 OK");
+              client.println("Content-type:text/html");
+              client.println("Connection: close");
+              client.println();
+
+              // Display the HTML web page
+              client.println("<!DOCTYPE html><html>");
+              client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+              client.println("<link rel=\"icon\" href=\"data:,\">");
+
+#if defined USE_CSS
+              // CSS styles for buttons
+              client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center; background-color: rgb(60, 161, 120);}");
+              client.println(".button { border: yes; color: white; padding: 10px 40px; width: 90%;");
+              client.println("text-decoration: none; font-size: 16px; margin: 2px; cursor: pointer;}");
+              client.println(".slider { -webkit-appearance: none; width: 80%; height: 25px; background: #d3d3d3; outline: none; opacity: 0.7; -webkit-transition: .2s; transition: opacity .2s; }");
+              client.println(".buttonGreen {background-color: #4CAF50;}");
+              client.println(".buttonRed {background-color: #ff0000;}");
+              client.println(".textbox {font-size: 16px; text-align: center;}");
+              client.println("</style></head>");
+# endif
+
+              // Website title
+              client.println("</head><body><h1>TheDIYGuy999 Sound & Light Controller</h1>");
+              client.printf("Software version %s\n", codeVersion);
+              client.printf("<p style=\"color:red;\">Don't mess around while driving!</p>");
+
+              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+
+              // Settings ------------------------------------------------------------------------------------------------------------
+
+              // Set1 (ssid) ----------------------------------
+              valueString = ssid; // Read current value
+              client.println("<p>SSID: "); // Display current value
+
+              client.println("<input type=\"text\" id=\"Setting1Input\" size=\"31\" maxlength=\"31\" class=\"textbox\" oninput=\"Setting1change(this.value)\" value=\"" + valueString + "\" /></p>"); // Set new value
+              client.println("<script> function Setting1change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Set1=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Set1=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                Serial.println(valueString);
+                ssid = valueString;
+              }
+
+              // Set2 (password) ----------------------------------
+              valueString = password; // Read current value
+              client.println("<p>Password (min. 8): "); // Display current value
+
+              client.println("<input type=\"text\" id=\"Setting2Input\" size=\"31\" maxlength=\"31\" class=\"textbox\" oninput=\"Setting2change(this.value)\" value=\"" + valueString + "\" /></p>"); // Set new value
+              client.println("<script> function Setting2change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Set2=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Set2=") >= 0) {
+                pos1 = header.indexOf('='); // Start pos
+                pos2 = header.indexOf('&'); // End pos
+                valueString = header.substring(pos1 + 1, pos2);
+                password = valueString;
+              }
+              client.printf("<p>Save settings & reboot required after changes in this section");
+
+              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+
+#if defined ENABLE_WIRELESS
+
+              // Trailer 1 ********************************************************************************************************
+              if (useTrailer1 == true) {
+                client.println("<p><input type=\"checkbox\" id=\"tr1\" checked onclick=\"CheckboxTr1Change(this.checked)\"> use trailer 1: </input></p>");
+              }
+              else {
+                client.println("<p><input type=\"checkbox\" id=\"tr1\" unchecked onclick=\"CheckboxTr1Change(this.checked)\"> use trailer 1: </input></p>");
+              }
+              client.println("<script> function CheckboxTr1Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr1=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr1=true") >= 0) {
+                useTrailer1 = true;
+                Serial.println("Trailer 1 enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr1=false") >= 0) {
+                useTrailer1 = false;
+                Serial.println("Trailer 1 disabled");
+              }
+
+              // MAC0 ----------------------------------
+              valueString = String(broadcastAddress1[0], HEX); // Read current value
+              //client.println("<p>Custom MAC: "); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr1Mac0change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr1Mac0change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr1Mac0Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr1Mac0Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                //Serial.println(pos1);
+                //Serial.println(pos2);
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress1[0] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC1 ----------------------------------
+              valueString = String(broadcastAddress1[1], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr1Mac1change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr1Mac1change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr1Mac1Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr1Mac1Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress1[1] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC2 ----------------------------------
+              valueString = String(broadcastAddress1[2], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr1Mac2change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr1Mac2change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr1Mac2Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr1Mac2Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress1[2] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC3 ----------------------------------
+              valueString = String(broadcastAddress1[3], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr1Mac3change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr1Mac3change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr1Mac3Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr1Mac3Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress1[3] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC4 ----------------------------------
+              valueString = String(broadcastAddress1[4], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr1Mac4change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr1Mac4change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr1Mac4Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr1Mac4Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress1[4] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC5 ----------------------------------
+              valueString = String(broadcastAddress1[5], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr1Mac5change(this.value)\" value=\"" + valueString + "\" /></p>"); // Set new value
+              client.println("<script> function Tr1Mac5change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr1Mac5Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr1Mac5Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress1[5] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // Trailer 2 ********************************************************************************************************
+              // use trailer ----------------------------------
+              if (useTrailer2 == true) {
+                client.println("<p><input type=\"checkbox\" id=\"tr2\" checked onclick=\"CheckboxTr2Change(this.checked)\"> use trailer 2: </input></p>");
+              }
+              else {
+                client.println("<p><input type=\"checkbox\" id=\"tr2\" unchecked onclick=\"CheckboxTr2Change(this.checked)\"> use trailer 2: </input></p>");
+              }
+              client.println("<script> function CheckboxTr2Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr2=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr2=true") >= 0) {
+                useTrailer2 = true;
+                Serial.println("Trailer 2 enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr2=false") >= 0) {
+                useTrailer2 = false;
+                Serial.println("Trailer 2 disabled");
+              }
+
+              // MAC0 ----------------------------------
+              valueString = String(broadcastAddress2[0], HEX); // Read current value
+              //client.println("<p>Custom MAC: "); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr2Mac0change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr2Mac0change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr2Mac0Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr2Mac0Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress2[0] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC1 ----------------------------------
+              valueString = String(broadcastAddress2[1], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr2Mac1change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr2Mac1change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr2Mac1Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr2Mac1Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress2[1] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC2 ----------------------------------
+              valueString = String(broadcastAddress2[2], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr2Mac2change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr2Mac2change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr2Mac2Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr2Mac2Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress2[2] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC3 ----------------------------------
+              valueString = String(broadcastAddress2[3], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr2Mac3change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr2Mac3change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr2Mac3Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr2Mac3Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress2[3] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC4 ----------------------------------
+              valueString = String(broadcastAddress2[4], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr2Mac4change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr2Mac4change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr2Mac4Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr2Mac4Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress2[4] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC5 ----------------------------------
+              valueString = String(broadcastAddress2[5], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr2Mac5change(this.value)\" value=\"" + valueString + "\" /></p>"); // Set new value
+              client.println("<script> function Tr2Mac5change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr2Mac5Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr2Mac5Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress2[5] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // Trailer 3 ********************************************************************************************************
+              // use trailer ----------------------------------
+              if (useTrailer3 == true) {
+                client.println("<p><input type=\"checkbox\" id=\"tr3\" checked onclick=\"CheckboxTr3Change(this.checked)\"> use trailer 3: </input></p>");
+              }
+              else {
+                client.println("<p><input type=\"checkbox\" id=\"tr3\" unchecked onclick=\"CheckboxTr3Change(this.checked)\"> use trailer 3: </input></p>");
+              }
+
+              client.println("<script> function CheckboxTr3Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr3=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr3=true") >= 0) {
+                useTrailer3 = true;
+                Serial.println("Trailer 3 enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr3=false") >= 0) {
+                useTrailer3 = false;
+                Serial.println("Trailer 3 disabled");
+              }
+
+              // MAC0 ----------------------------------
+              valueString = String(broadcastAddress3[0], HEX); // Read current value
+              //client.println("<p>Custom MAC: "); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr3Mac0change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr3Mac0change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr3Mac0Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr3Mac0Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress3[0] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC1 ----------------------------------
+              valueString = String(broadcastAddress3[1], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr3Mac1change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr3Mac1change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr3Mac1Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr3Mac1Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress3[1] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC2 ----------------------------------
+              valueString = String(broadcastAddress3[2], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr3Mac2change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr3Mac2change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr3Mac2Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr3Mac2Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress3[2] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC3 ----------------------------------
+              valueString = String(broadcastAddress3[3], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr3Mac3change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr3Mac3change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr3Mac3Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr3Mac3Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress3[3] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC4 ----------------------------------
+              valueString = String(broadcastAddress3[4], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr3Mac4change(this.value)\" value=\"" + valueString + "\" />"); // Set new value (no </p> = no new line)
+              client.println("<script> function Tr3Mac4change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr3Mac4Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr3Mac4Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress3[4] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+              // MAC5 ----------------------------------
+              valueString = String(broadcastAddress3[5], HEX); // Read current value
+              client.println(":"); // Display title
+
+              client.println("<input type=\"text\" style=\"text-transform: uppercase\" size=\"2\" maxlength=\"2\" class=\"textbox\" oninput=\"Tr3Mac5change(this.value)\" value=\"" + valueString + "\" /></p>"); // Set new value
+              client.println("<script> function Tr3Mac5change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Tr3Mac5Set=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Tr3Mac5Set=") >= 0) {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                broadcastAddress3[5] = strtol(valueString.c_str(), NULL, 16);
+              }
+
+
+              client.printf("<p>Use HEX values (0-9, A-F) only, always starting with FE");
+              client.printf("<p>Save settings & reboot required after changes in this section");
+
+#endif
+
+              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+
+
+              // button1 (Save settings to EEPROM) ----------------------------------
+              client.println("<p><a href=\"/save/on\"><button class=\"button buttonRed\">Save settings & reboot</button></a></p>");
+
+              if (header.indexOf("GET /save/on") >= 0)
+              {
+                eepromWrite();
+                delay(1000);
+                ESP.restart();
+              }
+              /*
+                            // button2 (Reboot controller) ----------------------------------
+                            client.println("<p><a href=\"/reboot/on\"><button class=\"button buttonRed\">Reboot controller (better disconnect battery)</button></a></p>");
+
+                            if (header.indexOf("GET /reboot/on") >= 0)
+                            {
+                              ESP.restart();
+                            }*/
+
+              //-----------------------------------------------------------------------------------------------------------------------
+              client.println("</body></html>");
+
+              // The HTTP-response ends with an empty column
+              client.println();
+              // Break out of the while loop
+              break;
+            } else { // if you got a newline, then clear currentLine
+              currentLine = "";
+            }
+          } else if (c != '\r') {  // if you got anything else but a carriage return character,
+            currentLine += c;      // add it to the end of the currentLine
+          }
+        }
+      }
+      // Clear header
+      header = "";
+      // Disconnect client
+      client.stop();
+      Serial.println("Client disconnected.");
+
+#if defined DEBUG
+      Serial.print("DEBUG stuff: ");
+      //Serial.printf("Trailer 1 MAC address: %02X:%02X:%02X:%02X:%02X:%02X\n", broadcastAddress1[0], broadcastAddress1[1], broadcastAddress1[2], broadcastAddress1[3], broadcastAddress1[4], broadcastAddress1[5]);
+      Serial.println("");
+#endif
+    }
+  }
 }
 
 //
@@ -4439,7 +5269,7 @@ void steamLocomotiveControl() {
 //
 
 void trailerControl() {
-#if defined WIRELESS_TRAILER
+#if defined ENABLE_WIRELESS
 
   static unsigned long espNowMillis;
 
@@ -4597,6 +5427,9 @@ void loop() {
 
   // Trailer control, using ESP NOW
   trailerControl();
+
+  // Configuration website
+  webInterface();
 
   // Core ID debug
 #if defined CORE_DEBUG

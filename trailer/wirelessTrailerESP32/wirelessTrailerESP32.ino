@@ -14,11 +14,18 @@ const float codeVersion = 0.5; // Software revision.
 //
 
 // Uncomment the following line, if you want to specify your own trailer MAC address
-//#define CUSTOM_MAC_ADDRESS
+#define CUSTOM_MAC_ADDRESS
+
+// Only addresses with low multicast bit are valid: http://sqa.fyicenter.com/1000208_MAC_Address_Validator.html
+// This means, that the least significant bit of the first byte from the left always needs to be zero!
+// Also, the second last significant bit of this byte should  always be high = locally administrated.
+// So, it is recommended to use 0xFE for the first byte from the left.
+// Use hex calculator for verification!
+
 //uint8_t customMACAddress[] = {0xFF, 0x00, 0x00, 0x00, 0x99, 0x01}; // not working!
-//uint8_t customMACAddress[] = {0xFE, 0x00, 0x00, 0x00, 0x99, 0x01}; // working!
 //uint8_t customMACAddress[] = {0x7F, 0x7F, 0x7F, 0x7F, 0x99, 0x01}; // not working!
-uint8_t customMACAddress[] = {0x00, 0x00, 0x00, 0x00, 0x99, 0x01}; // working
+//uint8_t customMACAddress[] = {0xFE, 0x00, 0x0D, 0x09, 0x99, 0x01}; // working. Don't use it, TheDIYGuy999 only!
+uint8_t customMACAddress[] = {0xFE, 0x00, 0x0D, 0x09, 0x99, 0x02}; // working. Don't use it, TheDIYGuy999 only!
 
 #define LOW_POWER_MODE // Uncommenting this will lower the clock to 80MHz and will increase battery life
 
