@@ -2,7 +2,7 @@
 
 ### 9.12.0 beta:
 - WiFi based configuration website for trailer options added
-- Settings files renamed
+- Settings files renamed, "adjustments" removed
 
 ### 9.11.0:
 - LS3 Engine added, used in James Bond Spectre Defender: Defender62LS3.h

@@ -7,7 +7,7 @@
 
 // Debug settings -----------------------------------------------------------------------------------------------
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
-#define DEBUG // More infos such as EEPROM dump on serial monitor, if defined
+//#define DEBUG // More infos such as EEPROM dump on serial monitor, if defined
 //#define CHANNEL_DEBUG // uncomment it for input signal & general debugging informations
 //#define ESC_DEBUG // uncomment it to debug the ESC
 //#define AUTO_TRANS_DEBUG // uncomment it to debug the automatic transmission

@@ -1568,7 +1568,7 @@ void setupEeprom() {
   eepromRead(); // Read settings from Eeprom
   Serial.print("current eeprom_id: ");
   Serial.println(EEPROM.read(adr_eprom_init));
-  Serial.print(" change it for default value upload!");
+  Serial.println(" change it for default value upload!");
   eepromDebugRead(); // Shows content of entire eeprom, except of empty areas
 }
 

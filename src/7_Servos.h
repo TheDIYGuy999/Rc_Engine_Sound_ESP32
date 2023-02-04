@@ -22,11 +22,11 @@
  // Select the vehicle configuration you have:
 //#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 //#define SERVOS_LANDY_MN_MODEL
-#define SERVOS_LANDY_DOUBLE_EAGLE
+//#define SERVOS_LANDY_DOUBLE_EAGLE
 //#define SERVOS_C34
 //#define SERVOS_URAL
 //#define SERVOS_RGT_EX86100
-//#define SERVOS_ACTROS
+#define SERVOS_ACTROS
 //#define SERVOS_KING_HAULER 
 //#define SERVOS_RACING_TRUCK
 //#define SERVOS_MECCANO_DUMPER
