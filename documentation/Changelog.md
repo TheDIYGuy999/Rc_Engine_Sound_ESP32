@@ -3,6 +3,7 @@
 ### 9.12.0 beta:
 - WiFi based configuration website for trailer options added
 - Settings files renamed, "adjustments" removed
+- ESP32 trailer software moved to: https://github.com/TheDIYGuy999/wirelessTrailerESP32web
 
 ### 9.11.0:
 - LS3 Engine added, used in James Bond Spectre Defender: Defender62LS3.h
