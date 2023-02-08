@@ -1,5 +1,9 @@
 # Changelog
 
+### 9.12.0 beta 2:
+- WiFi Tx power lowered = less noise in the speaker and longer battery life
+- Tx power is displayed in the serial monitor
+
 ### 9.12.0 beta:
 - WiFi based configuration website for trailer options added
 - Settings files renamed, "adjustments" removed
