@@ -499,7 +499,7 @@ void webInterface() {
                 ESP.restart();
               }
                 client.println("<script> function restartPopup() {");
-                client.println("alert(\"Controller restarted!\"); ");
+                client.println("alert(\"Controller restarted, you may need to reconnect WiFi!\"); ");
                 client.println("} </script>");
 
               //-----------------------------------------------------------------------------------------------------------------------
