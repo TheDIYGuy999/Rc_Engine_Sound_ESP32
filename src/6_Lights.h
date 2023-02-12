@@ -7,7 +7,7 @@
  */
 
 // Neopixel settings ----------------------------------------------------------------------------------------------------------------------------- 
-//#define NEOPIXEL_ENABLED // GPIO0 used for WS2812 Neopixel control, if defined!
+#define NEOPIXEL_ENABLED // GPIO0 used for WS2812 Neopixel control, if defined!
 #define NEOPIXEL_COUNT 8 // How many Neopixels? 8 for Knight Rider, 3 for B33lz3bub
 #define NEOPIXEL_BRIGHTNESS  127 // Brightness (255 is the maximum)
 #define MAX_POWER_MILLIAMPS 100 // Maximum allowed current draw in mA (100 recommended, depending on your 5V supply)

@@ -2,7 +2,6 @@
     Based on the code for ATmega 328: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 
     ***** ESP32 CPU frequency must be set to 240MHz! *****
-    ESP32 macOS Big Sur fix see: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/BigSurFix.md
 
    Sound files converted with: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/tools/Audio2Header.html
    Original converter code by bitluni (send him a high five, if you like the code)
@@ -14,27 +13,11 @@
    Contributors:
    - Christian Fiebig https://github.com/fiechr
 
-   NEW: Visual Studio Code IDE support added (you need to install PlatformIO)
-   Arduino IDE is supported as before, but stuff was renamed and moved to different folders!
+   Visual Studio Code IDE support added (you need to install PlatformIO plugin and git https://git-scm.com)
+   Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.12.0 beta 2"; // Software revision.
-
-// This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
-#include <Arduino.h>
-void Task1code(void *parameters);
-void readSbusCommands();
-void readIbusCommands();
-void readSumdCommands();
-void readPpmCommands();
-void readPwmSignals();
-void processRawChannels();
-void failsafeRcSignals();
-void channelZero();
-float batteryVolts();
-void eepromDebugRead();
-void eepromRead();
-void eepromInit();
+char codeVersion[] = "9.12.0 beta 3"; // Software revision.
 
 //
 // =======================================================================================================
@@ -43,9 +26,9 @@ void eepromInit();
 //
 /*
    Indicators:
-   Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
-   Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated
-   (check channel trim settings)
+   - Constantly on = no SBUS signal (check "sbusInverted" true / false in "2_adjustmentsRemote.h")
+   - Number of blinks = this channel signal is not between 1400 and 1600 microseconds and can't be auto calibrated (check channel trim settings)
+   - 2 fast blinks = battery error (see below)
 
    Beeps (only, if "#define BATTERY_PROTECTION" in "3_adjustmentsESC.h"):
    - Number of beeps = number of detected battery cells in series
@@ -92,7 +75,7 @@ void eepromInit();
 #include <TFT_eSPI.h>       // https://github.com/Bodmer/TFT_eSPI        <<------- required for LCD dashboard. Use v2.3.70
 #include <FastLED.h>        // https://github.com/FastLED/FastLED        <<------- required for Neopixel support. Use V3.3.3
 #include <ESP32AnalogRead.h>// https://github.com/madhephaestus/ESP32AnalogRead <<------- required for battery voltage measurement
-#include <Tone32.h>         // https://github.com/lbernstone/Tone32      <<------- required for battery cell detection beeps
+#include <Tone32.h>         // https://github.com/lbernstone/Tone32      <<------- required for battery cell detection beeps // Not for platform = espressif32@4.3.0
 
 // Additional headers (included)
 #include "src/curves.h"    // Nonlinear throttle curve arrays
@@ -113,6 +96,22 @@ void eepromInit();
 #include <esp_wifi.h>
 #include <Esp.h>           // for displaying memory information
 #include <EEPROM.h>        // for non volatile variable storage
+
+// This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
+#include <Arduino.h>
+void Task1code(void *parameters);
+void readSbusCommands();
+void readIbusCommands();
+void readSumdCommands();
+void readPpmCommands();
+void readPwmSignals();
+void processRawChannels();
+void failsafeRcSignals();
+void channelZero();
+float batteryVolts();
+void eepromDebugRead();
+void eepromRead();
+void eepromInit();
 
 // The following tasks only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -139,12 +138,12 @@ void eepromInit();
 
 
 // Serial DEBUG pins -----
-#define DEBUG_RX 99 // 99 is just a dummy, because the "RX0" pin (GPIO3) is used for the headlights and causing issues, if rx enabled!
+#define DEBUG_RX -1 // 99 is just a dummy, because the "RX0" pin (GPIO3) is used for the headlights and causing issues, if rx enabled!
 #define DEBUG_TX 1 // The "RX0" is on pin 1 
 
 // Serial command pins for SBUS, IBUS, PPM, SUMD -----
 #define COMMAND_RX 36 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
-#define COMMAND_TX 98 // 98 is just a dummy
+#define COMMAND_TX -1 // 98 is just a dummy
 
 #define BATTERY_DETECT_PIN 39 // Voltage divider resistors connected to pin "VN"
 
@@ -1455,19 +1454,8 @@ void setupEspNow() {
   WiFi.softAP(ssid.c_str(), password.c_str());
 
   Serial.printf("\nWiFi Tx Power Level: %u",WiFi.getTxPower());
-  /*WIFI_POWER_19_5dBm = 78,// 19.5dBm
-  WIFI_POWER_19dBm = 76,// 19dBm
-  WIFI_POWER_18_5dBm = 74,// 18.5dBm
-  WIFI_POWER_17dBm = 68,// 17dBm
-  WIFI_POWER_15dBm = 60,// 15dBm
-  WIFI_POWER_13dBm = 52,// 13dBm
-  WIFI_POWER_11dBm = 44,// 11dBm
-  WIFI_POWER_8_5dBm = 34,// 8.5dBm
-  WIFI_POWER_7dBm = 28,// 7dBm
-  WIFI_POWER_5dBm = 20,// 5dBm
-  WIFI_POWER_2dBm = 8,// 2dBm
-  WIFI_POWER_MINUS_1dBm = -4// -1dBm*/
-  WiFi.setTxPower (WIFI_POWER_2dBm); // Set power to lowest possible value WIFI_POWER_2dBm (WIFI_POWER_MINUS_1dBm is not working for me)
+  
+  WiFi.setTxPower (cpType); // WiFi and ESP-Now power according to "0_generalSettings.h"
   Serial.printf("\nWiFi Tx Power Level changed to: %u\n\n",WiFi.getTxPower());
 
   server.begin();  // Start Webserver
@@ -1547,19 +1535,24 @@ void setupBattery() {
     Serial.printf("Battery cutoff voltage: %.2f V (%i * %.2f V) \n", batteryCutoffvoltage, numberOfCells, CUTOFF_VOLTAGE);
     for (uint8_t beeps = 0; beeps < numberOfCells; beeps++) { // Number of beeps = number of cells in series
       tone(26, 3000, 4, 0);
+      //tone(26, 3000, 4); // For platform = espressif32@4.3.0 
       delay(200);
     }
   }
   else {
     Serial.printf("Error, no valid battery detected! Only 2S & 3S batteries are supported!\n");
-    Serial.printf("REMOVE BATTERY, CONTROLLER IS LOCKED!\n");
+    Serial.printf("REMOVE BATTERY, CONTROLLER IS LOCKED = 2 FAST FLASHES!\n");
     bool locked = true;
     for (uint8_t beeps = 0; beeps < 10; beeps++) { // Number of beeps = number of cells in series
       tone(26, 3000, 4, 0);
+      //tone(26, 3000, 4); // For platform = espressif32@4.3.0
       delay(30);
     }
     while (locked) {
       // wait here forever!
+      indicatorL.flash(70, 75, 500, 2); // Show 2 fast flashes on indicators!
+      indicatorR.flash(70, 75, 500, 2); // Feed watchdog timer
+      rtc_wdt_feed();
     }
   }
 #else
@@ -1583,7 +1576,7 @@ void setupEeprom() {
   eepromRead(); // Read settings from Eeprom
   Serial.print("current eeprom_id: ");
   Serial.println(EEPROM.read(adr_eprom_init));
-  Serial.println(" change it for default value upload!");
+  Serial.println("change it for default value upload!\n");
   eepromDebugRead(); // Shows content of entire eeprom, except of empty areas
 }
 
@@ -1597,7 +1590,7 @@ void setup() {
 
   // Watchdog timers need to be disabled, if task 1 is running without delay(1)
   disableCore0WDT();
-  //disableCore1WDT(); // TODO leaving this one enabled is experimental!
+  //disableCore1WDT(); // Core 1 WDT can stay enabled
 
   // Setup RTC (Real Time Clock) watchdog
   rtc_wdt_protect_off();         // Disable RTC WDT write protection
@@ -1640,12 +1633,6 @@ void setup() {
 
   // Eeprom Setup
   setupEeprom();
-
-  // Battery setup
-  setupBattery();
-
-  // ESP NOW setup
-  setupEspNow();
 
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the PWM variable.
@@ -1696,6 +1683,12 @@ void setup() {
 #if not defined SPI_DASHBOARD
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
 #endif
+
+// Battery setup
+  setupBattery();
+
+  // ESP NOW setup
+  setupEspNow();
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
@@ -2210,7 +2203,7 @@ void processRawChannels() {
   }
 
   if (!autoZeroDone) { // Indicators are showing the number of channels, which are out of auto calibration range
-    indicatorL.flash(140, 150, 500, channel);
+    indicatorL.flash(140, 150, 500, channel); // ON, OFF, PAUSE, PULSES, (OPTIONAL DELAY FOR FIRST PASS)
     indicatorR.flash(140, 150, 500, channel);
   }
 

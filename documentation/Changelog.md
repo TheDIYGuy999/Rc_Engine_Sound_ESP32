@@ -1,5 +1,9 @@
 # Changelog
 
+### 9.12.0 beta 3:
+- WiFi Tx power adjustable in "0_generalSettings.h"
+- Short double flash, if battery error during controller start
+
 ### 9.12.0 beta 2:
 - WiFi Tx power lowered = less noise in the speaker and longer battery life
 - Tx power is displayed in the serial monitor
