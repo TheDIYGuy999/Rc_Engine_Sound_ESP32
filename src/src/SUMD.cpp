@@ -1,7 +1,7 @@
 #include "SUMD.h"
 
 SUMD::SUMD(HardwareSerial& serial) : _serial(&serial) {
-  this->_serial->setRxBufferSize(SUMD_FRAME_LENGTH * 4);
+  //this->_serial->setRxBufferSize(SUMD_FRAME_LENGTH * 4); //less than 128 causing error in newer espressif 32 platforms! TODO
 }
 
 void SUMD::begin(int8_t rxPin) {

@@ -6,6 +6,9 @@
  *  The required login informations for the browser based configuration via 192.186.4.1 can also be found there.
  */
 
+// Hardware settings -------------------------------------------------------------------------------------------------------------------------------
+//#define WEMOS_D1_MINI_ESP32 // Software is running on ESP32 RC Trailer controller, if defined (Headlights on GPIO 22 instead of 3, no cab lights support)
+
 // Debug settings -----------------------------------------------------------------------------------------------------------------------------------
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
 //#define DEBUG // More infos such as EEPROM dump on serial monitor, if defined
@@ -27,19 +30,19 @@ uint8_t eeprom_id = 2; // change this id (between 1 and 255, compare with serial
 #define ENABLE_WIRELESS // Define this, if you want to use an ESP-Now wireless trailer or the WiFi configuration via 192.168.4.1
 
 /* Wifi & ESP-Now and ESP-Now transmission power: less power = less speaker noise & longer battery life. Valid options are:
-WIFI_POWER_19_5dBm = 78,// 19.5dBm
-WIFI_POWER_19dBm = 76,// 19dBm
-WIFI_POWER_18_5dBm = 74,// 18.5dBm
-WIFI_POWER_17dBm = 68,// 17dBm
-WIFI_POWER_15dBm = 60,// 15dBm
-WIFI_POWER_13dBm = 52,// 13dBm
-WIFI_POWER_11dBm = 44,// 11dBm
-WIFI_POWER_8_5dBm = 34,// 8.5dBm
-WIFI_POWER_7dBm = 28,// 7dBm          // recommended setting
-WIFI_POWER_5dBm = 20,// 5dBm
-WIFI_POWER_2dBm = 8,// 2dBm           // lowest setting, WiFi may become weak
+WIFI_POWER_19_5dBm = 78     // full power
+WIFI_POWER_19dBm = 76
+WIFI_POWER_18_5dBm = 74
+WIFI_POWER_17dBm = 68
+WIFI_POWER_15dBm = 60
+WIFI_POWER_13dBm = 52
+WIFI_POWER_11dBm = 44
+WIFI_POWER_8_5dBm = 34
+WIFI_POWER_7dBm = 28         // recommended setting
+WIFI_POWER_5dBm = 20
+WIFI_POWER_2dBm = 8          // lowest setting, WiFi may become weak
 */ 
-wifi_power_t cpType = WIFI_POWER_2dBm; // Only use values from above!
+wifi_power_t cpType = WIFI_POWER_7dBm; // Only use values from above!
 
 // WiFi settings (for vehicle configuration website, open 192.168.4.1 in your browser)--------------------------------------------------------------
 // Note: if these credentials were changed, using the configuration website, 
@@ -48,4 +51,10 @@ String default_ssid = "My_Truck"; // Select this network
 String default_password = "123456789"; // Then enter this password
 
 // Configuration website settings -------------------------------------------------------------------------------------------------------------------
-#define USE_CSS // Simple Website style is used, if not defined
+#define USE_CSS // Simple, unformatted Website style is used, if not defined
+#define MODERN_CSS // Use modern CSS with scaling for better adaption between different devices
+
+// How to read Flash Memory (ignore it, for testing only): ------------------------------------------------------------------------------------------
+// Read firmware from ESP32 in terminal below:
+// ~/.platformio/packages/tool-esptoolpy/esptool.py -p /dev/cu.SLAB_USBtoUART -b 115200 read_flash 0x00000 0x400000 flash_dump.bin
+// export PATH=$PATH:/path/to/python

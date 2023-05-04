@@ -77,7 +77,7 @@ LCD dashboard (original by Gamadril)
 - Support for 2812 Neopixel LED (GPIO0)
 - Support for hydlaulic excavators (hydraulic pump, hydraulic flow, track rattling sounds). Use #define FLYSKY_FS_I6S_EXCAVATOR profile for remote
 - ESP-NOW based 2.4 GHz wireless trailer control support
-- An An RZ7886 motor driver IC can be used instead of a standard crawler type RC ESC
+- An RZ7886 motor driver IC can be used instead of a standard crawler type RC ESC
 - Battery low discharge protection options
 - Switchable crawler mode (with just minimal virtual inertia)
 - Wireless configuration website 192.168.4.1
@@ -129,17 +129,12 @@ https://forum.arduino.cc/t/mac-os-update-killed-esp32-sketch/969580/24
 - compile and upload the sketch in Arduino IDE
 - the new sound should now be ready
 
-## Schematic (use PDF for current version!):
+## Schematic example (use PDF for current version!):
 ![](documentation/pictures/schematic.png)
 
 ## PCB
 ### Included PCB files:
-- for 30 pin ESP32: advanced version with 11x LED driver transistors, inverting input for SBUS, double input connectors to avoid y-cables
-![](pictures/pcb30pinTop.jpg)
-
-- for 36 pin ESP32: simple version with direct output pin access via 330 Ohm resistors, 8x LED driver transistors (not recommended)
-![](pictures/pcbTop.jpg)
-![](pictures/pcbBottom.jpg)
+- See hardware folder
 
 ### Recommended manufacturer:
 https://www.pcbway.com (including SMD assembling service, use Gerbers.zip for board, it also includes BOM. xlsx and CPL.xlsx, if you want to use the SMT assembling service)
@@ -147,6 +142,9 @@ How to order pre assembled boards see /Eagle_PCB/How To Order Your PCB.pdf
 
 ### The easiest way to order the 30pin SMD version with display connector:
 https://www.pcbway.com/project/shareproject/Arduino_RC_engine_sound_light_controller_for_ESP32_a9334731.html
+
+### Assembling tutorial (for the 30 pin SMD version without display connector):
+https://www.youtube.com/watch?v=csQgTfxRd8Y&t=2s
 
 ### Assembling tutorial (for the 36 pin version):
 https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz_so&index=13
@@ -220,15 +218,20 @@ https://www.youtube.com/watch?v=Vfaz3CzecG4&list=PLGO5EJJClJBCjIvu8frS7LrEU3H2Yz
 - Please note, that the used mosfet needs to be a logic level type. Otherwise the shaker will not work!
 - The motor should not draw more than about 300mA @ 5V. I'm using a shaker motor from GT Power.
 
-### RZ7886 DC motor driver instead of an ESC:
-This circuit will be included in future boards. It is intended for smaller scale vehicles like WPL
+### RZ7886 7A DC motor driver instead of an ESC:
+It is intended for smaller scale vehicles like WPL
+
+#### Prototype:
 ![](documentation/pictures/RZ7886.png)
 ![](documentation/pictures/RZ7886.JPG)
 ![](documentation/pictures/RZ7886_1.JPG)
 
+#### Order your motor driver PCB here:
+https://www.pcbway.com/project/shareproject/RZ7886_based_ESC_for_ESP32_Sound_and_Light_Controller_f8f4a805.html
+
 ## Software:
 ### Required software for code uploading and editing:
-- Arduino IDE: https://www.arduino.cc/en/Main/Software
+- Arduino IDE (not recommnded): https://www.arduino.cc/en/Main/Software
 - or Visual Studio Code with PlatformIO extension (recommended): https://code.visualstudio.com
 - Visual Studio also requires this software (restart VS Code afterwards) in order to be able to synchronise libraries: https://git-scm.com/download
 
@@ -241,7 +244,7 @@ This circuit will be included in future boards. It is intended for smaller scale
 
 ### Required ESP32 board definition (not required, if Visual Studio Code is used as IDE):
 - Install it according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-- Use v1.04, v1.05 is causing reboot issues!
+- Use v1.04, v1.05 or newer are causing reboot issues!
 - Adjust settings according to:
 ![](documentation/pictures/settings.png)
 
@@ -263,7 +266,7 @@ Install them according to: https://www.arduino.cc/en/Guide/Libraries
 ### Visual Studio Code (instead of Arduino IDE) overiew:
 ![](documentation/pictures/VScode.png)
 
-## Adjusting things in "adjustmentsXyz.h":
+## Adjusting things in "X_Xyz.h":
 ### Vehicle selection:
 
 Note, that in v5.5 the former "Adjustments.h" configuration file was divided into multiple files.

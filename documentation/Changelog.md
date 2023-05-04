@@ -1,17 +1,18 @@
 # Changelog
 
-### 9.12.0 beta 3:
+### 9.12.0:
+- Support for 36 Pin version removed
+- Support for Wemos D1 Mini ESP32 added (#define WEMOS_D1_MINI_ESP32 in "0_generalSettings.h").  Allows to use the upcoming wireless trailer controller as modular sound controller.
+- In BUS communication mode: steering servo signal output stays disabled until auto zero was successful. Important in IBUS mode to prevent servo "ghost moves"
+- Short triple flash, if no valid input bus signal is detected, no reboot loop anymore
+- Short double flash, if no valid battery is detected, no reboot loop anymore
 - WiFi Tx power adjustable in "0_generalSettings.h"
 - Short double flash, if battery error during controller start
-
-### 9.12.0 beta 2:
 - WiFi Tx power lowered = less noise in the speaker and longer battery life
 - Tx power is displayed in the serial monitor
-
-### 9.12.0 beta:
 - WiFi based configuration website for trailer options added
 - Settings files renamed, "adjustments" removed
-- ESP32 trailer software moved to: https://github.com/TheDIYGuy999/wirelessTrailerESP32web
+- ESP32 trailer software moved to (the old verion without WiFi is still included): https://github.com/TheDIYGuy999/wirelessTrailerESP32web
 
 ### 9.11.0:
 - LS3 Engine added, used in James Bond Spectre Defender: Defender62LS3.h
