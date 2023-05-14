@@ -62,6 +62,7 @@
 // #define ESC_DIR // uncomment this, if your motor is spinning in the wrong direction
 
 /* RZ7886 motor driver IC instead of an ESC. Not in combination with #define THIRD_BRAKELIGHT or #define TRAILER_LIGHTS_TRAILER_PRESENCE_SWITCH_DEPENDENT
+Order the PCB here: https://www.pcbway.com/project/shareproject/RZ7886_based_ESC_for_ESP32_Sound_and_Light_Controller_f8f4a805.html
   Wiring:
   Pin 1 to 33 "ESC"
   Pin 2 to 32
@@ -87,7 +88,7 @@ const uint8_t RZ7886_DRAGBRAKE_DUTY = 100; // 0 - 100%. 100% = max. brake power 
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck (top speed = 160km/h) = 900
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
 // - Meccano Dumper = 500
-const uint16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc.
+uint16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc.
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.
@@ -98,7 +99,7 @@ const uint16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half 
 // - Hobbywing 1080 ESC & RBR/C 370 motor in Carson Mercedes racing truck = 50
 // - Meccano Dumper = 0
 // - RZ7886 Driver = 0
-const uint16_t escTakeoffPunch = 0;
+uint16_t escTakeoffPunch = 0;
 
 // Additional reverse speed (disconnect & reconnect battery after changing this setting):
 // Usually 0. Enlarge it, if your reverse speed is too slow.
@@ -108,24 +109,24 @@ const uint16_t escTakeoffPunch = 0;
 // - Hobbywing 1080 ESC & 35T 540 motor for HERCULES HOBBY trucks with 3 speed transmission = 80
 // - Meccano Dumper = 0
 // - RZ7886 Driver = 0
-const uint16_t escReversePlus = 0;
+uint16_t escReversePlus = 0;
 
 // Brake margin: (Experimental!)
 // This setting prevents the ESC from going completely back to zero / neutral as long as the brake trigger is pulled.
 // This prevents the vehicle from rolling back as long as brake is applied. 0 = no effect, ca. 20 = strong effect.
 // How it works? Prevents the ESC from entering the "drag brake range"
 // Warning: vehicle may be unable to stop, if too high, especially when driving downhill! NEVER more than 20!
-const uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10
+uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10
 
 // Crawler mode escRampTime (see "8_Sound.h") WARNING: a very low setting may damage your transmission!
-const uint8_t crawlerEscRampTime = 10; // about 10 (15 for Jeep), less = more direct control = less virtual inertia
+uint8_t crawlerEscRampTime = 10; // about 10 (15 for Jeep), less = more direct control = less virtual inertia
 
 // Allows to scale vehicle file dependent acceleration
 uint16_t globalAccelerationPercentage = 100; // about 100 - 200% (200 for Jeep, 150 for 1/8 Landy) Experimental, may cause automatic transmission shifting issues!
 
 /* Battery low discharge protection (only for boards with voltage divider resistors):
  *  IMPORTANT: Enter used resistor values in Ohms (Ω) and THEN adjust DIODE_DROP, until your readings match the actual battery voltage! */
-//#define BATTERY_PROTECTION // This will disable the ESC output, if the battery cutout voltage is reached. 2 fast flashes = battery error!
+#define BATTERY_PROTECTION // This will disable the ESC output, if the battery cutout voltage is reached. 2 fast flashes = battery error!
 const float CUTOFF_VOLTAGE = 3.3;        // Usually 3.3 V per LiPo cell. NEVER below 3.2 V!
 const float FULLY_CHARGED_VOLTAGE = 4.2; // Usually 4.2 V per LiPo cell, NEVER above!
 const float RECOVERY_HYSTERESIS = 0.2;   // around 0.2 V

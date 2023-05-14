@@ -98,7 +98,14 @@ void webInterface()
 #if defined BATTERY_PROTECTION
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
               client.printf("<p>Battery voltage: %.2f V\n", batteryVolts());
-              client.printf("<p>Number of cells: %i (%iS battery)\n", numberOfCells, numberOfCells);
+              if (numberOfCells > 1)
+              {
+                client.printf("<p>Number of cells: %i (%iS battery)\n", numberOfCells, numberOfCells);
+              }
+              else
+              {
+                client.printf("<p>Battery error!\n");
+              }
               client.printf("<p>Battery cutoff voltage: %.2f V\n", batteryCutoffvoltage);
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 #endif
@@ -555,6 +562,48 @@ void webInterface()
 
               client.printf("<p>Use HEX values (0-9, A-F) only, always starting with FE");
               client.printf("<p>Save settings & restart required after changes in this section");
+
+              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+
+              // Slider1 (ESC pulse span) ----------------------------------
+              valueString = String(escPulseSpan, DEC);
+              client.println("<p>ESC pulse span (vehicle top speed, 500 = fastest, 1200 = slowest): <span id=\"textSlider1Value\">" + valueString + "</span><br>"); // Label
+              client.println("<input type=\"range\" min=\"500\" max=\"1200\" step=\"50\" class=\"slider\" id=\"Slider1Input\" onchange=\"Slider1Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider1Change(pos) { ");
+              client.println("var slider1Value = document.getElementById(\"Slider1Input\").value;");
+              client.println("document.getElementById(\"textSlider1Value\").innerHTML = slider1Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider1=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider1=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                escPulseSpan = (valueString.toInt());
+                Serial.println("escPulseSpan = "+ String(escPulseSpan));
+              }
+
+              // Slider2 (ESC takeoff punch) ----------------------------------
+              valueString = String(escTakeoffPunch, DEC);
+              client.println("<p>ESC takeoff punch (additional motor force around neutral): <span id=\"textSlider2Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"150\" step=\"5\" class=\"slider\" id=\"Slider2Input\" onchange=\"Slider2Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider2Change(pos) { ");
+              client.println("var slider2Value = document.getElementById(\"Slider2Input\").value;");
+              client.println("document.getElementById(\"textSlider2Value\").innerHTML = slider2Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider2=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider2=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                escTakeoffPunch = (valueString.toInt());
+                Serial.println("escTakeoffPunch = "+ String(escTakeoffPunch));
+              }
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 

@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.12.0"; // Software revision.
+char codeVersion[] = "9.13.0-b1"; // Software revision.
 
 //
 // =======================================================================================================
@@ -46,7 +46,7 @@ char codeVersion[] = "9.12.0"; // Software revision.
 #include <Arduino.h>
 
 // All the required user settings are done in the following .h files:
-#include "0_generalSettings.h" // <<------- general settings
+#include "0_GeneralSettings.h" // <<------- general settings
 #include "1_Vehicle.h"         // <<------- Select the vehicle you want to simulate
 #include "2_Remote.h"          // <<------- Remote control system related adjustments
 #include "3_ESC.h"             // <<------- ESC related adjustments
@@ -103,7 +103,7 @@ char codeVersion[] = "9.12.0"; // Software revision.
 #include <Esp.h>    // for displaying memory information
 #include <EEPROM.h> // for non volatile variable storage
 
-// This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
+// Forward declare functions
 void Task1code(void *parameters);
 void readSbusCommands();
 void readIbusCommands();
@@ -117,6 +117,8 @@ float batteryVolts();
 void eepromDebugRead();
 void eepromRead();
 void eepromInit();
+void serialInterface();
+void webInterface();
 
 // The following tasks only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
@@ -142,8 +144,12 @@ void eepromInit();
 // ------------------------------------------------------------------------------------
 
 // Serial DEBUG pins -----
-#define DEBUG_RX UART_PIN_NO_CHANGE // 99 is just a dummy, because the "RX0" pin (GPIO3) is used for the headlights and causing issues, if rx enabled! -1 (3 headlights)
-#define DEBUG_TX 1                  // The "RX0" is on pin 1
+#ifdef WEMOS_D1_MINI_ESP32 // Wemos D1 Mini board: GPIO3 is available
+#define DEBUG_RX 3
+#else // original board: GPIO3 is used for headlights!
+#define DEBUG_RX UART_PIN_NO_CHANGE
+#endif
+#define DEBUG_TX 1 // The "RX0" is on pin 1
 
 // Serial command pins for SBUS, IBUS, PPM, SUMD -----
 #define COMMAND_RX 36                 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
@@ -193,7 +199,11 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = {13, 12, 14, 27, 35, 34}; // Input pi
 #define BEACON_LIGHT2_PIN 19   // Blue beacons light
 #define BEACON_LIGHT1_PIN 21   // Blue beacons light
 
-#define RGB_LEDS_PIN 0 // Pin is used for WS2812 LED control
+#ifdef NEOPIXEL_ON_CH4           // Switching NEOPIXEL pin for WS2812 LED depending on setting
+#define RGB_LEDS_PIN COUPLER_PIN // Use coupler pin on CH4
+#else
+#define RGB_LEDS_PIN 0 // Use GPIO 0 (BOOT button)
+#endif
 
 #if defined THIRD_BRAKELIGHT
 #define BRAKELIGHT_PIN 32 // Upper brake lights
@@ -530,7 +540,7 @@ uint8_t broadcastAddress2[6];
 uint8_t broadcastAddress3[6];
 
 // Eeprom size and storage addresses ----------------------------------------------
-#define EEPROM_SIZE 256 // 256 Bytes (512 is maximum)
+#define EEPROM_SIZE 512 // 512 Bytes (512 is maximum)
 
 #define adr_eprom_init 0 // Eeprom initialized or not?
 
@@ -559,12 +569,17 @@ uint8_t broadcastAddress3[6];
 #define adr_eprom_Trailer3Mac5 84
 
 #define adr_eprom_fifthWhweelDetectionActive 88
+
 #define adr_eprom_tailLightBrightness 92
 #define adr_eprom_sideLightBrightness 96
 #define adr_eprom_reversingLightBrightness 100
 #define adr_eprom_indicatorLightBrightness 104
-#define adr_eprom_ssid 192     // 192
-#define adr_eprom_password 224 // 224
+
+#define adr_eprom_esc_pulse_span 108
+#define adr_eprom_esc_takeoff_punch 112
+
+#define adr_eprom_ssid 192     // 192 (32)
+#define adr_eprom_password 224 // 224 (64)
 
 // DEBUG stuff
 volatile uint8_t coreId = 99;
@@ -1496,8 +1511,10 @@ void setupMcpwm()
   // 1. set our servo output pins
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN); // Set steering as PWM0A
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN); // Set shifting as PWM0B
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN);  // Set coupling as PWM1A
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN);    // Set winch  or beacon as PWM1B
+#if not defined NEOPIXEL_ON_CH4
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN); // Set coupling as PWM1A
+#endif
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN); // Set winch  or beacon as PWM1B
 
   // 2. configure MCPWM parameters
   mcpwm_config_t pwm_config;
@@ -1705,6 +1722,8 @@ void setupBattery()
       // wait here forever!
       indicatorL.flash(70, 75, 500, 2); // Show 2 fast flashes on indicators!
       indicatorR.flash(70, 75, 500, 2);
+      serialInterface();
+      webInterface();
       rtc_wdt_feed(); // Feed watchdog timer
     }
   }
@@ -1778,17 +1797,25 @@ void setup()
       Serial.printf("Core %i reset reason: %i: %s\n", coreNum, rtc_get_reset_reason(coreNum), RESET_REASONS[resetReason - 1]);
     }
   }
-#if defined BATTERY_PROTECTION
-  Serial.printf("Battery protection calibration data:\n");
+  Serial.printf("**************************************************************************************************\n\n");
+
+  // Eeprom Setup
+  setupEeprom();
+
+  #if defined BATTERY_PROTECTION
+  Serial.printf("Battery protection calibration data: ----\n");
   Serial.printf("RESISTOR_TO_BATTTERY_PLUS: %i Ω\n", RESISTOR_TO_BATTTERY_PLUS);
   Serial.printf("RESISTOR_TO_GND: %i Ω\n", RESISTOR_TO_GND);
   Serial.printf("DIODE_DROP: %.2f V\n", DIODE_DROP);
 #endif
 
-  Serial.printf("**************************************************************************************************\n\n");
+  Serial.printf("\nESC calibration data: ----\n");
+  Serial.printf("ESC pulse span: %i (Used to adjust the top speed: 500 = full ESC power, 1000 = half ESC power etc.)\n", escPulseSpan);
+  Serial.printf("ESC takeoff punch: %i (Usually 0. Enlarge it up to about 150, if your motor is too weak around neutral.)\n", escTakeoffPunch);
+  Serial.printf("ESC reverse plus: %i (Usually 0. Enlarge it up to about 220, if your reverse speed is too slow.)\n", escReversePlus);
+  Serial.printf("ESC ramp time for crawler mode: %i (about 10 - 15), less = more direct control = less virtual inertia)\n", crawlerEscRampTime);
 
-  // Eeprom Setup
-  setupEeprom();
+  Serial.printf("**************************************************************************************************\n\n");
 
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the PWM variable.
@@ -1839,11 +1866,11 @@ void setup()
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
 #endif
 
-  // Battery setup
-  setupBattery();
-
   // ESP NOW setup
   setupEspNow();
+
+  // Battery setup
+  setupBattery();
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
@@ -1892,6 +1919,7 @@ void setup()
 #else
   // PWM ----
 #define PWM_COMMUNICATION
+#undef NEOPIXEL_ON_CH4 // not usable, pin is required as an input
   if (MAX_RPM_PERCENTAGE > maxPwmRpmPercentage)
     MAX_RPM_PERCENTAGE = maxPwmRpmPercentage; // Limit RPM range
   for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++)
@@ -1968,6 +1996,8 @@ void setup()
     readSbusCommands();               // SBUS communication (pin 36)
     indicatorL.flash(70, 75, 500, 3); // Show 3 fast flashes on indicators!
     indicatorR.flash(70, 75, 500, 3);
+    serialInterface();
+    webInterface();
     rtc_wdt_feed(); // Feed watchdog timer
   }
   Serial.printf("... SBUS initialization succesful!\n");
@@ -1981,6 +2011,8 @@ void setup()
     readIbusCommands();               // IBUS communication (pin 36)
     indicatorL.flash(70, 75, 500, 3); // Show 3 fast flashes on indicators!
     indicatorR.flash(70, 75, 500, 3);
+    serialInterface();
+    webInterface();
     rtc_wdt_feed(); // Feed watchdog timer
   }
   Serial.printf("... IBUS initialization succesful!\n");
@@ -1994,6 +2026,8 @@ void setup()
     readSumdCommands();
     indicatorL.flash(70, 75, 500, 3); // Show 3 fast flashes on indicators!
     indicatorR.flash(70, 75, 500, 3);
+    serialInterface();
+    webInterface();
     rtc_wdt_feed(); // Feed watchdog timer
   }
   Serial.printf("... SUMD initialization succesful!\n");
@@ -2750,7 +2784,7 @@ void disableAllInterrupts()
   timerDetachInterrupt(variableTimer);
   timerDetachInterrupt(fixedTimer);
 
-  Serial.print("Interrupts disabled, reboot required!");
+  Serial.print("Interrupts disabled, reboot required!\n");
 }
 
 //
@@ -2829,13 +2863,17 @@ void eepromInit()
     EEPROM.write(adr_eprom_Trailer3Mac2, defaultBroadcastAddress3[2]); // Region number
     EEPROM.write(adr_eprom_Trailer3Mac3, defaultBroadcastAddress3[3]); // User Number 1
     EEPROM.write(adr_eprom_Trailer3Mac4, defaultBroadcastAddress3[4]); // User Number 2
-    EEPROM.write(adr_eprom_Trailer3Mac5, defaultBroadcastAddress3[5]); // 0x02 = trailer #2
+    EEPROM.write(adr_eprom_Trailer3Mac5, defaultBroadcastAddress3[5]); // 0x03 = trailer #3
 
     // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, defaulFifthWhweelDetectionActive);
     // EEPROM.write(adr_eprom_tailLightBrightness, defaultLightsBrightness);
     // EEPROM.write(adr_eprom_sideLightBrightness, defaultLightsBrightness);
     // EEPROM.write(adr_eprom_reversingLightBrightness, defaultLightsBrightness);
     // EEPROM.write(adr_eprom_indicatorLightBrightness, defaultLightsBrightness);
+
+    EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);       // ESC pulse span
+    EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch); // ESC takeoff punch
+
     writeStringToEEPROM(adr_eprom_ssid, default_ssid);
     writeStringToEEPROM(adr_eprom_password, default_password);
     EEPROM.commit();
@@ -2847,7 +2885,7 @@ void eepromInit()
 void eepromWrite()
 {
 
-  disableAllInterrupts();
+  disableAllInterrupts(); // This is very important!
 
   EEPROM.write(adr_eprom_useTrailer1, useTrailer1);
   EEPROM.write(adr_eprom_Trailer1Mac0, broadcastAddress1[0]); // Should always be 0xFE!
@@ -2871,13 +2909,17 @@ void eepromWrite()
   EEPROM.write(adr_eprom_Trailer3Mac2, broadcastAddress3[2]); // Region number
   EEPROM.write(adr_eprom_Trailer3Mac3, broadcastAddress3[3]); // User Number 1
   EEPROM.write(adr_eprom_Trailer3Mac4, broadcastAddress3[4]); // User Number 2
-  EEPROM.write(adr_eprom_Trailer3Mac5, broadcastAddress3[5]); // 0x02 = trailer #2
+  EEPROM.write(adr_eprom_Trailer3Mac5, broadcastAddress3[5]); // 0x03 = trailer #3
 
   // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, fifthWhweelDetectionActive);
   // EEPROM.write(adr_eprom_tailLightBrightness, tailLightBrightness);
   // EEPROM.write(adr_eprom_sideLightBrightness, sideLightBrightness);
   // EEPROM.write(adr_eprom_reversingLightBrightness, reversingLightBrightness);
   // EEPROM.write(adr_eprom_indicatorLightBrightness, indicatorLightBrightness);
+
+  EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);       // ESC pulse span
+  EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch); // ESC takeoff punch
+
   writeStringToEEPROM(adr_eprom_ssid, ssid);
   writeStringToEEPROM(adr_eprom_password, password);
   EEPROM.commit();
@@ -2917,6 +2959,10 @@ void eepromRead()
   // sideLightBrightness = EEPROM.read(adr_eprom_sideLightBrightness);
   // reversingLightBrightness = EEPROM.read(adr_eprom_reversingLightBrightness);
   // indicatorLightBrightness = EEPROM.read(adr_eprom_indicatorLightBrightness);
+
+  escPulseSpan = EEPROM.readUShort(adr_eprom_esc_pulse_span);    // ESC pulse span
+  escTakeoffPunch = EEPROM.readUShort(adr_eprom_esc_takeoff_punch); // ESC takeoff punch
+
   readStringFromEEPROM(adr_eprom_ssid, &ssid);
   readStringFromEEPROM(adr_eprom_password, &password);
 
@@ -2946,6 +2992,14 @@ void eepromDebugRead()
 //
 
 #include "src/webInterface.h" // Configuration website
+
+//
+// =======================================================================================================
+// SERIAL INTERFACE
+// =======================================================================================================
+//
+
+#include "src/serialInterface.h" // Serial command interface for configuration
 
 //
 // =======================================================================================================
@@ -5523,7 +5577,7 @@ void trailerControl()
       trailerData.indicatorR = 0;
     }
 #else // Trailer lights always on
-    trailerData.tailLight = ledcRead(2); // These are timer numbers, not pin numbers!
+    trailerData.tailLight = ledcRead(2);                     // These are timer numbers, not pin numbers!
     trailerData.sideLight = ledcRead(8);
     trailerData.reversingLight = ledcRead(6);
     trailerData.indicatorL = ledcRead(3);
@@ -5638,6 +5692,9 @@ void loop()
 
   // Configuration website
   webInterface();
+
+  // Serial configuration comamnds
+  serialInterface();
 
   // Core ID debug
 #if defined CORE_DEBUG

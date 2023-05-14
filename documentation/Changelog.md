@@ -1,5 +1,10 @@
 # Changelog
 
+### 9.13.0-b1:
+- New parameter "#define NEOPIXEL_ON_CH4" in "6_Lights.h" allows to connect the NEOPIXELS to servo CH 4 (BUS mode only, no 5th wheel servo in this case)
+- ESC parameters are adjustable via 192.168.4.1
+- in "#define WEMOS_D1_MINI_ESP32" mode only: Experimental Serial command interface for ESC parameters
+
 ### 9.12.0:
 - Support for 36 Pin version removed
 - Support for Wemos D1 Mini ESP32 added (#define WEMOS_D1_MINI_ESP32 in "0_generalSettings.h").  Allows to use the upcoming wireless trailer controller as modular sound controller.

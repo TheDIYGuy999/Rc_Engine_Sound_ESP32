@@ -1,3 +1,5 @@
+# Deprecated: not required anymore, if VS code is used instead of Arduino IDE
+
 # This document explains how to solve the macOS Big Sur ESP32 compiling error
 
 On a vanilla ESP32 board definition installation on mac OS Big Sur, the ESP32 throws the following (or similar) Python compiling error:
