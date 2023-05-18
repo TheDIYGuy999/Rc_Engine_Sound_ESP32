@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0-b2"; // Software revision.
+char codeVersion[] = "9.13.0-b3"; // Software revision.
 
 //
 // =======================================================================================================
@@ -5042,98 +5042,101 @@ void updateDashboard()
   static uint16_t fuelNeedle = 0;
   static uint16_t adblueNeedle = 0;
 
-  // Start animation triggering
-  if ((engineState == STARTING || engineState == RUNNING) && !startAnimationFinished)
+  if (millis() - lastFrameTime > 40) // We need to save processing time!
   {
-    startAnimationFinished = engineStartAnimation();
-    return;
-  }
-  else if (engineState == OFF)
-  {
-    startAnimationFinished = false;
-  }
 
-  // Calculations
-  // RPM, fuel, adblue
-  if (engineState == STARTING || engineState == RUNNING)
-  {
-    rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
+    // Start animation triggering
+    if ((engineState == STARTING || engineState == RUNNING) && !startAnimationFinished)
+    {
+      startAnimationFinished = engineStartAnimation();
+      return;
+    }
+    else if (engineState == OFF)
+    {
+      startAnimationFinished = false;
+    }
+
+    // Calculations
+    // RPM, fuel, adblue
+    if (engineState == STARTING || engineState == RUNNING)
+    {
+      rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
 
 #if defined BATTERY_PROTECTION
-    fuel = map_Generic<float, float, float, int16_t, int16_t>((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
-    if (fuel > 100)
-      fuel = 100;
-    if (fuel < 0)
-      fuel = 0;
-    if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE)
-      fuel = 0;
+      fuel = map_Generic<float, float, float, int16_t, int16_t>((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
+      if (fuel > 100)
+        fuel = 100;
+      if (fuel < 0)
+        fuel = 0;
+      if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE)
+        fuel = 0;
 #else
-    fuel = 90;
+      fuel = 90;
 #endif
-    adblue = 80;
-  }
-  else
-  {
-    rpm = currentRpm;
-    fuel = 0;
-    adblue = 0;
-  }
+      adblue = 80;
+    }
+    else
+    {
+      rpm = currentRpm;
+      fuel = 0;
+      adblue = 0;
+    }
 
-  // Speed
-  uint16_t speed;
+    // Speed
+    uint16_t speed;
 
 #if defined VIRTUAL_3_SPEED or defined VIRTUAL_16_SPEED_SEQUENTIAL or defined STEAM_LOCOMOTIVE_MODE
-  speed = currentSpeed; // for all transmissions
+    speed = currentSpeed; // for all transmissions
 #else
-  if (!automatic)
-    speed = currentSpeed * 100 / manualGearRatios[selectedGear - 1]; // Manual transmission
-  else
-    speed = currentSpeed; // Automatic transmission
-#endif
-
-  speed = map(speed, 0, RPM_MAX, 0, MAX_REAL_SPEED);
-
-  if (!gearUpShiftingInProgress && !gearDownShiftingInProgress)
-  { // avoid jumps between gear switches
-    dashboard.setSpeed(speed);
-  }
-
-  // Central display
-#if defined BATTERY_PROTECTION
-  dashboard.setVolt(batteryVoltage, CUTOFF_VOLTAGE * numberOfCells);
-#endif
-
-  if (neutralGear)
-  {
-    dashboard.setGear(0);
-  }
-  else if (escInReverse)
-  {
-    dashboard.setGear(-1);
-  }
-  else
-  {
     if (!automatic)
-      dashboard.setGear(selectedGear); // Manual transmission
+      speed = currentSpeed * 100 / manualGearRatios[selectedGear - 1]; // Manual transmission
     else
-      dashboard.setGear(selectedAutomaticGear); // Automatic transmission
-  }
-
-  // Indicator lamps
-#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
-  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
-#else
-  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
-  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
+      speed = currentSpeed; // Automatic transmission
 #endif
-  dashboard.setLowBeamIndicator(lightsOn);
-  dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
-  dashboard.setFogLightIndicator(fogLightOn);
 
-  // Needles
-  if (millis() - lastFrameTime > 14)
-  {
+    speed = map(speed, 0, RPM_MAX, 0, MAX_REAL_SPEED);
+
+    if (!gearUpShiftingInProgress && !gearDownShiftingInProgress)
+    { // avoid jumps between gear switches
+      dashboard.setSpeed(speed);
+    }
+
+    // Central display
+#if defined BATTERY_PROTECTION
+    dashboard.setVolt(batteryVoltage, CUTOFF_VOLTAGE * numberOfCells);
+#endif
+
+    if (neutralGear)
+    {
+      dashboard.setGear(0);
+    }
+    else if (escInReverse)
+    {
+      dashboard.setGear(-1);
+    }
+    else
+    {
+      if (!automatic)
+        dashboard.setGear(selectedGear); // Manual transmission
+      else
+        dashboard.setGear(selectedAutomaticGear); // Automatic transmission
+    }
+
+    // Indicator lamps
+#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
+    dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
+    dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
+#else
+    dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
+    dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
+#endif
+    dashboard.setLowBeamIndicator(lightsOn);
+    dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
+    dashboard.setFogLightIndicator(fogLightOn);
+
+    // Needles
+    // if (millis() - lastFrameTime > 14)
+    //{
 
     if (engineState == RUNNING)
     {

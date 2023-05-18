@@ -19,7 +19,8 @@ void Dashboard::init(uint8_t value)
     _tft.setRotation(value); // 3 = normal, 1 = upside down
     _tft.fillScreen(TFT_BLACK);
     drawLogo(0, 0, logo_thediyguy, 80, 80);
-    _tft.drawCentreString("TheDIYGuy999", 120, 40, 1); // Show new content
+    _tft.drawCentreString("Powered by", 120, 34, 1);
+    _tft.drawCentreString("TheDIYGuy999", 120, 46, 1);
     delay(1500);
     _tft.fillScreen(TFT_BLACK);
     drawFrame();
@@ -470,7 +471,7 @@ void Dashboard::drawLogo(int16_t x, int16_t y, const uint16_t *bitmap, int16_t w
 }
 // End of standard dashboard *********************************************************************************************************************
 
-#else // LCD dashboard from Vrevic. See: https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/post-490891
+#else // LCD dashboard from Frevic. See: https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/post-490891
 
 /*
  * dashboard.cpp - Library to drive a 80x160px color LCD as rc truck dashboard
@@ -491,7 +492,8 @@ void Dashboard::init(uint8_t value)
     _tft.setRotation(value); // 3 = normal, 1 = upside down
     _tft.fillScreen(TFT_BLACK);
     drawLogo(0, 0, logo_thediyguy, 80, 80);
-    _tft.drawCentreString("TheDIYGuy999", 120, 40, 1); // Show new content
+    _tft.drawCentreString("Powered by", 120, 34, 1);
+    _tft.drawCentreString("TheDIYGuy999", 120, 46, 1);
     delay(1500);
     drawLogo(0, 0, logo_frevic, 160, 80);
     delay(1500);
@@ -529,13 +531,11 @@ void Dashboard::init(uint8_t value)
 
 void Dashboard::setLeftIndicator(boolean on)
 {
-    // drawLeftIndicator(on ? TFT_DARKGREEN : TFT_BLACK);
     drawLeftIndicator(on ? TFT_DARKGREEN : offColor);
 }
 
 void Dashboard::setRightIndicator(boolean on)
 {
-    // drawRightIndicator(on ? TFT_DARKGREEN : TFT_BLACK);
     drawRightIndicator(on ? TFT_DARKGREEN : offColor);
 }
 
@@ -590,6 +590,8 @@ void Dashboard::drawFrame()
 
     unsigned short color1;
     unsigned short color2;
+
+    // Central display ----
     for (int i = 0; i <= 3; i++)
     {
         _tft.fillRect(SCREEN_WIDTH / 4, 15 + (i * 12), (SCREEN_WIDTH / 4) * 2, 10, 0x0290);
@@ -614,7 +616,8 @@ void Dashboard::drawFrame()
     _tft.fillCircle(SPEED_CIRCLE_CENTER_X, SPEED_CIRCLE_CENTER_Y, SPEED_CIRCLE_RADIUS + 2, TFT_BLACK);
     _tft.fillCircle(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, RPM_CIRCLE_RADIUS + 2, TFT_BLACK);
 
-    // SPEED FREDY
+    // SPEED FREDY ----
+    // Speed gauge outer ring segments
     drawArc(SPEED_CIRCLE_CENTER_X, SPEED_CIRCLE_CENTER_Y, SPEED_CIRCLE_RADIUS,
             SPEED_CIRCLE_ANGLE_START, SPEED_CIRCLE_ANGLE_END, 0x0290); // TFT_LIGHTGREY);
     drawArc(SPEED_CIRCLE_CENTER_X, SPEED_CIRCLE_CENTER_Y, SPEED_CIRCLE_RADIUS - 1,
@@ -625,6 +628,7 @@ void Dashboard::drawFrame()
     drawArc(SPEED_CIRCLE_CENTER_X, SPEED_CIRCLE_CENTER_Y, SPEED_CIRCLE_RADIUS - 4,
             SPEED_CIRCLE_ANGLE_START, SPEED_CIRCLE_ANGLE_END, TFT_WHITE); // TFT_LIGHTGREY);
 
+    // Speed scale segments
     for (int16_t i = 0; i <= SPEED_CIRCLE_SEGMENTS; i++)
     {
         if (i < 9)
@@ -651,9 +655,8 @@ void Dashboard::drawFrame()
         }
     }
 
-    // RPM Fredy
-
-    // SPEED FREDY
+    // RPM Fredy ----
+    // RPM gauge outer ring segments
     drawArc(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, RPM_CIRCLE_RADIUS,
             RPM_CIRCLE_ANGLE_START, RPM_CIRCLE_ANGLE_END, 0x0290);
     drawArc(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, RPM_CIRCLE_RADIUS - 1,
@@ -664,6 +667,7 @@ void Dashboard::drawFrame()
     drawArc(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, RPM_CIRCLE_RADIUS - 4,
             RPM_CIRCLE_ANGLE_START, RPM_CIRCLE_ANGLE_END, TFT_WHITE);
 
+    // RPM scale segments
     for (int16_t i = 0; i <= RPM_CIRCLE_SEGMENTS; i++)
     {
         color1 = gaugeColor;
@@ -691,9 +695,9 @@ void Dashboard::drawFrame()
     _tft.fillCircle(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, 14, 0x0290);
     _tft.fillCircle(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, 12, TFT_BLACK);
 
-    _tft.setTextColor(TFT_ORANGE);
-    _tft.drawCentreString("x100", RPM_CIRCLE_CENTER_X, 60, 1);
-    _tft.drawCentreString("Rpm", RPM_CIRCLE_CENTER_X, 70, 1);
+    _tft.setTextColor(TFT_ORANGE);  
+    _tft.drawCentreString("rpm", RPM_CIRCLE_CENTER_X, 60, 1);
+    _tft.drawCentreString("x100", RPM_CIRCLE_CENTER_X, 70, 1);
     _tft.drawCentreString("km/h", SPEED_CIRCLE_CENTER_X - 3, 60, 1);
 
     drawGear('N');
@@ -780,19 +784,16 @@ void Dashboard::drawNeedle(int16_t cx, int16_t cy, uint16_t len, int16_t deg_pos
 {
     float sx, sy;
     uint16_t x, y, xx, yy;
-
-    //_tft.fillCircle(cx, cy, radius_holder, TFT_DARKGREY);
-    sx = cos(deg_pos * DEG2RAD);
-    sy = sin(deg_pos * DEG2RAD);
+    sx = cos((deg_pos)*DEG2RAD);
+    sy = sin((deg_pos)*DEG2RAD);
     x = round(sx * len) + cx;
     y = round(sy * len) + cy;
     xx = -round(sx * 2) + cx;
     yy = -round(sy * 2) + cy;
     _tft.drawLine(x, y, xx, yy, color_needle);
-
-    //_tft.fillCircle(cx, cy, radius_holder, 0x0290);
 }
 
+// Needle function
 void Dashboard::drawIndicadorFr(int16_t cx, int16_t cy, uint16_t len, int16_t deg_pos,
                                 uint16_t radius_holder, uint32_t color_needle,
                                 int16_t deg_pos_ant, uint32_t color_needle_ant, uint16_t pVelocidad)
@@ -804,14 +805,12 @@ void Dashboard::drawIndicadorFr(int16_t cx, int16_t cy, uint16_t len, int16_t de
     }
     float sx, sy;
     uint16_t x, y, xx, yy;
-    // ante
+
+    // clear old needle
     sx = cos(deg_pos_ant * DEG2RAD);
     sy = sin(deg_pos_ant * DEG2RAD);
     x = round(sx * len) + cx;
     y = round(sy * len) + cy;
-
-    //  xx = -round(sx * 2) + cx;
-    //  yy = -round(sy * 2) + cy;
 
     xx = round(sx * (radius_holder - 2)) + cx;
     yy = round(sy * (radius_holder - 2)) + cy;
@@ -827,42 +826,17 @@ void Dashboard::drawIndicadorFr(int16_t cx, int16_t cy, uint16_t len, int16_t de
         drawNumrpm();
     }
 
-    // nuevo
+    // draw new needle
     sx = cos(deg_pos * DEG2RAD);
     sy = sin(deg_pos * DEG2RAD);
     x = round(sx * len) + cx;
     y = round(sy * len) + cy;
-
-    // xx = -round(sx * 2) + cx;
-    // yy = -round(sy * 2) + cy;
 
     xx = round(sx * (radius_holder - 2)) + cx;
     yy = round(sy * (radius_holder - 2)) + cy;
 
     _tft.drawLine(x, y, xx, yy, color_needle);
-
-    // _tft.fillCircle(cx, cy, radius_holder-3, 0x0290);
-    // _tft.fillCircle(cx, cy, radius_holder-2-3, TFT_BLACK);
 }
-/*
-void Dashboard::drawVel(int16_t cx, int16_t cy, uint16_t len, int16_t deg_pos,
-                           uint16_t radius_holder, uint32_t color_needle)
-{
-    float sx, sy;
-    uint16_t x, y, xx, yy;
-
-    sx = cos(deg_pos * DEG2RAD);
-    sy = sin(deg_pos * DEG2RAD);
-    x = round(sx * len) + cx;
-    y = round(sy * len) + cy;
-    xx = -round(sx * 2) + cx;
-    yy = -round(sy * 2) + cy;
-    _tft.drawLine(x, y, xx, yy, color_needle);
-
-    _tft.fillCircle(cx, cy, radius_holder-3, 0x0290);
-    _tft.fillCircle(cx, cy, radius_holder-2-3, TFT_BLACK);
-}
-*/
 
 void Dashboard::drawLeftIndicator(uint32_t color)
 {
@@ -989,7 +963,7 @@ void Dashboard::drawSpeed(uint16_t value)
     int16_t last_deg =
         map(lastVal, SPEED_MIN, SPEED_MAX, SPEED_CIRCLE_ANGLE_START, SPEED_CIRCLE_ANGLE_END);
     int16_t deg = map(value, SPEED_MIN, SPEED_MAX, SPEED_CIRCLE_ANGLE_START, SPEED_CIRCLE_ANGLE_END);
-
+    // Speed needle
     drawIndicadorFr(SPEED_CIRCLE_CENTER_X, SPEED_CIRCLE_CENTER_Y, SPEED_CIRCLE_RADIUS - 9, deg, 16,
                     needleColor, last_deg, TFT_BLACK, 1);
 
@@ -1012,7 +986,7 @@ void Dashboard::drawRPM(uint16_t value)
 
     int16_t last_deg = map(lastVal, RPM_MIN, RPM_MAX, RPM_CIRCLE_ANGLE_START, RPM_CIRCLE_ANGLE_END);
     int16_t deg = map(value, RPM_MIN, RPM_MAX, RPM_CIRCLE_ANGLE_START, RPM_CIRCLE_ANGLE_END);
-
+    // RPM needle
     drawIndicadorFr(RPM_CIRCLE_CENTER_X, RPM_CIRCLE_CENTER_Y, RPM_CIRCLE_RADIUS - 9, deg, 16,
                     needleColor, last_deg, TFT_BLACK, 2);
 
