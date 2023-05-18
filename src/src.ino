@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0-b1"; // Software revision.
+char codeVersion[] = "9.13.0-b2"; // Software revision.
 
 //
 // =======================================================================================================
@@ -120,7 +120,7 @@ void eepromInit();
 void serialInterface();
 void webInterface();
 
-// The following tasks only required for Arduino IDE! ----
+// The following tasks are only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 // Warning: Use Espressif ESP32 board definition v1.05 or 10.6! v2.x is not working
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
@@ -575,8 +575,15 @@ uint8_t broadcastAddress3[6];
 #define adr_eprom_reversingLightBrightness 100
 #define adr_eprom_indicatorLightBrightness 104
 
-#define adr_eprom_esc_pulse_span 108
-#define adr_eprom_esc_takeoff_punch 112
+#define adr_eprom_esc_pulse_span 120
+#define adr_eprom_esc_takeoff_punch 124
+#define adr_eprom_esc_reverse_plus 128
+#define adr_eprom_crawler_esc_ramp_time 132
+#define adr_eprom_global_acceleration_percentage 136
+
+#define adr_eprom_rz7886_brake_margin 148
+#define adr_eprom_rz7886_frequency 152
+#define adr_eprom_rz7886_dragbrake_duty 156
 
 #define adr_eprom_ssid 192     // 192 (32)
 #define adr_eprom_password 224 // 224 (64)
@@ -1538,8 +1545,17 @@ void setupMcpwm()
 
 void setupMcpwmESC()
 {
+  // ESC output range calibration
+  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; // Additional takeoff punch around zero
+  escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
+
+  escPulseMax = pulseZero[3] + escPulseSpan;
+  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; // Additional power for ESC with slow reverse
+
 #if not defined RZ7886_DRIVER_MODE // Setup for classic crawler style RC ESC ----
   Serial.printf("Standard ESC mode configured. Connect crawler ESC to ESC header. RZ7886 motor driver not usable!\n");
+
+  brakeMargin = 0; // Always 0, if not RZ7886 driver mode!
 
   // 1. set our ESC output pin
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, ESC_OUT_PIN); // Set ESC as PWM0A
@@ -1802,7 +1818,7 @@ void setup()
   // Eeprom Setup
   setupEeprom();
 
-  #if defined BATTERY_PROTECTION
+#if defined BATTERY_PROTECTION
   Serial.printf("Battery protection calibration data: ----\n");
   Serial.printf("RESISTOR_TO_BATTTERY_PLUS: %i Ω\n", RESISTOR_TO_BATTTERY_PLUS);
   Serial.printf("RESISTOR_TO_GND: %i Ω\n", RESISTOR_TO_GND);
@@ -2054,13 +2070,6 @@ void setup()
     pulseMaxLimit[i] = pulseZero[i] + pulseLimit;
     pulseMinLimit[i] = pulseZero[i] - pulseLimit;
   }
-
-  // ESC output range calibration
-  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; // Additional takeoff punch around zero
-  escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
-
-  escPulseMax = pulseZero[3] + escPulseSpan;
-  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; // Additional power for ESC with slow reverse
 
   // ESC setup
   setupMcpwmESC(); // ESC now using mpcpwm
@@ -2871,8 +2880,14 @@ void eepromInit()
     // EEPROM.write(adr_eprom_reversingLightBrightness, defaultLightsBrightness);
     // EEPROM.write(adr_eprom_indicatorLightBrightness, defaultLightsBrightness);
 
-    EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);       // ESC pulse span
-    EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch); // ESC takeoff punch
+    EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
+    EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
+    EEPROM.writeUShort(adr_eprom_esc_reverse_plus, escReversePlus);                             // ESC reverse plus
+    EEPROM.writeUShort(adr_eprom_crawler_esc_ramp_time, crawlerEscRampTime);                    // ESC crawler ramp time
+    EEPROM.writeUShort(adr_eprom_global_acceleration_percentage, globalAccelerationPercentage); // ESC acceleration percentage
+    EEPROM.writeUShort(adr_eprom_rz7886_brake_margin, brakeMargin);                             // RZ7886 brake margin
+    EEPROM.writeUShort(adr_eprom_rz7886_frequency, RZ7886_FREQUENCY);                           // RZ7886 frequency
+    EEPROM.writeUShort(adr_eprom_rz7886_dragbrake_duty, RZ7886_DRAGBRAKE_DUTY);                 // RZ7886 dragbrake duty
 
     writeStringToEEPROM(adr_eprom_ssid, default_ssid);
     writeStringToEEPROM(adr_eprom_password, default_password);
@@ -2917,8 +2932,15 @@ void eepromWrite()
   // EEPROM.write(adr_eprom_reversingLightBrightness, reversingLightBrightness);
   // EEPROM.write(adr_eprom_indicatorLightBrightness, indicatorLightBrightness);
 
-  EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);       // ESC pulse span
-  EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch); // ESC takeoff punch
+  EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
+  EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
+  EEPROM.writeUShort(adr_eprom_esc_reverse_plus, escReversePlus);                             // ESC reverse plus
+  EEPROM.writeUShort(adr_eprom_crawler_esc_ramp_time, crawlerEscRampTime);                    // ESC crawler ramp time
+  EEPROM.writeUShort(adr_eprom_global_acceleration_percentage, globalAccelerationPercentage); // ESC acceleration percentage
+
+  EEPROM.writeUShort(adr_eprom_rz7886_brake_margin, brakeMargin);             // RZ7886 brake margin
+  EEPROM.writeUShort(adr_eprom_rz7886_frequency, RZ7886_FREQUENCY);           // RZ7886 frequency
+  EEPROM.writeUShort(adr_eprom_rz7886_dragbrake_duty, RZ7886_DRAGBRAKE_DUTY); // RZ7886 dragbrake duty
 
   writeStringToEEPROM(adr_eprom_ssid, ssid);
   writeStringToEEPROM(adr_eprom_password, password);
@@ -2960,8 +2982,15 @@ void eepromRead()
   // reversingLightBrightness = EEPROM.read(adr_eprom_reversingLightBrightness);
   // indicatorLightBrightness = EEPROM.read(adr_eprom_indicatorLightBrightness);
 
-  escPulseSpan = EEPROM.readUShort(adr_eprom_esc_pulse_span);    // ESC pulse span
-  escTakeoffPunch = EEPROM.readUShort(adr_eprom_esc_takeoff_punch); // ESC takeoff punch
+  escPulseSpan = EEPROM.readUShort(adr_eprom_esc_pulse_span);                                 // ESC pulse span
+  escTakeoffPunch = EEPROM.readUShort(adr_eprom_esc_takeoff_punch);                           // ESC takeoff punch
+  escReversePlus = EEPROM.readUShort(adr_eprom_esc_reverse_plus);                             // ESC reverse plus
+  crawlerEscRampTime = EEPROM.readUShort(adr_eprom_crawler_esc_ramp_time);                    // ESC crawler ramp time
+  globalAccelerationPercentage = EEPROM.readUShort(adr_eprom_global_acceleration_percentage); // ESC acceleration percentage
+
+  brakeMargin = EEPROM.readUShort(adr_eprom_rz7886_brake_margin);             // RZ7886 brake margin
+  RZ7886_FREQUENCY = EEPROM.readUShort(adr_eprom_rz7886_frequency);           // RZ7886 frequency
+  RZ7886_DRAGBRAKE_DUTY = EEPROM.readUShort(adr_eprom_rz7886_dragbrake_duty); // RZ7886 dragbrake duty
 
   readStringFromEEPROM(adr_eprom_ssid, &ssid);
   readStringFromEEPROM(adr_eprom_password, &password);
@@ -4943,6 +4972,8 @@ void trailerPresenceSwitchRead()
 // LCD DASHBOARD BY Gamadril: https://github.com/Gamadril/Rc_Engine_Sound_ESP32
 // =======================================================================================================
 //
+
+// Nice alternative color dashboard by Frevic: https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/post-490891
 
 /* Bugs TODO:
 

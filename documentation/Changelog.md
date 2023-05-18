@@ -1,4 +1,7 @@
 # Changelog
+### 9.13.0-b1:
+- More adjustable ESC parameters on 192.168.4.1
+- Dashboard improved & optional dashboard from Frevic implemented. Select it in "dashboard.h" by uncommenting "#define FREVIC_DASHBOARD"
 
 ### 9.13.0-b1:
 - New parameter "#define NEOPIXEL_ON_CH4" in "6_Lights.h" allows to connect the NEOPIXELS to servo CH 4 (BUS mode only, no 5th wheel servo in this case)

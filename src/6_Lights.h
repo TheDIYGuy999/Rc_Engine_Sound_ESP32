@@ -9,7 +9,7 @@
 // Neopixel settings -----------------------------------------------------------------------------------------------------------------------------
 #define NEOPIXEL_ENABLED // GPIO0 used for WS2812 Neopixel control, if defined!
 #if defined NEOPIXEL_ENABLED // only selectable, if NEOPIXELS are in use ---
-#define NEOPIXEL_ON_CH4 // The CH 4 servo header is used as Neopixel output, if defined (BUS communication mode only, intended for RC trailer controller, no coupler servo)
+//#define NEOPIXEL_ON_CH4 // The CH 4 servo header is used as Neopixel output, if defined (BUS communication mode only, intended for RC trailer controller, no coupler servo)
 #endif // ---
 #define NEOPIXEL_COUNT 8        // How many Neopixels? 8 for Knight Rider, 3 for B33lz3bub
 #define NEOPIXEL_BRIGHTNESS 127 // Brightness (255 is the maximum)

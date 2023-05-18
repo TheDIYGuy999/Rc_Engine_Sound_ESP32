@@ -104,7 +104,7 @@ void webInterface()
               }
               else
               {
-                client.printf("<p>Battery error!\n");
+                client.printf("<p style=\"color:red;\">Battery error!\n");
               }
               client.printf("<p>Battery cutoff voltage: %.2f V\n", batteryCutoffvoltage);
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
@@ -152,7 +152,6 @@ void webInterface()
                 valueString = header.substring(pos1 + 1, pos2);
                 password = valueString;
               }
-              client.printf("<p>Save settings & restart required after changes in this section");
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 
@@ -561,9 +560,11 @@ void webInterface()
               }
 
               client.printf("<p>Use HEX values (0-9, A-F) only, always starting with FE");
-              client.printf("<p>Save settings & restart required after changes in this section");
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+              // ESC settings:
+
+              client.printf("<p style=\"color:red;\">Lift traction wheels off the ground while adjusting ESC settings!</p>");
 
               // Slider1 (ESC pulse span) ----------------------------------
               valueString = String(escPulseSpan, DEC);
@@ -582,7 +583,8 @@ void webInterface()
                 pos2 = header.indexOf('&');
                 valueString = header.substring(pos1 + 1, pos2);
                 escPulseSpan = (valueString.toInt());
-                Serial.println("escPulseSpan = "+ String(escPulseSpan));
+                setupMcpwmESC();
+                Serial.println("escPulseSpan = " + String(escPulseSpan));
               }
 
               // Slider2 (ESC takeoff punch) ----------------------------------
@@ -602,10 +604,142 @@ void webInterface()
                 pos2 = header.indexOf('&');
                 valueString = header.substring(pos1 + 1, pos2);
                 escTakeoffPunch = (valueString.toInt());
-                Serial.println("escTakeoffPunch = "+ String(escTakeoffPunch));
+                setupMcpwmESC();
+                Serial.println("escTakeoffPunch = " + String(escTakeoffPunch));
               }
 
+              // Slider3 (ESC reverse plus) ----------------------------------
+              valueString = String(escReversePlus, DEC);
+              client.println("<p>ESC reverse plus (additional reverse speed / trim, power-cycle ESC!): <span id=\"textSlider3Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"220\" step=\"5\" class=\"slider\" id=\"Slider3Input\" onchange=\"Slider3Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider3Change(pos) { ");
+              client.println("var slider3Value = document.getElementById(\"Slider3Input\").value;");
+              client.println("document.getElementById(\"textSlider3Value\").innerHTML = slider3Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider3=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider3=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                escReversePlus = (valueString.toInt());
+                setupMcpwmESC();
+                Serial.println("escReversePlus = " + String(escReversePlus));
+              }
+
+              // Slider4 (Crawler mode ESC ramp time) ----------------------------------
+              valueString = String(crawlerEscRampTime, DEC);
+              client.println("<p>Crawler mode ESC ramp time: <span id=\"textslider4Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"20\" step=\"2\" class=\"slider\" id=\"Slider4Input\" onchange=\"Slider4Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider4Change(pos) { ");
+              client.println("var slider4Value = document.getElementById(\"Slider4Input\").value;");
+              client.println("document.getElementById(\"textslider4Value\").innerHTML = slider4Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider4=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider4=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                crawlerEscRampTime = (valueString.toInt());
+                setupMcpwmESC();
+                Serial.println("crawlerEscRampTime = " + String(crawlerEscRampTime));
+              }
+
+              // Slider5 (ESC global acceleration %) ----------------------------------
+              valueString = String(globalAccelerationPercentage, DEC);
+              client.println("<p>ESC global acceleration % (experimental): <span id=\"textslider5Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"100\" max=\"200\" step=\"10\" class=\"slider\" id=\"Slider5Input\" onchange=\"Slider5Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider5Change(pos) { ");
+              client.println("var slider5Value = document.getElementById(\"Slider5Input\").value;");
+              client.println("document.getElementById(\"textslider5Value\").innerHTML = slider5Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider5=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider5=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                globalAccelerationPercentage = (valueString.toInt());
+                setupMcpwmESC();
+                Serial.println("globalAccelerationPercentage = " + String(globalAccelerationPercentage));
+              }
+
+              // RZ7886 ESC only options:
+#if defined RZ7886_DRIVER_MODE
+              // Slider6 (RZ7886 ESC brake margin) ----------------------------------
+              valueString = String(brakeMargin, DEC);
+              client.println("<p>RZ7886 ESC brake margin (experimental): <span id=\"textslider6Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"20\" step=\"2\" class=\"slider\" id=\"Slider6Input\" onchange=\"Slider6Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider6Change(pos) { ");
+              client.println("var slider6Value = document.getElementById(\"Slider6Input\").value;");
+              client.println("document.getElementById(\"textslider6Value\").innerHTML = slider6Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider6=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider6=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                brakeMargin = (valueString.toInt());
+                setupMcpwmESC();
+                Serial.println("brakeMargin = " + String(brakeMargin));
+              }
+
+              // Slider7 (RZ7886 ESC frequency) ----------------------------------
+              valueString = String(RZ7886_FREQUENCY, DEC);
+              client.println("<p>RZ7886 ESC frequency (frequencies > 500 may overheat driver!): <span id=\"textslider7Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"200\" max=\"1000\" step=\"50\" class=\"slider\" id=\"Slider7Input\" onchange=\"Slider7Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider7Change(pos) { ");
+              client.println("var slider7Value = document.getElementById(\"Slider7Input\").value;");
+              client.println("document.getElementById(\"textslider7Value\").innerHTML = slider7Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider7=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider7=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                RZ7886_FREQUENCY = (valueString.toInt());
+                setupMcpwmESC();
+                Serial.println("RZ7886_FREQUENCY = " + String(RZ7886_FREQUENCY));
+              }
+
+              // Slider8 (RZ7886 ESC dragbrake duty %) ----------------------------------
+              valueString = String(RZ7886_DRAGBRAKE_DUTY, DEC);
+              client.println("<p>RZ7886 ESC dragbrake % (more = stronger brake): <span id=\"textslider8Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"100\" step=\"5\" class=\"slider\" id=\"Slider8Input\" onchange=\"Slider8Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider8Change(pos) { ");
+              client.println("var slider8Value = document.getElementById(\"Slider8Input\").value;");
+              client.println("document.getElementById(\"textslider8Value\").innerHTML = slider8Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider8=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider8=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                RZ7886_DRAGBRAKE_DUTY = (valueString.toInt());
+                setupMcpwmESC();
+                Serial.println("RZ7886_DRAGBRAKE_DUTY = " + String(RZ7886_DRAGBRAKE_DUTY));
+              }
+#endif
+
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+
+              client.printf("<p>Save settings & restart required after changes above");
 
               // button1 (Save settings to EEPROM) ----------------------------------
               client.println("<p><a href=\"/save/on\"><button class=\"button buttonRed\" onclick=\"restartPopup()\" >Save settings & restart</button></a></p>");
@@ -620,7 +754,7 @@ void webInterface()
               client.println("alert(\"Controller restarted, you may need to reconnect WiFi!\"); ");
               client.println("} </script>");
 
-              client.println("<p>It is recommended to power cycle the controller as well as to close and reopen the browser window after using this button!</p>");
+              client.println("<p>It is recommended to power-cycle the controller as well as to close and reopen the browser window after using this button!</p>");
 
               //-----------------------------------------------------------------------------------------------------------------------
 

@@ -54,7 +54,7 @@
 
 */
 
-// ESC SETTINGS ******************************************************************************************************
+// ESC SETTINGS ************************************************************************************************************************
 
 // General options
 // #define QUICRUN_FUSION // Linearity compensation for HOBBYWING Quicrun Fusion motor / ESC combo
@@ -75,8 +75,15 @@ Order the PCB here: https://www.pcbway.com/project/shareproject/RZ7886_based_ESC
   - Connect a 100 - 470uF electrolytic cap and a 100nF tantalum or ceramic cap across pins 2 - 3
 */
 //#define RZ7886_DRIVER_MODE // An RZ7886 motor driver is used instead of a standard RC Crawler Type ESC. suitable for motors up to 370 size, for example WPL vehicles.
-const uint16_t RZ7886_FREQUENCY = 500;     // 500 Hz is recommended. It is not audible, if virtual engine sound is running. Higher frequencies may overheat the driver IC!
-const uint8_t RZ7886_DRAGBRAKE_DUTY = 100; // 0 - 100%. 100% = max. brake power while standing still. 100% is recommended for crawlers.
+uint16_t RZ7886_FREQUENCY = 500;     // 500 Hz is recommended. It is not audible, if virtual engine sound is running. Higher frequencies may overheat the driver IC!
+uint8_t RZ7886_DRAGBRAKE_DUTY = 100; // 0 - 100%. 100% = max. brake power while standing still. 100% is recommended for crawlers.
+
+// Brake margin: (Experimental!)
+// This setting prevents the ESC from going completely back to zero / neutral as long as the brake trigger is pulled.
+// This prevents the vehicle from rolling back as long as brake is applied. 0 = no effect, ca. 20 = strong effect.
+// How it works? Prevents the ESC from entering the "drag brake range"
+// Warning: vehicle may be unable to stop, if too high, especially when driving downhill! NEVER more than 20!
+uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10, otherwise 0
 
 // Top speed adjustment:
 // Usually 500 ( = 1000 - 2000 microseconds output or -45° to 45° servo angle) Enlarge it, if your vehicle is too fast
@@ -111,18 +118,13 @@ uint16_t escTakeoffPunch = 0;
 // - RZ7886 Driver = 0
 uint16_t escReversePlus = 0;
 
-// Brake margin: (Experimental!)
-// This setting prevents the ESC from going completely back to zero / neutral as long as the brake trigger is pulled.
-// This prevents the vehicle from rolling back as long as brake is applied. 0 = no effect, ca. 20 = strong effect.
-// How it works? Prevents the ESC from entering the "drag brake range"
-// Warning: vehicle may be unable to stop, if too high, especially when driving downhill! NEVER more than 20!
-uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10
-
 // Crawler mode escRampTime (see "8_Sound.h") WARNING: a very low setting may damage your transmission!
 uint8_t crawlerEscRampTime = 10; // about 10 (15 for Jeep), less = more direct control = less virtual inertia
 
 // Allows to scale vehicle file dependent acceleration
 uint16_t globalAccelerationPercentage = 100; // about 100 - 200% (200 for Jeep, 150 for 1/8 Landy) Experimental, may cause automatic transmission shifting issues!
+
+// BATTERY PROTECTION SETTINGS *********************************************************************************************************
 
 /* Battery low discharge protection (only for boards with voltage divider resistors):
  *  IMPORTANT: Enter used resistor values in Ohms (Ω) and THEN adjust DIODE_DROP, until your readings match the actual battery voltage! */
