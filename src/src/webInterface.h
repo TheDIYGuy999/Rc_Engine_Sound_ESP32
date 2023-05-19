@@ -58,7 +58,7 @@ void webInterface()
               // CSS styles for buttons
 
 #if defined MODERN_CSS // The modern CSS with scaling for better adaption between different devices
-              client.println("<style>html { font-family: Verdana, Helvetica, sans-serif; display: inline-block; margin: 0px auto; text-align: center; color: #0009ff; background-color: #white;}");
+              client.println("<style>html { font-family: Verdana, Helvetica, sans-serif; display: inline-block; margin: 0px auto; text-align: center; color: #0009ff; background-color: #f2f2f2;}");
 
               client.println("h1 {font-size: clamp(1.5rem, 2.5vw, 2.5rem);}");
               client.println("h2 {font-size: clamp(1.3rem, 2.0vw, 2.0rem);}");
@@ -68,7 +68,11 @@ void webInterface()
               client.println("input[type=\"checkbox\"] {cursor: pointer; zoom: 1.5;}");
 
               client.println(".slider { -webkit-appearance: none; width: 95%; height: 25px; background: #d3d3d3; outline: none; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; margin: 5px; border-radius: 10px;}");
-              client.println(".slider::-webkit-slider-thumb { -webkit-appearance: none; cursor: pointer; width: 95%; width: 35px; height: 35px; background: #fff; outline: none; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; border-radius: 10px;}");
+              client.println(".slider::-webkit-slider-thumb { -webkit-appearance: none; cursor: pointer; width: 95%; width: 35px; height: 35px; background: #66ffcc; outline: none; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; border-radius: 10px;}");
+              client.println(".sliderServo1::-webkit-slider-thumb { background: #ff9999;}");
+              client.println(".sliderServo2::-webkit-slider-thumb { background: #99ccff;}");
+              client.println(".sliderServo3::-webkit-slider-thumb { background: #ffbb99;}");
+              client.println(".sliderLed::-webkit-slider-thumb { background: #ffff99;}");
 
               client.println(".textbox {cursor: pointer; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; font-size: clamp(1rem, 2vw, 2rem); padding: clamp(0.2rem, 1vw, 1rem); text-align: center; border-radius: 10px;}");
               client.println(".buttonGreen {background-color: #4CAF50; color: white;}");
@@ -94,6 +98,7 @@ void webInterface()
               // Website title
               client.println("</head><body><h1>TheDIYGuy999 Sound & Light Controller</h1>");
               client.printf("<p>Software version %s\n", codeVersion);
+              client.printf("<p style=\"color:red;\"><b>Don't mess around while driving!</b></p>");
 
 #if defined BATTERY_PROTECTION
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
@@ -107,14 +112,11 @@ void webInterface()
                 client.printf("<p style=\"color:red;\">Battery error!\n");
               }
               client.printf("<p>Battery cutoff voltage: %.2f V\n", batteryCutoffvoltage);
-              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 #endif
 
-              client.printf("<p style=\"color:red;\">Don't mess around while driving!</p>");
-
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
-
-              // Settings ------------------------------------------------------------------------------------------------------------
+              // Network settings:
+              client.printf("<p><b>Network settings</b></p>");
 
               // Set1 (ssid) ----------------------------------
               valueString = ssid;              // Read current value
@@ -154,7 +156,8 @@ void webInterface()
               }
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
-
+              // Trailer settings:
+              client.printf("<p><b>Trailer settings</b></p>");
               // Trailer 1 ********************************************************************************************************
               if (useTrailer1 == true)
               {
@@ -563,8 +566,8 @@ void webInterface()
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
               // ESC settings:
-
-              client.printf("<p style=\"color:red;\">Lift traction wheels off the ground while adjusting ESC settings!</p>");
+              client.printf("<p><b>ESC settings</b></p>");
+              client.printf("<p style=\"color:red;\"><b>Lift traction wheels off the ground while adjusting!</b></p>");
 
               // Slider1 (ESC pulse span) ----------------------------------
               valueString = String(escPulseSpan, DEC);
@@ -736,6 +739,178 @@ void webInterface()
                 Serial.println("RZ7886_DRAGBRAKE_DUTY = " + String(RZ7886_DRAGBRAKE_DUTY));
               }
 #endif
+
+              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
+              // Servo settings:
+
+              client.printf("<p><b>Servo settings</b></p>");
+              // Slider11 (Steering position left) ----------------------------------
+              valueString = String(CH1L, DEC);
+              client.println("<p>Steering position left: <span id=\"textslider11Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"800\" max=\"2200\" step=\"10\" class=\"slider sliderServo1\" id=\"Slider11Input\" onchange=\"Slider11Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider11Change(pos) { ");
+              client.println("var slider11Value = document.getElementById(\"Slider11Input\").value;");
+              client.println("document.getElementById(\"textslider11Value\").innerHTML = slider11Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider11=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider11=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH1L = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH1L = " + String(CH1L));
+              }
+
+              // Slider12 (Steering position center) ----------------------------------
+              valueString = String(CH1C, DEC);
+              client.println("<p>Steering position center: <span id=\"textslider12Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"1300\" max=\"1700\" step=\"5\" class=\"slider sliderServo1\" id=\"Slider12Input\" onchange=\"Slider12Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider12Change(pos) { ");
+              client.println("var slider12Value = document.getElementById(\"Slider12Input\").value;");
+              client.println("document.getElementById(\"textslider12Value\").innerHTML = slider12Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider12=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider12=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH1C = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH1C = " + String(CH1C));
+              }
+
+              // Slider13 (Steering position right) ----------------------------------
+              valueString = String(CH1R, DEC);
+              client.println("<p>Steering position right: <span id=\"textslider13Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"800\" max=\"2200\" step=\"10\" class=\"slider sliderServo1\" id=\"Slider13Input\" onchange=\"Slider13Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider13Change(pos) { ");
+              client.println("var slider13Value = document.getElementById(\"Slider13Input\").value;");
+              client.println("document.getElementById(\"textslider13Value\").innerHTML = slider13Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider13=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider13=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH1R = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH1R = " + String(CH1R));
+              }
+
+              // Slider14 (Transmission position left) ----------------------------------
+              valueString = String(CH2L, DEC);
+              client.println("<p>Transmission position left (1st gear): <span id=\"textslider14Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"800\" max=\"2200\" step=\"10\" class=\"slider sliderServo2\" id=\"Slider14Input\" onchange=\"Slider14Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider14Change(pos) { ");
+              client.println("var slider14Value = document.getElementById(\"Slider14Input\").value;");
+              client.println("document.getElementById(\"textslider14Value\").innerHTML = slider14Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider14=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider14=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH2L = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH2L = " + String(CH2L));
+              }
+
+              // Slider15 (Transmission position center) ----------------------------------
+              valueString = String(CH2C, DEC);
+              client.println("<p>Transmission position center (2nd gear): <span id=\"textslider15Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"800\" max=\"2200\" step=\"10\" class=\"slider sliderServo2\" id=\"Slider15Input\" onchange=\"Slider15Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider15Change(pos) { ");
+              client.println("var slider15Value = document.getElementById(\"Slider15Input\").value;");
+              client.println("document.getElementById(\"textslider15Value\").innerHTML = slider15Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider15=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider15=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH2C = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH2C = " + String(CH2C));
+              }
+
+              // Slider16 (Transmission position right) ----------------------------------
+              valueString = String(CH2R, DEC);
+              client.println("<p>Transmission position right (3rd gear): <span id=\"textslider16Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"800\" max=\"2200\" step=\"10\" class=\"slider sliderServo2\" id=\"Slider16Input\" onchange=\"Slider16Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider16Change(pos) { ");
+              client.println("var slider16Value = document.getElementById(\"Slider16Input\").value;");
+              client.println("document.getElementById(\"textslider16Value\").innerHTML = slider16Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider16=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider16=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH2R = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH2R = " + String(CH2R));
+              }
+
+              // Slider17 (coupler position left) ----------------------------------
+              valueString = String(CH4L, DEC);
+              client.println("<p>coupler position left (locked): <span id=\"textslider17Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"1000\" max=\"2000\" step=\"10\" class=\"slider sliderServo3\" id=\"Slider17Input\" onchange=\"Slider17Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider17Change(pos) { ");
+              client.println("var slider17Value = document.getElementById(\"Slider17Input\").value;");
+              client.println("document.getElementById(\"textslider17Value\").innerHTML = slider17Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider17=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider17=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH4L = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH4L = " + String(CH4L));
+              }
+
+              // Slider18 (coupler position right) ----------------------------------
+              valueString = String(CH4R, DEC);
+              client.println("<p>coupler position right (unlocked): <span id=\"textslider18Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"1000\" max=\"2000\" step=\"10\" class=\"slider sliderServo3\" id=\"Slider18Input\" onchange=\"Slider18Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider18Change(pos) { ");
+              client.println("var slider18Value = document.getElementById(\"Slider18Input\").value;");
+              client.println("document.getElementById(\"textslider18Value\").innerHTML = slider18Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider18=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider18=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                CH4R = (valueString.toInt());
+                setupMcpwm();
+                Serial.println("CH4R = " + String(CH4R));
+              }
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 

@@ -497,6 +497,8 @@ void Dashboard::init(uint8_t value)
     delay(1500);
     drawLogo(0, 0, logo_frevic, 160, 80);
     delay(1500);
+    drawLogo(0, 0, logo_scania, 160, 80);
+    delay(1500);
     _tft.fillScreen(TFT_BLACK);
     drawFrame();
     setSpeed(0);

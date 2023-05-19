@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0-b3"; // Software revision.
+char codeVersion[] = "9.13.0-b4"; // Software revision.
 
 //
 // =======================================================================================================
@@ -585,8 +585,17 @@ uint8_t broadcastAddress3[6];
 #define adr_eprom_rz7886_frequency 152
 #define adr_eprom_rz7886_dragbrake_duty 156
 
-#define adr_eprom_ssid 192     // 192 (32)
-#define adr_eprom_password 224 // 224 (64)
+#define adr_eprom_steering_servo_left 160
+#define adr_eprom_steering_servo_center 164
+#define adr_eprom_steering_servo_right 168
+#define adr_eprom_transmission_servo_left 172
+#define adr_eprom_transmission_servo_center 176
+#define adr_eprom_transmission_servo_right 180
+#define adr_eprom_coupler_servo_left 184
+#define adr_eprom_coupelr_servo_right 188
+
+#define adr_eprom_ssid 192     // 384 (64)
+#define adr_eprom_password 224 // 448 (64)
 
 // DEBUG stuff
 volatile uint8_t coreId = 99;
@@ -2889,6 +2898,17 @@ void eepromInit()
     EEPROM.writeUShort(adr_eprom_rz7886_frequency, RZ7886_FREQUENCY);                           // RZ7886 frequency
     EEPROM.writeUShort(adr_eprom_rz7886_dragbrake_duty, RZ7886_DRAGBRAKE_DUTY);                 // RZ7886 dragbrake duty
 
+    EEPROM.writeUShort(adr_eprom_steering_servo_left, CH1L);   // Steering servo left
+    EEPROM.writeUShort(adr_eprom_steering_servo_center, CH1C); // Steering servo center
+    EEPROM.writeUShort(adr_eprom_steering_servo_right, CH1R);  // Steering servo right
+
+    EEPROM.writeUShort(adr_eprom_transmission_servo_left, CH2L);   // Transmission servo left (1. gear)
+    EEPROM.writeUShort(adr_eprom_transmission_servo_center, CH2C); // Transmission servo center (2. gear)
+    EEPROM.writeUShort(adr_eprom_transmission_servo_right, CH2R);  // Transmission servo right (3. gear)
+
+    EEPROM.writeUShort(adr_eprom_coupler_servo_left, CH4L);  // Trailer coupler servo left (locked)
+    EEPROM.writeUShort(adr_eprom_coupelr_servo_right, CH4R); // Trailer coupler servo right (unlocked)
+
     writeStringToEEPROM(adr_eprom_ssid, default_ssid);
     writeStringToEEPROM(adr_eprom_password, default_password);
     EEPROM.commit();
@@ -2942,6 +2962,17 @@ void eepromWrite()
   EEPROM.writeUShort(adr_eprom_rz7886_frequency, RZ7886_FREQUENCY);           // RZ7886 frequency
   EEPROM.writeUShort(adr_eprom_rz7886_dragbrake_duty, RZ7886_DRAGBRAKE_DUTY); // RZ7886 dragbrake duty
 
+  EEPROM.writeUShort(adr_eprom_steering_servo_left, CH1L);   // Steering servo left
+  EEPROM.writeUShort(adr_eprom_steering_servo_center, CH1C); // Steering servo center
+  EEPROM.writeUShort(adr_eprom_steering_servo_right, CH1R);  // Steering servo right
+
+  EEPROM.writeUShort(adr_eprom_transmission_servo_left, CH2L);   // Transmission servo left (1. gear)
+  EEPROM.writeUShort(adr_eprom_transmission_servo_center, CH2C); // Transmission servo center (2. gear)
+  EEPROM.writeUShort(adr_eprom_transmission_servo_right, CH2R);  // Transmission servo right (3. gear)
+
+  EEPROM.writeUShort(adr_eprom_coupler_servo_left, CH4L);  // Trailer coupler servo left (locked)
+  EEPROM.writeUShort(adr_eprom_coupelr_servo_right, CH4R); // Trailer coupler servo right (unlocked)
+
   writeStringToEEPROM(adr_eprom_ssid, ssid);
   writeStringToEEPROM(adr_eprom_password, password);
   EEPROM.commit();
@@ -2991,6 +3022,17 @@ void eepromRead()
   brakeMargin = EEPROM.readUShort(adr_eprom_rz7886_brake_margin);             // RZ7886 brake margin
   RZ7886_FREQUENCY = EEPROM.readUShort(adr_eprom_rz7886_frequency);           // RZ7886 frequency
   RZ7886_DRAGBRAKE_DUTY = EEPROM.readUShort(adr_eprom_rz7886_dragbrake_duty); // RZ7886 dragbrake duty
+
+  CH1L = EEPROM.readUShort(adr_eprom_steering_servo_left);   // Steering servo left
+  CH1C = EEPROM.readUShort(adr_eprom_steering_servo_center); // Steering servo center
+  CH1R = EEPROM.readUShort(adr_eprom_steering_servo_right);  // Steering servo right
+
+  CH2L = EEPROM.readUShort(adr_eprom_transmission_servo_left);   // Transmission servo left (1. gear)
+  CH2C = EEPROM.readUShort(adr_eprom_transmission_servo_center); // Transmission servo center (2. gear)
+  CH2R = EEPROM.readUShort(adr_eprom_transmission_servo_right);  // Transmission servo right (3. gear)
+
+  CH4L = EEPROM.readUShort(adr_eprom_coupler_servo_left);  // Trailer coupler servo left (locked)
+  CH4R = EEPROM.readUShort(adr_eprom_coupelr_servo_right); // Trailer coupler servo right (unlocked)
 
   readStringFromEEPROM(adr_eprom_ssid, &ssid);
   readStringFromEEPROM(adr_eprom_password, &password);

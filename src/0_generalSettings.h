@@ -22,7 +22,7 @@
 //#define CORE_DEBUG // Don't use this!
 
 // EEPROM settings ---------------------------------------------------------------------------------------------------------------------------------
-uint8_t eeprom_id = 3; // change this id (between 1 and 255, compare with serial monitor), if you want to restore EEPROM defaults (only executed 1x) <<------------- NOTE!
+uint8_t eeprom_id = 4; // change this id (between 1 and 255, compare with serial monitor), if you want to restore EEPROM defaults (executed if different) <<------------- NOTE!
 //#define ERASE_EEPROM_ON_BOOT // EEPROM is completely overwritten, if defined! Never define it, vehicle will not work!
 // only define it in order to clean up junk from old projects in your EEPROM
 
