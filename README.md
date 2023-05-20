@@ -11,14 +11,33 @@ Video series: https://www.youtube.com/playlist?list=PLGO5EJJClJBCjIvu8frS7LrEU3H
 You can find the changes in the [Changelog](documentation/Changelog.md).
 ************************************************************************
 
-Discussion and support thread (in German): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
+Discussion and support thread (in German & English): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/
 
-New: fully assembled, tested and working 30 pin SMD version with switch mode PSU & display connector.
+Fully assembled, tested and working 30 pin SMD version with switch mode PSU & display connector.
 Order it here: https://www.pcbway.com/project/shareproject/Arduino_RC_engine_sound_light_controller_for_ESP32_a9334731.html
-![](documentation/pictures/30pinSmdSwitchModeVersion.jpg)
+![](documentation/pictures/30pinSmdSwitchModeVersion.png)
+
+New: STL data for nice 3D printed housing available.
+See: https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
+![](documentation/pictures/ESP32SoundAndLightController.png)
+
+New: Compact version for trailer or tractor
+See: https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
+![](documentation/pictures/ESP32TrailerController.png)
+
+New: RZ7886 7A ESC
+See: https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
+![](documentation/pictures/RZ7886top.png)
 
 New: wireless built-in configuration website 192.168.4.1
 ![](documentation/pictures/Configuration.png)
+
+New: LCD dashboard (original by Frevic)
+![](documentation/pictures/dashboard2.JPG)
+https://www.facebook.com/profile.php?id=100066616574355
+
+LCD dashboard (original by Gamadril)
+![](documentation/pictures/dashboard.JPG)
 
 Fully assembled, tested and working 30 pin SMD version, manufactured and pre-assembled by https://www.pcbway.com
 ![](documentation/pictures/30pinSmdVersion.jpg)
@@ -30,10 +49,6 @@ Compact version for excavator (IBUS & sound only, supplied by 6V BEC)
 ![](documentation/pictures/compact1.JPG)
 ![](documentation/pictures/compact2.JPG)
 ![](documentation/pictures/compact3.JPG)
-
-LCD dashboard (original by Gamadril)
-![](documentation/pictures/dashboard.JPG)
-
 
 ## Features:
 - Unique vehicle mass inertia simulation (connect your crawler type ESC to pin 33). Throttle output is altered during shifting of a mechanical 3 speed transmission for smooth shifting, gear protection and realistic sound. Works just fine with TAMIYA 3 speed transmissions. Should work as well with crawler 2 speed transmissions. The ESC is controlled by a state machine with the following states: driving forward & reverse (varible acceleration, depending on throttle position), neutral, braking forward & reverse (variable deceleration with fine granularity, according to "reverse throttle" position). It also allows to control the brake lights, the brake sound, the reversing light & the reversing beep sound properly. Acceleration & deceleration (coasting & braking) are adjustable separately for each gear to ensure maximum realism.

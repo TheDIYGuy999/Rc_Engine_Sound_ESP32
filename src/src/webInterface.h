@@ -59,22 +59,27 @@ void webInterface()
 
 #if defined MODERN_CSS // The modern CSS with scaling for better adaption between different devices
               client.println("<style>html { font-family: Verdana, Helvetica, sans-serif; display: inline-block; margin: 0px auto; text-align: center; color: #0009ff; background-color: #f2f2f2;}");
-
+              // Text
               client.println("h1 {font-size: clamp(1.5rem, 2.5vw, 2.5rem);}");
               client.println("h2 {font-size: clamp(1.3rem, 2.0vw, 2.0rem);}");
               client.println("p {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; }");
               client.println("a {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; cursor: pointer; text-decoration: underline;}");
-
+              // Checkbox
               client.println("input[type=\"checkbox\"] {cursor: pointer; zoom: 1.5;}");
-
+              // Slider
               client.println(".slider { -webkit-appearance: none; width: 95%; height: 25px; background: #d3d3d3; outline: none; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; margin: 5px; border-radius: 10px;}");
               client.println(".slider::-webkit-slider-thumb { -webkit-appearance: none; cursor: pointer; width: 95%; width: 35px; height: 35px; background: #66ffcc; outline: none; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; border-radius: 10px;}");
               client.println(".sliderServo1::-webkit-slider-thumb { background: #ff9999;}");
               client.println(".sliderServo2::-webkit-slider-thumb { background: #99ccff;}");
               client.println(".sliderServo3::-webkit-slider-thumb { background: #ffbb99;}");
               client.println(".sliderLed::-webkit-slider-thumb { background: #ffff99;}");
-
+              // Collapsible
+              client.println(".collapsible {background-color: #888; color: white;cursor: pointer; padding: 10px; width: 100%; border: none; text-align: center; outline: none; font-size: clamp(1rem, 1.5vw, 1.5rem); font-weight: bold;)}");
+              client.println(".active, .collapsible:hover {background-color: #555;}");
+              client.println(".content { display: none;}");
+              // Textbox
               client.println(".textbox {cursor: pointer; border: clamp(0.15rem, 0.15vw, 0.3rem) solid black; font-size: clamp(1rem, 2vw, 2rem); padding: clamp(0.2rem, 1vw, 1rem); text-align: center; border-radius: 10px;}");
+              // Buttons
               client.println(".buttonGreen {background-color: #4CAF50; color: white;}");
               client.println(".buttonRed {background-color: #ff0000; color: white;}");
               client.println(".buttonGrey {background-color: #7A7A7A; color: black;}");
@@ -97,7 +102,8 @@ void webInterface()
 
               // Website title
               client.println("</head><body><h1>TheDIYGuy999 Sound & Light Controller</h1>");
-              client.printf("<p>Software version %s\n", codeVersion);
+              //client.printf("<p>Vehicle: %s\n", ssid); // TODO, not working!
+              client.printf("<p>Software version: %s\n", codeVersion);
               client.printf("<p style=\"color:red;\"><b>Don't mess around while driving!</b></p>");
 
 #if defined BATTERY_PROTECTION
@@ -114,9 +120,9 @@ void webInterface()
               client.printf("<p>Battery cutoff voltage: %.2f V\n", batteryCutoffvoltage);
 #endif
 
-              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
-              // Network settings:
-              client.printf("<p><b>Network settings</b></p>");
+              client.println("<hr>"); // WiFi settings ===================================================================================================================================================
+              client.println("<button type=\"button\" class=\"collapsible\">WiFi settings</button>");
+              client.println("<div class=\"content\">");
 
               // Set1 (ssid) ----------------------------------
               valueString = ssid;              // Read current value
@@ -154,10 +160,11 @@ void webInterface()
                 valueString = header.substring(pos1 + 1, pos2);
                 password = valueString;
               }
+              client.println("</div>");
 
-              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
-              // Trailer settings:
-              client.printf("<p><b>Trailer settings</b></p>");
+              client.println("<hr>"); // Wireless trailer settings ===================================================================================================================================================
+              client.println("<button type=\"button\" class=\"collapsible\">Wireless trailer settings</button>");
+              client.println("<div class=\"content\">");
               // Trailer 1 ********************************************************************************************************
               if (useTrailer1 == true)
               {
@@ -564,9 +571,11 @@ void webInterface()
 
               client.printf("<p>Use HEX values (0-9, A-F) only, always starting with FE");
 
-              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
-              // ESC settings:
-              client.printf("<p><b>ESC settings</b></p>");
+              client.println("</div>");
+
+              client.println("<hr>"); // ESC settings ===================================================================================================================================================
+              client.println("<button type=\"button\" class=\"collapsible\">ESC settings</button>");
+              client.println("<div class=\"content\">");
               client.printf("<p style=\"color:red;\"><b>Lift traction wheels off the ground while adjusting!</b></p>");
 
               // Slider1 (ESC pulse span) ----------------------------------
@@ -739,11 +748,12 @@ void webInterface()
                 Serial.println("RZ7886_DRAGBRAKE_DUTY = " + String(RZ7886_DRAGBRAKE_DUTY));
               }
 #endif
+              client.println("</div>");
 
-              client.println("<hr>"); // Horizontal line ===================================================================================================================================================
-              // Servo settings:
+              client.println("<hr>"); // Servo settings ===================================================================================================================================================
+              client.println("<button type=\"button\" class=\"collapsible\">Servo settings</button>");
+              client.println("<div class=\"content\">");
 
-              client.printf("<p><b>Servo settings</b></p>");
               // Slider11 (Steering position left) ----------------------------------
               valueString = String(CH1L, DEC);
               client.println("<p>Steering position left: <span id=\"textslider11Value\">" + valueString + "</span><br>");
@@ -911,6 +921,141 @@ void webInterface()
                 setupMcpwm();
                 Serial.println("CH4R = " + String(CH4R));
               }
+              client.println("</div>");
+
+              client.println("<hr>"); // Light settings ===================================================================================================================================================
+              client.println("<button type=\"button\" class=\"collapsible\">Light settings</button>");
+              client.println("<div class=\"content\">");
+              /*
+              uint8_t cabLightsBrightness = 100;      // Usually 255, 100 for Actros & Ural
+              uint8_t sideLightsBrightness = 150;     // Usually 200, 100 for WPL C44, 50 for Landy, 100 for P407, 150 for Actros
+              uint8_t reversingLightBrightness = 140; // Around 140, 50 for Landy & Ural
+              uint8_t rearlightDimmedBrightness = 30; // tailligt brightness, if not braking, about 30
+              uint8_t rearlightParkingBrightness = 3; // 0, if you want the taillights being off, if side lights are on, or about 5 if you want them on (0 for US Mode)
+              uint8_t headlightParkingBrightness = 3; // 0, if you want the headlights being off, if side lights are on, or about 5 if you want them on (0 for US Mode)
+              */
+
+              // Slider21 (Cab light brightness) ----------------------------------
+              valueString = String(cabLightsBrightness, DEC);
+              client.println("<p>Cab light brightness: <span id=\"textslider21Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"50\" max=\"255\" step=\"5\" class=\"slider sliderLed\" id=\"Slider21Input\" onchange=\"Slider21Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider21Change(pos) { ");
+              client.println("var slider21Value = document.getElementById(\"Slider21Input\").value;");
+              client.println("document.getElementById(\"textslider21Value\").innerHTML = slider21Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider21=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider21=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                cabLightsBrightness = (valueString.toInt());
+                Serial.println("cabLightsBrightness = " + String(cabLightsBrightness));
+              }
+
+              // Slider22 (Side light brightness) ----------------------------------
+              valueString = String(sideLightsBrightness, DEC);
+              client.println("<p>Side light brightness: <span id=\"textslider22Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"50\" max=\"255\" step=\"5\" class=\"slider sliderLed\" id=\"Slider22Input\" onchange=\"Slider22Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider22Change(pos) { ");
+              client.println("var slider22Value = document.getElementById(\"Slider22Input\").value;");
+              client.println("document.getElementById(\"textslider22Value\").innerHTML = slider22Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider22=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider22=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                sideLightsBrightness = (valueString.toInt());
+                Serial.println("sideLightsBrightness = " + String(sideLightsBrightness));
+              }
+
+              // Slider23 (Reversing light brightness) ----------------------------------
+              valueString = String(reversingLightBrightness, DEC);
+              client.println("<p>Reversing light brightness: <span id=\"textslider23Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"50\" max=\"255\" step=\"5\" class=\"slider sliderLed\" id=\"Slider23Input\" onchange=\"Slider23Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider23Change(pos) { ");
+              client.println("var slider23Value = document.getElementById(\"Slider23Input\").value;");
+              client.println("document.getElementById(\"textslider23Value\").innerHTML = slider23Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider23=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider23=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                reversingLightBrightness = (valueString.toInt());
+                Serial.println("reversingLightBrightness = " + String(reversingLightBrightness));
+              }
+
+              // Slider24 (Tail light dimmed brightness while not braking) ----------------------------------
+              valueString = String(rearlightDimmedBrightness, DEC);
+              client.println("<p>Tail light dimmed brightness (while not braking): <span id=\"textslider24Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"30\" max=\"255\" step=\"5\" class=\"slider sliderLed\" id=\"Slider24Input\" onchange=\"Slider24Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider24Change(pos) { ");
+              client.println("var slider24Value = document.getElementById(\"Slider24Input\").value;");
+              client.println("document.getElementById(\"textslider24Value\").innerHTML = slider24Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider24=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider24=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                rearlightDimmedBrightness = (valueString.toInt());
+                Serial.println("rearlightDimmedBrightness = " + String(rearlightDimmedBrightness));
+              }
+
+              // Slider25 (Tail light dimmed brightness while parking lights only) ----------------------------------
+              valueString = String(rearlightParkingBrightness, DEC);
+              client.println("<p>Tail light dimmed brightness (while parking lights only): <span id=\"textslider25Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"5\" step=\"1\" class=\"slider sliderLed\" id=\"Slider25Input\" onchange=\"Slider25Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider25Change(pos) { ");
+              client.println("var slider25Value = document.getElementById(\"Slider25Input\").value;");
+              client.println("document.getElementById(\"textslider25Value\").innerHTML = slider25Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider25=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider25=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                rearlightParkingBrightness = (valueString.toInt());
+                Serial.println("rearlightParkingBrightness = " + String(rearlightParkingBrightness));
+              }
+
+              // Slider26 (Head light dimmed brightness while parking lights only) ----------------------------------
+              valueString = String(headlightParkingBrightness, DEC);
+              client.println("<p>Head light dimmed brightness (while parking lights only): <span id=\"textslider26Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"0\" max=\"5\" step=\"1\" class=\"slider sliderLed\" id=\"Slider26Input\" onchange=\"Slider26Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider26Change(pos) { ");
+              client.println("var slider26Value = document.getElementById(\"Slider26Input\").value;");
+              client.println("document.getElementById(\"textslider26Value\").innerHTML = slider26Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider26=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider26=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                headlightParkingBrightness = (valueString.toInt());
+                Serial.println("headlightParkingBrightness = " + String(headlightParkingBrightness));
+              }
+
+              client.println("</div>");
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 
@@ -934,6 +1079,13 @@ void webInterface()
               //-----------------------------------------------------------------------------------------------------------------------
 
               client.println("<br>More informations on my <a href=\"https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/index.html\" target=\"_blank\">Website</a><br>");
+
+              //-----------------------------------------------------------------------------------------------------------------------
+              // Script for collapsible sections
+
+              client.println("<script> var coll = document.getElementsByClassName(\"collapsible\"); var i; for (i = 0; i < coll.length; i++) { coll[i].addEventListener(\"click\", function() { this.classList.toggle(\"active\"); var content = this.nextElementSibling; if (content.style.display === \"block\") { content.style.display = \"none\"; } else { content.style.display = \"block\"; } }); } </script>");
+
+              //-----------------------------------------------------------------------------------------------------------------------
 
               client.println("</body></html>");
 

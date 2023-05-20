@@ -1,5 +1,9 @@
 # Changelog
 
+### 9.13.0-b5:
+- First light settings available on 192.168.4.1
+- Website with collapsible sections to keep it more organized
+
 ### 9.13.0-b4:
 - Servo positions adjustable on 192.168.4.1
 - Improved website look

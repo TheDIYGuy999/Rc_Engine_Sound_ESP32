@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0-b4"; // Software revision.
+char codeVersion[] = "9.13.0-b5"; // Software revision.
 
 //
 // =======================================================================================================
@@ -570,10 +570,13 @@ uint8_t broadcastAddress3[6];
 
 #define adr_eprom_fifthWhweelDetectionActive 88
 
-#define adr_eprom_tailLightBrightness 92
-#define adr_eprom_sideLightBrightness 96
-#define adr_eprom_reversingLightBrightness 100
-#define adr_eprom_indicatorLightBrightness 104
+#define adr_eprom_rearLightDimmedBrightness 92
+#define adr_eprom_tailLightParkingBrightness 96
+#define adr_eprom_headLightParkingBrightness 100
+#define adr_eprom_sideLightBrightness 104
+#define adr_eprom_reversingLightBrightness 108
+#define adr_eprom_indicatorLightBrightness 112
+#define adr_eprom_cabLightBrightness 116
 
 #define adr_eprom_esc_pulse_span 120
 #define adr_eprom_esc_takeoff_punch 124
@@ -2884,10 +2887,13 @@ void eepromInit()
     EEPROM.write(adr_eprom_Trailer3Mac5, defaultBroadcastAddress3[5]); // 0x03 = trailer #3
 
     // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, defaulFifthWhweelDetectionActive);
-    // EEPROM.write(adr_eprom_tailLightBrightness, defaultLightsBrightness);
-    // EEPROM.write(adr_eprom_sideLightBrightness, defaultLightsBrightness);
-    // EEPROM.write(adr_eprom_reversingLightBrightness, defaultLightsBrightness);
-    // EEPROM.write(adr_eprom_indicatorLightBrightness, defaultLightsBrightness);
+
+    EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
+    EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
+    EEPROM.writeUShort(adr_eprom_tailLightParkingBrightness, rearlightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+    EEPROM.writeUShort(adr_eprom_headLightParkingBrightness, headlightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+    EEPROM.writeUShort(adr_eprom_sideLightBrightness, sideLightsBrightness);              // Sidelights brightness about 100 - 200
+    EEPROM.writeUShort(adr_eprom_reversingLightBrightness, reversingLightBrightness);     // Reversing lights brightness about 140
 
     EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
     EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
@@ -2947,10 +2953,13 @@ void eepromWrite()
   EEPROM.write(adr_eprom_Trailer3Mac5, broadcastAddress3[5]); // 0x03 = trailer #3
 
   // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, fifthWhweelDetectionActive);
-  // EEPROM.write(adr_eprom_tailLightBrightness, tailLightBrightness);
-  // EEPROM.write(adr_eprom_sideLightBrightness, sideLightBrightness);
-  // EEPROM.write(adr_eprom_reversingLightBrightness, reversingLightBrightness);
-  // EEPROM.write(adr_eprom_indicatorLightBrightness, indicatorLightBrightness);
+
+  EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
+  EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
+  EEPROM.writeUShort(adr_eprom_tailLightParkingBrightness, rearlightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  EEPROM.writeUShort(adr_eprom_headLightParkingBrightness, headlightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  EEPROM.writeUShort(adr_eprom_sideLightBrightness, sideLightsBrightness);              // Sidelights brightness about 100 - 200
+  EEPROM.writeUShort(adr_eprom_reversingLightBrightness, reversingLightBrightness);     // Reversing lights brightness about 140
 
   EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
   EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
@@ -3008,10 +3017,12 @@ void eepromRead()
   broadcastAddress3[5] = EEPROM.read(adr_eprom_Trailer3Mac5);
 
   // fifthWhweelDetectionActive = EEPROM.read(adr_eprom_fifthWhweelDetectionActive);
-  // tailLightBrightness = EEPROM.read(adr_eprom_tailLightBrightness);
-  // sideLightBrightness = EEPROM.read(adr_eprom_sideLightBrightness);
-  // reversingLightBrightness = EEPROM.read(adr_eprom_reversingLightBrightness);
-  // indicatorLightBrightness = EEPROM.read(adr_eprom_indicatorLightBrightness);
+
+  cabLightsBrightness = EEPROM.readUShort(adr_eprom_cabLightBrightness);                // Cab lights brightness usually 255
+  rearlightParkingBrightness = EEPROM.readUShort(adr_eprom_tailLightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  headlightParkingBrightness = EEPROM.readUShort(adr_eprom_headLightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  sideLightsBrightness = EEPROM.readUShort(adr_eprom_sideLightBrightness);              // Sidelights brightness about 100 - 200
+  reversingLightBrightness = EEPROM.readUShort(adr_eprom_reversingLightBrightness);     // Reversing lights brightness about 140
 
   escPulseSpan = EEPROM.readUShort(adr_eprom_esc_pulse_span);                                 // ESC pulse span
   escTakeoffPunch = EEPROM.readUShort(adr_eprom_esc_takeoff_punch);                           // ESC takeoff punch
