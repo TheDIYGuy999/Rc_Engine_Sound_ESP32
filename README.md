@@ -17,16 +17,16 @@ Fully assembled, tested and working 30 pin SMD version with switch mode PSU & di
 Order it here: https://www.pcbway.com/project/shareproject/Arduino_RC_engine_sound_light_controller_for_ESP32_a9334731.html
 ![](documentation/pictures/30pinSmdSwitchModeVersion.png)
 
-New: STL data for nice 3D printed housing available.
-See: https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
+New: STL data for nice 3D printed housing available:
+https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
 ![](documentation/pictures/ESP32SoundAndLightController.png)
 
-New: Compact version for trailer or tractor
-See: https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
+New: Compact version for trailer or tractor:
+https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
 ![](documentation/pictures/ESP32TrailerController.png)
 
-New: RZ7886 7A ESC
-See: https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
+New: RZ7886 7A ESC:
+https://thediyguy999.github.io/TheDIYGuy999_ESP32_Web_Flasher/products.html
 ![](documentation/pictures/RZ7886top.png)
 
 New: wireless built-in configuration website 192.168.4.1
