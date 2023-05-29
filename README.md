@@ -1,7 +1,7 @@
 # This is an Arduino RC engine sound & light controller for ESP32
 
-[![GitHub latest release version](https://img.shields.io/github/v/release/saltysimulations/salty-747.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/releases/latest)
-[![Github All Releases download count](https://img.shields.io/github/downloads/saltysimulations/salty-747/total.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/releases/latest)
+[![GitHub latest release version](https://img.shields.io/github/v/release/TheDIYGuy999/Rc_Engine_Sound_ESP32.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/releases/latest)
+[![Github All Releases download count](https://img.shields.io/github/downloads/TheDIYGuy999/Rc_Engine_Sound_ESP32/total.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/releases/latest)
 
 It's based on the ATmega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
