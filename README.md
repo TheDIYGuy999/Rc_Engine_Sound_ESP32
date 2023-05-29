@@ -2,6 +2,7 @@
 
 [![GitHub latest release version](https://img.shields.io/github/v/release/TheDIYGuy999/Rc_Engine_Sound_ESP32.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/releases/latest)
 [![Github All Releases download count](https://img.shields.io/github/downloads/TheDIYGuy999/Rc_Engine_Sound_ESP32/total.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/releases/latest)
+[![GitHub contributors](https://img.shields.io/github/contributors/TheDIYGuy999/Rc_Engine_Sound_ESP32.svg?style=flat)](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/graphs/contributors)
 
 It's based on the ATmega 328 version: https://github.com/TheDIYGuy999/Rc_Engine_Sound
 and on bitlunis Halloween example: https://github.com/bitluni/MotionPumpkin
