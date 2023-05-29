@@ -1,5 +1,14 @@
 # Changelog
 
+### Todo:
+- Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
+- Add Neopixel settings
+
+### 9.13.0-b6:
+- Defines removed: NO_CABLIGHTS, NO_FOGLIGHTS, XENON_LIGHTS, FLICKERING_WHILE_CRANKING, SEPARATE_FULL_BEAM
+- Variables removed: INDICATOR_DIR
+- Variables added (adjustable on 192.168.4.1): noCabLights, noFogLights, xenonLights, flickeringWileCranking, swap_L_R_indicators, separateFullBeam, flashingBlueLight
+
 ### 9.13.0-b5:
 - First light settings available on 192.168.4.1
 - Website with collapsible sections to keep it more organized

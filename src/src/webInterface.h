@@ -64,6 +64,8 @@ void webInterface()
               client.println("h2 {font-size: clamp(1.3rem, 2.0vw, 2.0rem);}");
               client.println("p {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; }");
               client.println("a {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; cursor: pointer; text-decoration: underline;}");
+              // Two columns for checkboxes
+              client.println(".multiColumn {display: inline-block; width: 49%; text-align: left; vertical-align: top;}");
               // Checkbox
               client.println("input[type=\"checkbox\"] {cursor: pointer; zoom: 1.5;}");
               // Slider
@@ -102,7 +104,7 @@ void webInterface()
 
               // Website title
               client.println("</head><body><h1>TheDIYGuy999 Sound & Light Controller</h1>");
-              //client.printf("<p>Vehicle: %s\n", ssid); // TODO, not working!
+              // client.printf("<p>Vehicle: %s\n", ssid); // TODO, not working!
               client.printf("<p>Software version: %s\n", codeVersion);
               client.printf("<p style=\"color:red;\"><b>Don't mess around while driving!</b></p>");
 
@@ -926,10 +928,258 @@ void webInterface()
               client.println("<hr>"); // Light settings ===================================================================================================================================================
               client.println("<button type=\"button\" class=\"collapsible\">Light settings</button>");
               client.println("<div class=\"content\">");
+
+              // Checkbox21 (Flickering while cranking) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (flickeringWileCranking == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr21\" checked onclick=\"CheckboxTr21Change(this.checked)\"> Flickering while cranking </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr21\" unchecked onclick=\"CheckboxTr21Change(this.checked)\"> Flickering while cranking </input></p>");
+              }
+              client.println("<script> function CheckboxTr21Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr21=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr21=true") >= 0)
+              {
+                flickeringWileCranking = true;
+                Serial.println("Flickering while cranking enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr21=false") >= 0)
+              {
+                flickeringWileCranking = false;
+                Serial.println("Flickering while cranking disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox22 (Xenon simulation) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (xenonLights == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr22\" checked onclick=\"CheckboxTr22Change(this.checked)\"> Xenon simulation </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr22\" unchecked onclick=\"CheckboxTr22Change(this.checked)\"> Xenon simulation </input></p>");
+              }
+              client.println("<script> function CheckboxTr22Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr22=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr22=true") >= 0)
+              {
+                xenonLights = true;
+                Serial.println("Xenon simulation enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr22=false") >= 0)
+              {
+                xenonLights = false;
+                Serial.println("Xenon simulation disabled");
+              }
+              client.println("</div>");
+              // Checkbox23 (Swap L & R indicators) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (swap_L_R_indicators == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr23\" checked onclick=\"CheckboxTr23Change(this.checked)\"> Swap L & R indicators </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr23\" unchecked onclick=\"CheckboxTr23Change(this.checked)\"> Swap L & R indicators </input></p>");
+              }
+              client.println("<script> function CheckboxTr23Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr23=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr23=true") >= 0)
+              {
+                swap_L_R_indicators = true;
+                Serial.println("Swap L & R indicators enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr23=false") >= 0)
+              {
+                swap_L_R_indicators = false;
+                Serial.println("Swap L & R indicators disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox24 (Indicators as sidemarkers) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (indicatorsAsSidemarkers == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr24\" checked onclick=\"CheckboxTr24Change(this.checked)\"> Indicators as sidemarkers </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr24\" unchecked onclick=\"CheckboxTr24Change(this.checked)\"> Indicators as sidemarkers </input></p>");
+              }
+              client.println("<script> function CheckboxTr24Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr24=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr24=true") >= 0)
+              {
+                indicatorsAsSidemarkers = true;
+                Serial.println("Indicators as sidemarkers enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr24=false") >= 0)
+              {
+                indicatorsAsSidemarkers = false;
+                Serial.println("Indicators as sidemarkers disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox28 (LED indicators) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (ledIndicators == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr28\" checked onclick=\"Checkboxtr28Change(this.checked)\"> LED indicators </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr28\" unchecked onclick=\"Checkboxtr28Change(this.checked)\"> LED indicators </input></p>");
+              }
+              client.println("<script> function Checkboxtr28Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Checkboxtr28=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Checkboxtr28=true") >= 0)
+              {
+                ledIndicators = true;
+                Serial.println("LED indicators enabled");
+              }
+              else if (header.indexOf("GET /?Checkboxtr28=false") >= 0)
+              {
+                ledIndicators = false;
+                Serial.println("LED indicators disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox25 (Separate full beam) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (separateFullBeam == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr25\" checked onclick=\"CheckboxTr25Change(this.checked)\">Separate full beam (roof light connector)</input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr25\" unchecked onclick=\"CheckboxTr25Change(this.checked)\">Separate full beam (roof light connector)</input></p>");
+              }
+              client.println("<script> function CheckboxTr25Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?CheckboxTr25=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?CheckboxTr25=true") >= 0)
+              {
+                separateFullBeam = true;
+                Serial.println("Separate full beam enabled");
+              }
+              else if (header.indexOf("GET /?CheckboxTr25=false") >= 0)
+              {
+                separateFullBeam = false;
+                Serial.println("Separate full beam disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox26 (No cab lights) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (noCabLights == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr26\" checked onclick=\"Checkboxtr26Change(this.checked)\"> No cab lights </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr26\" unchecked onclick=\"Checkboxtr26Change(this.checked)\"> No cab lights </input></p>");
+              }
+              client.println("<script> function Checkboxtr26Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Checkboxtr26=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Checkboxtr26=true") >= 0)
+              {
+                noCabLights = true;
+                Serial.println("No cab lights enabled");
+              }
+              else if (header.indexOf("GET /?Checkboxtr26=false") >= 0)
+              {
+                noCabLights = false;
+                Serial.println("No cab lights disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox27 (No fog lights) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (noFogLights == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr27\" checked onclick=\"Checkboxtr27Change(this.checked)\"> No fog lights </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr27\" unchecked onclick=\"Checkboxtr27Change(this.checked)\"> No fog lights </input></p>");
+              }
+              client.println("<script> function Checkboxtr27Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Checkboxtr27=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Checkboxtr27=true") >= 0)
+              {
+                noFogLights = true;
+                Serial.println("No fog lights enabled");
+              }
+              else if (header.indexOf("GET /?Checkboxtr27=false") >= 0)
+              {
+                noFogLights = false;
+                Serial.println("No fog lights disabled");
+              }
+              client.println("</div>");
+
+              // Checkbox29 (Flashing blue lights) ----------------------------------
+              client.println("<div class=\"multiColumn\">");
+              if (flashingBlueLight == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr29\" checked onclick=\"Checkboxtr29Change(this.checked)\"> Flashing blue lights </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr29\" unchecked onclick=\"Checkboxtr29Change(this.checked)\"> Flashing blue lights </input></p>");
+              }
+              client.println("<script> function Checkboxtr29Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Checkboxtr29=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Checkboxtr29=true") >= 0)
+              {
+                flashingBlueLight = true;
+                Serial.println("Flashing blue lights enabled");
+              }
+              else if (header.indexOf("GET /?Checkboxtr29=false") >= 0)
+              {
+                flashingBlueLight = false;
+                Serial.println("Flashing blue lights disabled");
+              }
+              client.println("</div>");
+
+              // Dummy checkbox
+              client.println("<div class=\"multiColumn\">");
+              client.println("</div>");
+
               /*
               uint8_t cabLightsBrightness = 100;      // Usually 255, 100 for Actros & Ural
               uint8_t sideLightsBrightness = 150;     // Usually 200, 100 for WPL C44, 50 for Landy, 100 for P407, 150 for Actros
               uint8_t reversingLightBrightness = 140; // Around 140, 50 for Landy & Ural
+              uint8_t fogLightBrightness = 200;       // Around 200
               uint8_t rearlightDimmedBrightness = 30; // tailligt brightness, if not braking, about 30
               uint8_t rearlightParkingBrightness = 3; // 0, if you want the taillights being off, if side lights are on, or about 5 if you want them on (0 for US Mode)
               uint8_t headlightParkingBrightness = 3; // 0, if you want the headlights being off, if side lights are on, or about 5 if you want them on (0 for US Mode)
@@ -995,9 +1245,29 @@ void webInterface()
                 Serial.println("reversingLightBrightness = " + String(reversingLightBrightness));
               }
 
+              // Slider27 (Fog light brightness) ----------------------------------
+              valueString = String(fogLightBrightness, DEC);
+              client.println("<p>Fog light brightness: <span id=\"textslider27Value\">" + valueString + "</span><br>");
+              client.println("<input type=\"range\" min=\"100\" max=\"255\" step=\"5\" class=\"slider sliderLed\" id=\"Slider27Input\" onchange=\"Slider27Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              client.println("<script> function Slider27Change(pos) { ");
+              client.println("var slider27Value = document.getElementById(\"Slider27Input\").value;");
+              client.println("document.getElementById(\"textslider27Value\").innerHTML = slider27Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Slider27=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Slider27=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                fogLightBrightness = (valueString.toInt());
+                Serial.println("fogLightBrightness = " + String(fogLightBrightness));
+              }
+
               // Slider24 (Tail light dimmed brightness while not braking) ----------------------------------
               valueString = String(rearlightDimmedBrightness, DEC);
-              client.println("<p>Tail light dimmed brightness (while not braking): <span id=\"textslider24Value\">" + valueString + "</span><br>");
+              client.println("<p>Tail light dimmed brightness (while not braking, use low value in Indicators as sidemarkers mode): <span id=\"textslider24Value\">" + valueString + "</span><br>");
               client.println("<input type=\"range\" min=\"30\" max=\"255\" step=\"5\" class=\"slider sliderLed\" id=\"Slider24Input\" onchange=\"Slider24Change(this.value)\" value=\"" + valueString + "\" /></p>");
               client.println("<script> function Slider24Change(pos) { ");
               client.println("var slider24Value = document.getElementById(\"Slider24Input\").value;");
@@ -1055,7 +1325,36 @@ void webInterface()
                 Serial.println("headlightParkingBrightness = " + String(headlightParkingBrightness));
               }
 
-              client.println("</div>");
+              // Select Neopixel mode -------------------------------------------------------------------------------
+              /*
+              valueString = String(neopixelMode, DEC);
+              client.println("<p>Neopixel mode:");
+              client.println("<select name=\"select1\" class=\" button\" id=\" select1Input \"onchange=\"select1Change(this.value)\" value=\"" + valueString + "\" /></p>");
+              //client.println("<select name=\"select1\" class=\" button\" id=\" select1Input \"onchange=\"select1Change(this)\"></p>");
+              client.println("<option value=\"1\">1 = Demo (don't use it)</option>");
+              client.println("<option value=\"2\">2 = Knight Rider scanner animation for 8 LED </option>");
+              client.println("<option value=\"1\">3 = Bluelight animation for 8 LED </option>");
+              client.println("<option value=\"2\">4 = Union Jack United Kingdom animation for 8 LED</option>");
+              client.println("<option value=\"2\">5 = B33lz3bub Austria animation for 3 LED</option>");
+              client.println("</select>");
+
+              client.println("<script> function select1Change(pos) { ");
+              client.println("var select1Value = document.getElementById(\"select1Input\").value;");
+              //client.println("var select1Value = pos.value;");
+              client.println("console.log(value);");
+              client.println("document.getElementById(\"select1Value\").innerHTML = select1Value;");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Select1=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Select1=") >= 0)
+              {
+                pos1 = header.indexOf('=');
+                pos2 = header.indexOf('&');
+                valueString = header.substring(pos1 + 1, pos2);
+                neopixelMode = (valueString.toInt());
+                Serial.println("neopixelMode = " + String(neopixelMode));
+              }*/
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 

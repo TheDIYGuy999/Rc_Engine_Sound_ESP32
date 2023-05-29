@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0-b5"; // Software revision.
+char codeVersion[] = "9.13.0-b6"; // Software revision.
 
 //
 // =======================================================================================================
@@ -183,7 +183,7 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = {13, 12, 14, 27, 35, 34}; // Input pi
 #ifdef WEMOS_D1_MINI_ESP32 // switching headlight pin depending on the board variant
 #define HEADLIGHT_PIN 22   // Headlights connected to GPIO 22
 #define CABLIGHT_PIN -1    // No Cabin lights
-#define NO_CABLIGHTS
+noCabLights = true;
 #else
 #define HEADLIGHT_PIN 3 // Headlights connected to GPIO 3
 #define CABLIGHT_PIN 22 // Cabin lights connected to GPIO 22
@@ -544,6 +544,7 @@ uint8_t broadcastAddress3[6];
 
 #define adr_eprom_init 0 // Eeprom initialized or not?
 
+// Trailer
 #define adr_eprom_useTrailer1 4 // Trailer 1
 #define adr_eprom_Trailer1Mac0 8
 #define adr_eprom_Trailer1Mac1 12
@@ -570,35 +571,47 @@ uint8_t broadcastAddress3[6];
 
 #define adr_eprom_fifthWhweelDetectionActive 88
 
-#define adr_eprom_rearLightDimmedBrightness 92
-#define adr_eprom_tailLightParkingBrightness 96
-#define adr_eprom_headLightParkingBrightness 100
-#define adr_eprom_sideLightBrightness 104
-#define adr_eprom_reversingLightBrightness 108
-#define adr_eprom_indicatorLightBrightness 112
-#define adr_eprom_cabLightBrightness 116
+// Lights
+#define adr_eprom_xenonLights 100
+#define adr_eprom_separateFullBeam 104
+#define adr_eprom_indicatorsAsSidemarkers 108
+#define adr_eprom_flickeringWileCranking 112
+#define adr_eprom_swap_L_R_indicators 116
+#define adr_eprom_noCabLights 120
+#define adr_eprom_noFogLights 124
+#define adr_eprom_ledIndicators 128
+#define adr_eprom_flashingBlueLight 132
 
-#define adr_eprom_esc_pulse_span 120
-#define adr_eprom_esc_takeoff_punch 124
-#define adr_eprom_esc_reverse_plus 128
-#define adr_eprom_crawler_esc_ramp_time 132
-#define adr_eprom_global_acceleration_percentage 136
+#define adr_eprom_rearLightDimmedBrightness 140
+#define adr_eprom_tailLightParkingBrightness 144
+#define adr_eprom_headLightParkingBrightness 148
+#define adr_eprom_sideLightBrightness 152
+#define adr_eprom_reversingLightBrightness 156
+#define adr_eprom_indicatorLightBrightness 160
+#define adr_eprom_cabLightBrightness 164
+#define adr_eprom_fogLightBrightness 168
 
-#define adr_eprom_rz7886_brake_margin 148
-#define adr_eprom_rz7886_frequency 152
-#define adr_eprom_rz7886_dragbrake_duty 156
+#define adr_eprom_esc_pulse_span 172
+#define adr_eprom_esc_takeoff_punch 176
+#define adr_eprom_esc_reverse_plus 180
+#define adr_eprom_crawler_esc_ramp_time 184
+#define adr_eprom_global_acceleration_percentage 188
 
-#define adr_eprom_steering_servo_left 160
-#define adr_eprom_steering_servo_center 164
-#define adr_eprom_steering_servo_right 168
-#define adr_eprom_transmission_servo_left 172
-#define adr_eprom_transmission_servo_center 176
-#define adr_eprom_transmission_servo_right 180
-#define adr_eprom_coupler_servo_left 184
-#define adr_eprom_coupelr_servo_right 188
+#define adr_eprom_rz7886_brake_margin 200
+#define adr_eprom_rz7886_frequency 204
+#define adr_eprom_rz7886_dragbrake_duty 208
 
-#define adr_eprom_ssid 192     // 384 (64)
-#define adr_eprom_password 224 // 448 (64)
+#define adr_eprom_steering_servo_left 220
+#define adr_eprom_steering_servo_center 224
+#define adr_eprom_steering_servo_right 228
+#define adr_eprom_transmission_servo_left 232
+#define adr_eprom_transmission_servo_center 236
+#define adr_eprom_transmission_servo_right 240
+#define adr_eprom_coupler_servo_left 244
+#define adr_eprom_coupelr_servo_right 248
+
+#define adr_eprom_ssid 384     // 384 (64)
+#define adr_eprom_password 448 // 448 (64)
 
 // DEBUG stuff
 volatile uint8_t coreId = 99;
@@ -1783,6 +1796,22 @@ void setupEeprom()
 
 //
 // =======================================================================================================
+// NEOPIXEL SETUP
+// =======================================================================================================
+//
+
+void setupNeopixel()
+{
+#ifdef NEOPIXEL_ENABLED
+  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
+  FastLED.setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
+#endif
+}
+
+//
+// =======================================================================================================
 // MAIN ARDUINO SETUP (1x during startup)
 // =======================================================================================================
 //
@@ -1908,12 +1937,7 @@ void setup()
 #endif
 
   // Neopixel setup
-#ifdef NEOPIXEL_ENABLED
-  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
-  FastLED.setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
-#endif
+  setupNeopixel();
 
   // Communication setup --------------------------------------------
   indicatorL.on();
@@ -2888,12 +2912,23 @@ void eepromInit()
 
     // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, defaulFifthWhweelDetectionActive);
 
+    EEPROM.write(adr_eprom_xenonLights, xenonLights);                         // Xenon simulation
+    EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);               // Separate full beam
+    EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers); // Indicators as sidemarkers
+    EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);   // Flickering while cranking
+    EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);         // Swap L & R indicators
+    EEPROM.write(adr_eprom_noCabLights, noCabLights);                         // No cab lights
+    EEPROM.write(adr_eprom_noFogLights, noFogLights);                         // No fog lights
+    EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                     // LED indicator mode
+    EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);             // flashing or rotating bluelight
+
     EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
     EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
     EEPROM.writeUShort(adr_eprom_tailLightParkingBrightness, rearlightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
     EEPROM.writeUShort(adr_eprom_headLightParkingBrightness, headlightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
     EEPROM.writeUShort(adr_eprom_sideLightBrightness, sideLightsBrightness);              // Sidelights brightness about 100 - 200
     EEPROM.writeUShort(adr_eprom_reversingLightBrightness, reversingLightBrightness);     // Reversing lights brightness about 140
+    EEPROM.writeUShort(adr_eprom_fogLightBrightness, fogLightBrightness);                 // Fog lights brightness about 200
 
     EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
     EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
@@ -2954,12 +2989,23 @@ void eepromWrite()
 
   // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, fifthWhweelDetectionActive);
 
+  EEPROM.write(adr_eprom_xenonLights, xenonLights);                         // Xenon simulation
+  EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);               // Separate full beam
+  EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers); // Indicators as sidemarkers
+  EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);   // Flickering while cranking
+  EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);         // Swap L & R indicators
+  EEPROM.write(adr_eprom_noCabLights, noCabLights);                         // No cab lights
+  EEPROM.write(adr_eprom_noFogLights, noFogLights);                         // No fog lights
+  EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                     // LED indicator mode
+  EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);             // flashing or rotating bluelight
+
   EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
   EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
   EEPROM.writeUShort(adr_eprom_tailLightParkingBrightness, rearlightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
   EEPROM.writeUShort(adr_eprom_headLightParkingBrightness, headlightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
   EEPROM.writeUShort(adr_eprom_sideLightBrightness, sideLightsBrightness);              // Sidelights brightness about 100 - 200
   EEPROM.writeUShort(adr_eprom_reversingLightBrightness, reversingLightBrightness);     // Reversing lights brightness about 140
+  EEPROM.writeUShort(adr_eprom_fogLightBrightness, fogLightBrightness);                 // Fog lights brightness about 200
 
   EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
   EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
@@ -3018,11 +3064,22 @@ void eepromRead()
 
   // fifthWhweelDetectionActive = EEPROM.read(adr_eprom_fifthWhweelDetectionActive);
 
+  xenonLights = EEPROM.read(adr_eprom_xenonLights);                         // Xenon simulation
+  separateFullBeam = EEPROM.read(adr_eprom_separateFullBeam);               // Separate full beam
+  indicatorsAsSidemarkers = EEPROM.read(adr_eprom_indicatorsAsSidemarkers); // Indicators as sidemarkers
+  flickeringWileCranking = EEPROM.read(adr_eprom_flickeringWileCranking);   // Flickering while cranking
+  swap_L_R_indicators = EEPROM.read(adr_eprom_swap_L_R_indicators);         // Swap L & R indicators
+  noCabLights = EEPROM.read(adr_eprom_noCabLights);                         // No cab lights
+  noFogLights = EEPROM.read(adr_eprom_noFogLights);                         // No fog lights
+  ledIndicators = EEPROM.read(adr_eprom_ledIndicators);                     // LED indicator mode
+  flashingBlueLight = EEPROM.read(adr_eprom_flashingBlueLight);             // flashing or rotating bluelight
+
   cabLightsBrightness = EEPROM.readUShort(adr_eprom_cabLightBrightness);                // Cab lights brightness usually 255
   rearlightParkingBrightness = EEPROM.readUShort(adr_eprom_tailLightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
   headlightParkingBrightness = EEPROM.readUShort(adr_eprom_headLightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
   sideLightsBrightness = EEPROM.readUShort(adr_eprom_sideLightBrightness);              // Sidelights brightness about 100 - 200
   reversingLightBrightness = EEPROM.readUShort(adr_eprom_reversingLightBrightness);     // Reversing lights brightness about 140
+  fogLightBrightness = EEPROM.readUShort(adr_eprom_fogLightBrightness);                 // Fog lights brightness about 200
 
   escPulseSpan = EEPROM.readUShort(adr_eprom_esc_pulse_span);                                 // ESC pulse span
   escTakeoffPunch = EEPROM.readUShort(adr_eprom_esc_takeoff_punch);                           // ESC takeoff punch
@@ -3601,103 +3658,114 @@ void headLightsSub(bool head, bool fog, bool roof, bool park)
 
   fogLightOn = fog;
 
-#ifdef XENON_LIGHTS // Optional xenon ignition flash
-  if (millis() - xenonMillis > 50)
-    xenonIgnitionFlash = 0;
-  else
-    xenonIgnitionFlash = 170; // bulb is brighter for 50ms
-#endif
-
-#ifdef SEPARATE_FULL_BEAM // separate full beam bulb, wired to "rooflight" pin ----
-  // Headlights (low beam bulb)
-  if (!head && !park)
+  if (xenonLights) // Optional Xenon ignition flash
   {
-    headLight.off();
-    xenonMillis = millis();
-    if (!headLightsFlasherOn)
-      headLightsHighBeamOn = false;
+    if (millis() - xenonMillis > 50)
+      xenonIgnitionFlash = 0;
+    else
+      xenonIgnitionFlash = 170; // bulb is brighter for 50ms
   }
-  else if (park)
-  { // Parking lights
-    headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
-    xenonMillis = millis();
-    if (!headLightsFlasherOn)
-      headLightsHighBeamOn = false;
-  }
-  else
-  { // ON
-    headLight.pwm(constrain(255 - crankingDim - 170 + xenonIgnitionFlash, 0, 255));
-  }
-  // Headlights (high beam bulb)
-  if (headLightsFlasherOn || (headLightsHighBeamOn && head))
-    roofLight.pwm(200 - crankingDim);
-  else
-    roofLight.off();
 
-#else  // Bulbs wired as labeled on the board ----
-  // Headlights
-  if (!head && !park)
-  { // OFF or flasher
-    if (!headLightsFlasherOn)
+  if (separateFullBeam) // separate full beam bulb, wired to "rooflight" pin ----
+  {
+    // Headlights (low beam bulb)
+    if (!head && !park)
+    {
       headLight.off();
-    else
-      headLight.on();
-    xenonMillis = millis();
-    headLightsHighBeamOn = false;
-  }
-  else if (park)
-  { // Parking lights
-    if (!headLightsFlasherOn)
+      xenonMillis = millis();
+      if (!headLightsFlasherOn)
+        headLightsHighBeamOn = false;
+    }
+    else if (park)
+    { // Parking lights
       headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
+      xenonMillis = millis();
+      if (!headLightsFlasherOn)
+        headLightsHighBeamOn = false;
+    }
     else
-      headLight.on();
-    xenonMillis = millis();
-    headLightsHighBeamOn = false;
+    { // ON
+      headLight.pwm(constrain(255 - crankingDim - 170 + xenonIgnitionFlash, 0, 255));
+    }
+    // Headlights (high beam bulb)
+    if (headLightsFlasherOn || (headLightsHighBeamOn && head))
+      roofLight.pwm(200 - crankingDim);
+    else
+      roofLight.off();
   }
-  else
-  { // ON
-    headLight.pwm(constrain(255 - crankingDim - dipDim + xenonIgnitionFlash, 0, 255));
-  }
+  else // Bulbs wired as labeled on the board ----
+  {
+    // Headlights
+    if (!head && !park)
+    { // OFF or flasher
+      if (!headLightsFlasherOn)
+        headLight.off();
+      else
+        headLight.on();
+      xenonMillis = millis();
+      headLightsHighBeamOn = false;
+    }
+    else if (park)
+    { // Parking lights
+      if (!headLightsFlasherOn)
+        headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
+      else
+        headLight.on();
+      xenonMillis = millis();
+      headLightsHighBeamOn = false;
+    }
+    else
+    { // ON
+      headLight.pwm(constrain(255 - crankingDim - dipDim + xenonIgnitionFlash, 0, 255));
+    }
 
-  // Roof lights
-  if (!roof)
-    roofLight.off();
-  else
-    roofLight.pwm(130 - crankingDim);
-#endif // ----
+    // Roof lights
+    if (!roof)
+      roofLight.off();
+    else
+      roofLight.pwm(130 - crankingDim);
+  } // ----
 
   // Fog lights
-  if (!fog)
+  if (!fog || noFogLights)
     fogLight.off();
   else
-    fogLight.pwm(200 - crankingDim);
+    fogLight.pwm(fogLightBrightness - crankingDim);
 }
 
 // Main LED function --------------------------------------------------------------------------------------
 void led()
 {
 
-#if defined LED_INDICATORS
-  indicatorFade = 0; // No soft indicator on / off, if LED
-#endif
+  if (ledIndicators)
+  {
+    indicatorFade = 0; // No soft indicator on / off, if LED
+  }
+  else
+  {
+    indicatorFade = 300; // Soft indicator on / off, if not LED
+  }
 
   // Lights brightness ----
-#if defined FLICKERING_WHILE_CRANKING
-  static unsigned long flickerMillis;
-  if (millis() - flickerMillis > 30)
-  { // Every 30ms
-    flickerMillis = millis();
-    if (engineStart)
-      crankingDim = random(25, 55);
-    else
-      crankingDim = 0; // lights are dimmer and flickering while engine cranking
+  if (flickeringWileCranking) // Flickering
+  {
+    static unsigned long flickerMillis;
+    if (millis() - flickerMillis > 30)
+    { // Every 30ms
+      flickerMillis = millis();
+      if (engineStart)
+        crankingDim = random(25, 55);
+      else
+        crankingDim = 0; // lights are dimmer and flickering while engine cranking
+    }
   }
-#else
-  if (engineStart)
-    crankingDim = 50;
-  else
-    crankingDim = 0; // lights are dimmer while engine cranking
-#endif
+  else // Not flickering
+  {
+    if (engineStart)
+      crankingDim = 50;
+    else
+      crankingDim = 0; // lights are dimmer while engine cranking
+  }
 
   if (headLightsFlasherOn || headLightsHighBeamOn)
     dipDim = 10;
@@ -3715,7 +3783,7 @@ void led()
 #if not defined TRACKED_MODE // Normal beacons mode
   if (blueLightTrigger)
   {
-    if (doubleFlashBlueLight)
+    if (flashingBlueLight)
     {
       beaconLight1.flash(30, 80, 400, 2);      // Simulate double flash lights
       beaconLight2.flash(30, 80, 400, 2, 330); // Simulate double flash lights (with delay for first pass)
@@ -3741,14 +3809,17 @@ void led()
 
   // Indicators (turn signals, blinkers) ----
   uint8_t indicatorOffBrightness;
-#if defined INDICATOR_SIDE_MARKERS // Indicators used as US style side markers as well
-  if (lightsState > 1)
-    indicatorOffBrightness = rearlightDimmedBrightness - crankingDim / 2;
+  if (indicatorsAsSidemarkers) // Indicators used as US style side markers as well
+  {
+    if (lightsState > 1)
+      indicatorOffBrightness = rearlightDimmedBrightness - crankingDim / 2;
+    else
+      indicatorOffBrightness = 0;
+  }
   else
+  {
     indicatorOffBrightness = 0;
-#else
-  indicatorOffBrightness = 0;
-#endif
+  }
 
 #ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
   if (!hazard && !unlock5thWheel && !batteryProtection)
@@ -3757,41 +3828,34 @@ void led()
   if (!hazard && !batteryProtection)
   {
 #endif
+
+    // L indicator
     if (indicatorLon)
     {
       if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
         indicatorSoundOn = true; // Left indicator
     }
-#if defined INDICATOR_SIDE_MARKERS // Indicators used as US style side markers as well
     else
     {
-      if (lightsState > 1)
-        indicatorL.pwm(rearlightDimmedBrightness - crankingDim / 2);
+      if (lightsState > 1 && indicatorsAsSidemarkers)
+        indicatorL.pwm(indicatorOffBrightness);
       else
         indicatorL.off(indicatorFade);
     }
-#else
-    else
-      indicatorL.off(indicatorFade);
-#endif
 
+    // R indicator
     if (indicatorRon)
     {
       if (indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
         indicatorSoundOn = true; // Left indicator
     }
-#if defined INDICATOR_SIDE_MARKERS // Indicators used as US style side markers as well
     else
     {
       if (lightsState > 1)
-        indicatorR.pwm(rearlightDimmedBrightness - crankingDim / 2);
+        indicatorR.pwm(indicatorOffBrightness);
       else
         indicatorR.off(indicatorFade);
     }
-#else
-    else
-      indicatorR.off(indicatorFade);
-#endif
   }
   else
   { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
@@ -3803,12 +3867,13 @@ void led()
   // Headlights, tail lights ----
 #ifdef AUTO_LIGHTS // automatic lights mode (deprecated, not maintained anymore!) ************************
 
-#ifdef XENON_LIGHTS // Optional xenon ignition flash
-  if (millis() - xenonMillis > 50)
-    xenonIgnitionFlash = 0;
-  else
-    xenonIgnitionFlash = 170; // bulb is brighter for 50ms
-#endif
+  if (xenonLights) // Optional Xenon ignition flash
+  {
+    if (millis() - xenonMillis > 50)
+      xenonIgnitionFlash = 0;
+    else
+      xenonIgnitionFlash = 170; // bulb is brighter for 50ms
+  }
   if (lightsOn && (engineRunning || engineStart))
   {
     headLight.pwm(constrain(255 - crankingDim - dipDim + xenonIgnitionFlash, 0, 255));
@@ -3854,7 +3919,7 @@ void led()
   else
     cabLight.off();
 
-#else // manual lights mode ************************
+#else  // manual lights mode ************************
   // Lights state machine
   switch (lightsState)
   {
@@ -3867,21 +3932,25 @@ void led()
     brakeLightsSub(0); // 0 brightness, if not braking
     break;
 
-  case 1:            // cab lights ---------------------------------------------------------------------
-#ifdef NO_CABLIGHTS
-    lightsState = 2; // Skip cablights
-#else
-    cabLight.pwm(cabLightsBrightness - crankingDim);
-#endif
+  case 1: // cab lights ---------------------------------------------------------------------
+    if (noCabLights)
+    {
+      lightsState = 2; // Skip cablights
+    }
+    else
+    {
+      cabLight.pwm(cabLightsBrightness - crankingDim);
+    }
     sideLight.off();
     headLightsSub(false, false, false, false);
     brakeLightsSub(0); // 0 brightness, if not braking
     break;
 
   case 2: // cab & roof & side lights ---------------------------------------------------------------------
-#ifndef NO_CABLIGHTS
-    cabLight.pwm(cabLightsBrightness - crankingDim);
-#endif
+    if (!noCabLights)
+    {
+      cabLight.pwm(cabLightsBrightness - crankingDim);
+    }
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
     headLightsSub(false, false, true, true);
     fogLight.off();
@@ -3896,20 +3965,22 @@ void led()
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
     break;
 
-  case 4:            // roof & side & head & fog lights ---------------------------------------------------------------------
-#ifdef NO_FOGLIGHTS
-    lightsState = 5; // Skip foglights
-#endif
+  case 4: // roof & side & head & fog lights ---------------------------------------------------------------------
+    if (noFogLights)
+    {
+      lightsState = 5; // Skip foglights
+    }
     cabLight.off();
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
     headLightsSub(true, true, true, false);
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
     break;
 
-  case 5:            // cab & roof & side & head & fog lights ---------------------------------------------------------------------
-#ifdef NO_CABLIGHTS
-    lightsState = 0; // Skip cablights
-#endif
+  case 5: // cab & roof & side & head & fog lights ---------------------------------------------------------------------
+    if (noCabLights)
+    {
+      lightsState = 0; // Skip cablights
+    }
     cabLight.pwm(cabLightsBrightness - crankingDim);
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
     headLightsSub(true, true, true, false);
@@ -4810,7 +4881,7 @@ void triggerIndicators()
 #endif // End of manually triggered indicators
 
   // Indicator direction
-  if (!INDICATOR_DIR)
+  if (swap_L_R_indicators)
   {
     indicatorLon = L;
     indicatorRon = R;
@@ -5235,169 +5306,6 @@ void updateRGBLEDs()
   static bool unionJackLatch = false;
   static bool neopixelShow = false;
 
-#ifdef NEOPIXEL_DEMO // Demo -------------------------------------------------------------
-  if (millis() - lastNeopixelTime > 20)
-  { // Every 20 ms
-    lastNeopixelTime = millis();
-
-    uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
-
-    rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
-    rgbLEDs[1] = CRGB::Red;
-    rgbLEDs[2] = CRGB::White;
-    rgbLEDs[3] = CRGB::Yellow;
-    rgbLEDs[4] = CRGB::Blue;
-    rgbLEDs[5] = CRGB::Green;
-    neopixelShow = true;
-  }
-#endif
-
-#ifdef NEOPIXEL_KNIGHT_RIDER // Knight Rider scanner -------------------------------------
-  static int16_t increment = 1;
-  static int16_t counter = 0;
-
-  if (millis() - lastNeopixelTime > 91)
-  { // Every 91 ms (must match with sound)
-    lastNeopixelTime = millis();
-
-    if (sirenTrigger || knightRiderLatch)
-    { // Only active, if siren signal!
-      if (counter >= NEOPIXEL_COUNT - 1)
-        increment = -1;
-      if (counter <= 0)
-        increment = 1;
-      knightRiderLatch = (counter > 0);
-      rgbLEDs[counter] = CRGB::Red;
-      counter += increment;
-    }
-    else
-    {
-      counter = 0;
-    }
-    for (int i = 0; i < NEOPIXEL_COUNT; i++)
-    {
-      rgbLEDs[i].nscale8(160); // 160
-    }
-    neopixelShow = true;
-  }
-#endif
-
-#ifdef NEOPIXEL_BLUELIGHT // Bluelight ----------------------------------------------------
-  static uint32_t lastNeopixelBluelightTime = millis();
-
-  if (millis() - lastNeopixelTime > 20)
-  { // Every 20 ms
-    lastNeopixelTime = millis();
-    if (blueLightTrigger)
-    {
-      if (millis() - lastNeopixelBluelightTime > 0)
-      { // Step 1
-        rgbLEDs[0] = CRGB::Red;
-        rgbLEDs[1] = CRGB::Blue;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Blue;
-        rgbLEDs[6] = CRGB::Red;
-        rgbLEDs[7] = CRGB::Blue;
-      }
-      if (millis() - lastNeopixelBluelightTime > 160)
-      { // Step 2
-        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
-      }
-      if (millis() - lastNeopixelBluelightTime > 300)
-      { // Step 3
-        rgbLEDs[0] = CRGB::Blue;
-        rgbLEDs[1] = CRGB::Red;
-        rgbLEDs[3] = CRGB::Blue;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[6] = CRGB::Blue;
-        rgbLEDs[7] = CRGB::Red;
-      }
-      if (millis() - lastNeopixelBluelightTime > 460)
-      { // Step 4
-        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
-      }
-      if (millis() - lastNeopixelBluelightTime > 600)
-      { // Step 5
-        lastNeopixelBluelightTime = millis();
-      }
-    }
-    else
-      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black); // Off
-    neopixelShow = true;
-  }
-#endif
-
-#ifdef NEOPIXEL_UNION_JACK // United Kingdom animation ---------------------------------------
-  static uint32_t lastNeopixelUnionJackTime = millis();
-  static uint8_t animationStep = 1;
-
-  if (sirenTrigger || unionJackLatch)
-  {
-    unionJackLatch = true;
-    if (millis() - lastNeopixelUnionJackTime > 789)
-    { // Every 789 ms (must match with sound "BritishNationalAnthemSiren.h")
-      lastNeopixelUnionJackTime = millis();
-      if (animationStep == 1 || animationStep == 9)
-      { // Step 1 or 9
-        rgbLEDs[0] = CRGB::Red;
-        rgbLEDs[1] = CRGB::Blue;
-        rgbLEDs[2] = CRGB::Blue;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Blue;
-        rgbLEDs[6] = CRGB::Blue;
-        rgbLEDs[7] = CRGB::Red;
-      }
-      if (animationStep == 2 || animationStep == 8)
-      { // Step 2 or 8
-        rgbLEDs[0] = CRGB::White;
-        rgbLEDs[1] = CRGB::Red;
-        rgbLEDs[2] = CRGB::Blue;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Blue;
-        rgbLEDs[6] = CRGB::Red;
-        rgbLEDs[7] = CRGB::White;
-      }
-      if (animationStep == 3 || animationStep == 7)
-      { // Step 3 or 7
-        rgbLEDs[0] = CRGB::Blue;
-        rgbLEDs[1] = CRGB::White;
-        rgbLEDs[2] = CRGB::Red;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Red;
-        rgbLEDs[6] = CRGB::White;
-        rgbLEDs[7] = CRGB::Blue;
-      }
-      if (animationStep == 4 || animationStep == 5 || animationStep == 6)
-      { // Step 4
-        rgbLEDs[0] = CRGB::Red;
-        rgbLEDs[1] = CRGB::Red;
-        rgbLEDs[2] = CRGB::Red;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Red;
-        rgbLEDs[6] = CRGB::Red;
-        rgbLEDs[7] = CRGB::Red;
-      }
-      if (animationStep == 10)
-      { // Step 10
-        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
-        animationStep = 0;
-        unionJackLatch = false;
-      }
-      animationStep++;
-      neopixelShow = true;
-    }
-  }
-  else
-  {
-    animationStep = 1;
-    lastNeopixelUnionJackTime = millis();
-  }
-#endif
-
 #ifdef NEOPIXEL_HIGHBEAM // Neopixel bar is used as high beam as well --------------------
   static uint32_t lastNeopixelHighbeamTime = millis();
   if (millis() - lastNeopixelHighbeamTime > 20)
@@ -5415,36 +5323,203 @@ void updateRGBLEDs()
   }
 #endif
 
-#ifdef NEOPIXEL_B33LZ3BUB // B33lz3bub Austria cab light ---------------------------------
-  if (millis() - lastNeopixelTime > 20)
-  { // Every 20 ms
-    lastNeopixelTime = millis();
+  switch (neopixelMode)
+  {
 
-    uint8_t hue = map(pulseWidth[7], 1000, 2000, 0, 255); // map pulseWidth[7] from poti VRA to hue
-    if (hue <= 20)
-    { // LEDs off
-      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+  case 1: // Demo -------------------------------------------------------------
+    if (millis() - lastNeopixelTime > 20)
+    { // Every 20 ms
+      lastNeopixelTime = millis();
+
+      uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
+
+      rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+      rgbLEDs[1] = CRGB::Red;
+      rgbLEDs[2] = CRGB::White;
+      rgbLEDs[3] = CRGB::Yellow;
+      rgbLEDs[4] = CRGB::Blue;
+      rgbLEDs[5] = CRGB::Green;
+      neopixelShow = true;
     }
-    else if (hue > 20 && hue < 235)
-    { // different colors depending on potentiometer VRA CH7
+    break;
+
+  case 2: // Knight Rider scanner -------------------------------------
+    static int16_t increment = 1;
+    static int16_t counter = 0;
+
+    if (millis() - lastNeopixelTime > 91)
+    { // Every 91 ms (must match with sound)
+      lastNeopixelTime = millis();
+
+      if (sirenTrigger || knightRiderLatch)
+      { // Only active, if siren signal!
+        if (counter >= NEOPIXEL_COUNT - 1)
+          increment = -1;
+        if (counter <= 0)
+          increment = 1;
+        knightRiderLatch = (counter > 0);
+        rgbLEDs[counter] = CRGB::Red;
+        counter += increment;
+      }
+      else
+      {
+        counter = 0;
+      }
       for (int i = 0; i < NEOPIXEL_COUNT; i++)
       {
-        rgbLEDs[i] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+        rgbLEDs[i].nscale8(160); // 160
       }
+      neopixelShow = true;
     }
-    else if (hue >= 235 && hue < 250)
-    { // colors red-white-red -> flag color of Austria ;-)
-      rgbLEDs[0] = CRGB::Red;
-      rgbLEDs[1] = CRGB::White;
-      rgbLEDs[2] = CRGB::Red;
+    break;
+
+  case 3: // Bluelight ----------------------------------------------------
+    static uint32_t lastNeopixelBluelightTime = millis();
+
+    if (millis() - lastNeopixelTime > 20)
+    { // Every 20 ms
+      lastNeopixelTime = millis();
+      if (blueLightTrigger)
+      {
+        if (millis() - lastNeopixelBluelightTime > 0)
+        { // Step 1
+          rgbLEDs[0] = CRGB::Red;
+          rgbLEDs[1] = CRGB::Blue;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Blue;
+          rgbLEDs[6] = CRGB::Red;
+          rgbLEDs[7] = CRGB::Blue;
+        }
+        if (millis() - lastNeopixelBluelightTime > 160)
+        { // Step 2
+          fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+        }
+        if (millis() - lastNeopixelBluelightTime > 300)
+        { // Step 3
+          rgbLEDs[0] = CRGB::Blue;
+          rgbLEDs[1] = CRGB::Red;
+          rgbLEDs[3] = CRGB::Blue;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[6] = CRGB::Blue;
+          rgbLEDs[7] = CRGB::Red;
+        }
+        if (millis() - lastNeopixelBluelightTime > 460)
+        { // Step 4
+          fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+        }
+        if (millis() - lastNeopixelBluelightTime > 600)
+        { // Step 5
+          lastNeopixelBluelightTime = millis();
+        }
+      }
+      else
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black); // Off
+      neopixelShow = true;
+    }
+    break;
+
+  case 4: // United Kingdom animation ---------------------------------------
+    static uint32_t lastNeopixelUnionJackTime = millis();
+    static uint8_t animationStep = 1;
+
+    if (sirenTrigger || unionJackLatch)
+    {
+      unionJackLatch = true;
+      if (millis() - lastNeopixelUnionJackTime > 789)
+      { // Every 789 ms (must match with sound "BritishNationalAnthemSiren.h")
+        lastNeopixelUnionJackTime = millis();
+        if (animationStep == 1 || animationStep == 9)
+        { // Step 1 or 9
+          rgbLEDs[0] = CRGB::Red;
+          rgbLEDs[1] = CRGB::Blue;
+          rgbLEDs[2] = CRGB::Blue;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Blue;
+          rgbLEDs[6] = CRGB::Blue;
+          rgbLEDs[7] = CRGB::Red;
+        }
+        if (animationStep == 2 || animationStep == 8)
+        { // Step 2 or 8
+          rgbLEDs[0] = CRGB::White;
+          rgbLEDs[1] = CRGB::Red;
+          rgbLEDs[2] = CRGB::Blue;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Blue;
+          rgbLEDs[6] = CRGB::Red;
+          rgbLEDs[7] = CRGB::White;
+        }
+        if (animationStep == 3 || animationStep == 7)
+        { // Step 3 or 7
+          rgbLEDs[0] = CRGB::Blue;
+          rgbLEDs[1] = CRGB::White;
+          rgbLEDs[2] = CRGB::Red;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Red;
+          rgbLEDs[6] = CRGB::White;
+          rgbLEDs[7] = CRGB::Blue;
+        }
+        if (animationStep == 4 || animationStep == 5 || animationStep == 6)
+        { // Step 4
+          rgbLEDs[0] = CRGB::Red;
+          rgbLEDs[1] = CRGB::Red;
+          rgbLEDs[2] = CRGB::Red;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Red;
+          rgbLEDs[6] = CRGB::Red;
+          rgbLEDs[7] = CRGB::Red;
+        }
+        if (animationStep == 10)
+        { // Step 10
+          fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+          animationStep = 0;
+          unionJackLatch = false;
+        }
+        animationStep++;
+        neopixelShow = true;
+      }
     }
     else
     {
-      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White); // only white
+      animationStep = 1;
+      lastNeopixelUnionJackTime = millis();
     }
-    neopixelShow = true;
-  }
-#endif
+    break;
+
+  case 5: // B33lz3bub Austria cab light ---------------------------------
+    if (millis() - lastNeopixelTime > 20)
+    { // Every 20 ms
+      lastNeopixelTime = millis();
+
+      uint8_t hue = map(pulseWidth[7], 1000, 2000, 0, 255); // map pulseWidth[7] from poti VRA to hue
+      if (hue <= 20)
+      { // LEDs off
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+      }
+      else if (hue > 20 && hue < 235)
+      { // different colors depending on potentiometer VRA CH7
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+        {
+          rgbLEDs[i] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+        }
+      }
+      else if (hue >= 235 && hue < 250)
+      { // colors red-white-red -> flag color of Austria ;-)
+        rgbLEDs[0] = CRGB::Red;
+        rgbLEDs[1] = CRGB::White;
+        rgbLEDs[2] = CRGB::Red;
+      }
+      else
+      {
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White); // only white
+      }
+      neopixelShow = true;
+    }
+    break;
+  } // End of switch case -----
 
   // Neopixel refresh for all options above ------------------------------------------------
   static uint32_t lastNeopixelRefreshTime = millis();
