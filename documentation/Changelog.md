@@ -2,7 +2,12 @@
 
 ### Todo:
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
-- Add Neopixel settings
+- Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
+
+### 9.13.0-b7:
+- Defines removed: HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
+- Variables added (adjustable on 192.168.4.1): hazardsWhile5thWheelUnlocked
+- Neopixel animation mode selectable in dropdown menu on 192.168.4.1
 
 ### 9.13.0-b6:
 - Defines removed: NO_CABLIGHTS, NO_FOGLIGHTS, XENON_LIGHTS, FLICKERING_WHILE_CRANKING, SEPARATE_FULL_BEAM

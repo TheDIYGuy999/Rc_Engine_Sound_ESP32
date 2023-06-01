@@ -63,6 +63,7 @@ void webInterface()
               client.println("h1 {font-size: clamp(1.5rem, 2.5vw, 2.5rem);}");
               client.println("h2 {font-size: clamp(1.3rem, 2.0vw, 2.0rem);}");
               client.println("p {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; }");
+              client.println("label {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; }");
               client.println("a {font-size: clamp(1rem, 1.5vw, 1.5rem); color: black; cursor: pointer; text-decoration: underline;}");
               // Two columns for checkboxes
               client.println(".multiColumn {display: inline-block; width: 49%; text-align: left; vertical-align: top;}");
@@ -102,8 +103,11 @@ void webInterface()
 #endif
 #endif
 
-              // Website title
-              client.println("</head><body><h1>TheDIYGuy999 Sound & Light Controller</h1>");
+              client.println("</head>");
+
+              client.println("<body onload=\"readDefaults()\">");
+
+              client.println("<h1>TheDIYGuy999 Sound & Light Controller</h1>"); // Website title
               // client.printf("<p>Vehicle: %s\n", ssid); // TODO, not working!
               client.printf("<p>Software version: %s\n", codeVersion);
               client.printf("<p style=\"color:red;\"><b>Don't mess around while driving!</b></p>");
@@ -1171,9 +1175,36 @@ void webInterface()
               }
               client.println("</div>");
 
-              // Dummy checkbox
+              // Checkbox30 (Hazards on, if 5th wheel is unlocked) ----------------------------------
               client.println("<div class=\"multiColumn\">");
+              if (hazardsWhile5thWheelUnlocked == true)
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr30\" checked onclick=\"Checkboxtr30Change(this.checked)\"> Hazards on, if 5th wheel is unlocked </input></p>");
+              }
+              else
+              {
+                client.println("<p><input type=\"checkbox\" id=\"tr30\" unchecked onclick=\"Checkboxtr30Change(this.checked)\"> Hazards on, if 5th wheel is unlocked </input></p>");
+              }
+              client.println("<script> function Checkboxtr30Change(pos) { ");
+              client.println("var xhr = new XMLHttpRequest();");
+              client.println("xhr.open('GET', \"/?Checkboxtr30=\" + pos + \"&\", true);");
+              client.println("xhr.send(); } </script>");
+
+              if (header.indexOf("GET /?Checkboxtr30=true") >= 0)
+              {
+                hazardsWhile5thWheelUnlocked = true;
+                Serial.println("Hazards on, if 5th wheel is unlocked enabled");
+              }
+              else if (header.indexOf("GET /?Checkboxtr30=false") >= 0)
+              {
+                hazardsWhile5thWheelUnlocked = false;
+                Serial.println("Hazards on, if 5th wheel is unlocked disabled");
+              }
               client.println("</div>");
+
+              // Dummy checkbox
+              //client.println("<div class=\"multiColumn\">");
+              //client.println("</div>");
 
               /*
               uint8_t cabLightsBrightness = 100;      // Usually 255, 100 for Actros & Ural
@@ -1325,26 +1356,22 @@ void webInterface()
                 Serial.println("headlightParkingBrightness = " + String(headlightParkingBrightness));
               }
 
-              // Select Neopixel mode -------------------------------------------------------------------------------
-              /*
-              valueString = String(neopixelMode, DEC);
-              client.println("<p>Neopixel mode:");
-              client.println("<select name=\"select1\" class=\" button\" id=\" select1Input \"onchange=\"select1Change(this.value)\" value=\"" + valueString + "\" /></p>");
-              //client.println("<select name=\"select1\" class=\" button\" id=\" select1Input \"onchange=\"select1Change(this)\"></p>");
+              // Select Neopixel animation mode -------------------------------------------------------------------------------
+
+              client.println("<label for=\"select1Input\">Neopixel animation mode:</label>");
+              client.println("<select name=\"select1\" class=\"button\" id=\"select1Input\" onchange=\"select1Change(this)\">");
               client.println("<option value=\"1\">1 = Demo (don't use it)</option>");
               client.println("<option value=\"2\">2 = Knight Rider scanner animation for 8 LED </option>");
-              client.println("<option value=\"1\">3 = Bluelight animation for 8 LED </option>");
-              client.println("<option value=\"2\">4 = Union Jack United Kingdom animation for 8 LED</option>");
-              client.println("<option value=\"2\">5 = B33lz3bub Austria animation for 3 LED</option>");
+              client.println("<option value=\"3\">3 = Bluelight animation for 8 LED </option>");
+              client.println("<option value=\"4\">4 = Union Jack United Kingdom animation for 8 LED</option>");
+              client.println("<option value=\"5\">5 = B33lz3bub Austria animation for 3 LED</option>");
               client.println("</select>");
 
               client.println("<script> function select1Change(pos) { ");
-              client.println("var select1Value = document.getElementById(\"select1Input\").value;");
-              //client.println("var select1Value = pos.value;");
-              client.println("console.log(value);");
-              client.println("document.getElementById(\"select1Value\").innerHTML = select1Value;");
+              client.println("var select1Value = pos.value;"); // OK
+              client.println("console.log(select1Value);");
               client.println("var xhr = new XMLHttpRequest();");
-              client.println("xhr.open('GET', \"/?Select1=\" + pos + \"&\", true);");
+              client.println("xhr.open('GET', \"/?Select1=\" + select1Value + \"&\", true);");
               client.println("xhr.send(); } </script>");
 
               if (header.indexOf("GET /?Select1=") >= 0)
@@ -1353,8 +1380,11 @@ void webInterface()
                 pos2 = header.indexOf('&');
                 valueString = header.substring(pos1 + 1, pos2);
                 neopixelMode = (valueString.toInt());
+                setupNeopixel();
                 Serial.println("neopixelMode = " + String(neopixelMode));
-              }*/
+              }
+
+              client.println("</div>");
 
               client.println("<hr>"); // Horizontal line ===================================================================================================================================================
 
@@ -1381,8 +1411,12 @@ void webInterface()
 
               //-----------------------------------------------------------------------------------------------------------------------
               // Script for collapsible sections
-
               client.println("<script> var coll = document.getElementsByClassName(\"collapsible\"); var i; for (i = 0; i < coll.length; i++) { coll[i].addEventListener(\"click\", function() { this.classList.toggle(\"active\"); var content = this.nextElementSibling; if (content.style.display === \"block\") { content.style.display = \"none\"; } else { content.style.display = \"block\"; } }); } </script>");
+
+              // Script for reading defaults
+              client.println("<script> function readDefaults() {");
+              client.println("document.getElementById(\"select1Input\").value = \"" + String(neopixelMode, DEC) + "\";");
+              client.println("}</script>");
 
               //-----------------------------------------------------------------------------------------------------------------------
 

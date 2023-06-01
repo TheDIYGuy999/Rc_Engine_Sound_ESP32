@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0-b6"; // Software revision.
+char codeVersion[] = "9.13.0-b7"; // Software revision.
 
 //
 // =======================================================================================================
@@ -572,6 +572,7 @@ uint8_t broadcastAddress3[6];
 #define adr_eprom_fifthWhweelDetectionActive 88
 
 // Lights
+#define adr_eprom_hazardsWhile5thWheelUnlocked 96
 #define adr_eprom_xenonLights 100
 #define adr_eprom_separateFullBeam 104
 #define adr_eprom_indicatorsAsSidemarkers 108
@@ -581,6 +582,7 @@ uint8_t broadcastAddress3[6];
 #define adr_eprom_noFogLights 124
 #define adr_eprom_ledIndicators 128
 #define adr_eprom_flashingBlueLight 132
+#define adr_eprom_neopixelMode 136
 
 #define adr_eprom_rearLightDimmedBrightness 140
 #define adr_eprom_tailLightParkingBrightness 144
@@ -2912,15 +2914,18 @@ void eepromInit()
 
     // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, defaulFifthWhweelDetectionActive);
 
-    EEPROM.write(adr_eprom_xenonLights, xenonLights);                         // Xenon simulation
-    EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);               // Separate full beam
-    EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers); // Indicators as sidemarkers
-    EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);   // Flickering while cranking
-    EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);         // Swap L & R indicators
-    EEPROM.write(adr_eprom_noCabLights, noCabLights);                         // No cab lights
-    EEPROM.write(adr_eprom_noFogLights, noFogLights);                         // No fog lights
-    EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                     // LED indicator mode
-    EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);             // flashing or rotating bluelight
+    EEPROM.write(adr_eprom_hazardsWhile5thWheelUnlocked, hazardsWhile5thWheelUnlocked); // Hazards on, if 5th wheel unlocked
+    EEPROM.write(adr_eprom_xenonLights, xenonLights);                                   // Xenon simulation
+    EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);                         // Separate full beam
+    EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers);           // Indicators as sidemarkers
+    EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);             // Flickering while cranking
+    EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);                   // Swap L & R indicators
+    EEPROM.write(adr_eprom_noCabLights, noCabLights);                                   // No cab lights
+    EEPROM.write(adr_eprom_noFogLights, noFogLights);                                   // No fog lights
+    EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                               // LED indicator mode
+    EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);                       // flashing or rotating bluelight
+
+    EEPROM.writeUShort(adr_eprom_neopixelMode, neopixelMode); // Neopixel animation mode
 
     EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
     EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
@@ -2989,15 +2994,18 @@ void eepromWrite()
 
   // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, fifthWhweelDetectionActive);
 
-  EEPROM.write(adr_eprom_xenonLights, xenonLights);                         // Xenon simulation
-  EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);               // Separate full beam
-  EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers); // Indicators as sidemarkers
-  EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);   // Flickering while cranking
-  EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);         // Swap L & R indicators
-  EEPROM.write(adr_eprom_noCabLights, noCabLights);                         // No cab lights
-  EEPROM.write(adr_eprom_noFogLights, noFogLights);                         // No fog lights
-  EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                     // LED indicator mode
-  EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);             // flashing or rotating bluelight
+  EEPROM.write(adr_eprom_hazardsWhile5thWheelUnlocked, hazardsWhile5thWheelUnlocked); // Hazards on, if 5th wheel unlocked
+  EEPROM.write(adr_eprom_xenonLights, xenonLights);                                   // Xenon simulation
+  EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);                         // Separate full beam
+  EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers);           // Indicators as sidemarkers
+  EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);             // Flickering while cranking
+  EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);                   // Swap L & R indicators
+  EEPROM.write(adr_eprom_noCabLights, noCabLights);                                   // No cab lights
+  EEPROM.write(adr_eprom_noFogLights, noFogLights);                                   // No fog lights
+  EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                               // LED indicator mode
+  EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);                       // flashing or rotating bluelight
+
+  EEPROM.writeUShort(adr_eprom_neopixelMode, neopixelMode); // Neopixel animation mode
 
   EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
   EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
@@ -3064,15 +3072,18 @@ void eepromRead()
 
   // fifthWhweelDetectionActive = EEPROM.read(adr_eprom_fifthWhweelDetectionActive);
 
-  xenonLights = EEPROM.read(adr_eprom_xenonLights);                         // Xenon simulation
-  separateFullBeam = EEPROM.read(adr_eprom_separateFullBeam);               // Separate full beam
-  indicatorsAsSidemarkers = EEPROM.read(adr_eprom_indicatorsAsSidemarkers); // Indicators as sidemarkers
-  flickeringWileCranking = EEPROM.read(adr_eprom_flickeringWileCranking);   // Flickering while cranking
-  swap_L_R_indicators = EEPROM.read(adr_eprom_swap_L_R_indicators);         // Swap L & R indicators
-  noCabLights = EEPROM.read(adr_eprom_noCabLights);                         // No cab lights
-  noFogLights = EEPROM.read(adr_eprom_noFogLights);                         // No fog lights
-  ledIndicators = EEPROM.read(adr_eprom_ledIndicators);                     // LED indicator mode
-  flashingBlueLight = EEPROM.read(adr_eprom_flashingBlueLight);             // flashing or rotating bluelight
+  hazardsWhile5thWheelUnlocked = EEPROM.read(adr_eprom_hazardsWhile5thWheelUnlocked); // Hazards on, if 5th wheel unlocked
+  xenonLights = EEPROM.read(adr_eprom_xenonLights);                                   // Xenon simulation
+  separateFullBeam = EEPROM.read(adr_eprom_separateFullBeam);                         // Separate full beam
+  indicatorsAsSidemarkers = EEPROM.read(adr_eprom_indicatorsAsSidemarkers);           // Indicators as sidemarkers
+  flickeringWileCranking = EEPROM.read(adr_eprom_flickeringWileCranking);             // Flickering while cranking
+  swap_L_R_indicators = EEPROM.read(adr_eprom_swap_L_R_indicators);                   // Swap L & R indicators
+  noCabLights = EEPROM.read(adr_eprom_noCabLights);                                   // No cab lights
+  noFogLights = EEPROM.read(adr_eprom_noFogLights);                                   // No fog lights
+  ledIndicators = EEPROM.read(adr_eprom_ledIndicators);                               // LED indicator mode
+  flashingBlueLight = EEPROM.read(adr_eprom_flashingBlueLight);                       // flashing or rotating bluelight
+
+  neopixelMode = EEPROM.readUShort(adr_eprom_neopixelMode); // Neopixel animation mode
 
   cabLightsBrightness = EEPROM.readUShort(adr_eprom_cabLightBrightness);                // Cab lights brightness usually 255
   rearlightParkingBrightness = EEPROM.readUShort(adr_eprom_tailLightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
@@ -3821,14 +3832,8 @@ void led()
     indicatorOffBrightness = 0;
   }
 
-#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-  if (!hazard && !unlock5thWheel && !batteryProtection)
-  { // Hazards also active, if 5th wheel unlocked
-#else
-  if (!hazard && !batteryProtection)
+  if (!hazard && !unlock5thWheel && !batteryProtection && hazardsWhile5thWheelUnlocked || !hazard && !batteryProtection && !hazardsWhile5thWheelUnlocked)
   {
-#endif
-
     // L indicator
     if (indicatorLon)
     {
@@ -5247,21 +5252,21 @@ void updateDashboard()
     }
 
     // Indicator lamps
-#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-    dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
-    dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
-#else
-    dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
-    dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
-#endif
+    if (hazardsWhile5thWheelUnlocked)
+    {
+      dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
+      dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
+    }
+    else
+    {
+      dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
+      dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
+    }
     dashboard.setLowBeamIndicator(lightsOn);
     dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
     dashboard.setFogLightIndicator(fogLightOn);
 
     // Needles
-    // if (millis() - lastFrameTime > 14)
-    //{
-
     if (engineState == RUNNING)
     {
       rpmNeedle = rpm; // No delay, if running!
@@ -5792,8 +5797,8 @@ void loop()
   mcpwmOutput();      // PWM servo signal output
 
 #elif defined IBUS_COMMUNICATION
-  readIbusCommands(); // IBUS communication (pin 36)
-  mcpwmOutput();      // PWM servo signal output
+  readIbusCommands();       // IBUS communication (pin 36)
+  mcpwmOutput();            // PWM servo signal output
 
 #elif defined SUMD_COMMUNICATION
   readSumdCommands(); // SUMD communication (pin 36)
