@@ -110,7 +110,7 @@ volatile int sirenVolumePercentage = 130; // Adjust the siren volume (usually = 
 //#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
 //#include "sounds/siren01norskere22.h" // Norwegian siren
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
-#include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
+#include "sounds/Tequila.h" // sound from nenno @ rc-modellbau-portal.de
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
