@@ -875,9 +875,8 @@ void IRAM_ATTR variablePlaybackTimer()
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
-  // dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
-  // dacWrite(DAC1, constrain(a + 128, 0, 255));
+  uint8_t value = constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255);
+  SET_PERI_REG_BITS(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC, value, RTC_IO_PDAC1_DAC_S);
 
   // portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -1338,10 +1337,8 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // DAC output (groups mixed together) ****************************************************************************
 
-  // dacDebug = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255); // Mix signals, add 128 offset, write result to DAC
-  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
-  // dacWrite(DAC2, constrain( a2 * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
-  // dacWrite(DAC2, 0);
+  uint8_t value = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255);
+  SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, value, RTC_IO_PDAC2_DAC_S);
 
   // portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -1941,6 +1938,12 @@ void setup()
       1,         // priority of the task (1 = low, 3 = medium, 5 = highest)
       &Task1,    // Task handle to keep track of created task
       0);        // pin task to core 0
+
+  // once write with the "normal" way.
+  // all further writes are done directly in the register since
+  // it's much faster
+  dacWrite(DAC1, 0);
+  dacWrite(DAC2, 0);
 
   // Interrupt timer for variable sample rate playback
   variableTimer = timerBegin(0, 20, true);                           // timer 0, MWDT clock period = 12.5 ns * TIMGn_Tx_WDT_CLK_PRESCALE -> 12.5 ns * 20 -> 250 ns = 0.25 us, countUp
