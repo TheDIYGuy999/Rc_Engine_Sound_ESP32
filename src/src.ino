@@ -923,9 +923,6 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   if (hornTrigger || hornLatch)
   {
-    fixedTimerTicks = 4000000 / hornSampleRate;         // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
-
     if (curHornSample < hornSampleCount - 1)
     {
       a1 = (hornSamples[curHornSample] * hornVolumePercentage / 100);
@@ -945,8 +942,6 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   if (sirenTrigger || sirenLatch)
   {
-    fixedTimerTicks = 4000000 / sirenSampleRate;        // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
 
 #if defined SIREN_STOP
     if (!sirenTrigger)
@@ -983,9 +978,6 @@ void IRAM_ATTR fixedPlaybackTimer()
   // Sound 1 "b0" ----
   if (sound1trigger)
   {
-    fixedTimerTicks = 4000000 / sound1SampleRate;       // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
-
     if (curSound1Sample < sound1SampleCount - 1)
     {
       b0 = (sound1Samples[curSound1Sample] * sound1VolumePercentage / 100);
@@ -1005,9 +997,6 @@ void IRAM_ATTR fixedPlaybackTimer()
   // Reversing beep sound "b1" ----
   if (engineRunning && escInReverse)
   {
-    fixedTimerTicks = 4000000 / reversingSampleRate;    // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
-
     if (curReversingSample < reversingSampleCount - 1)
     {
       b1 = (reversingSamples[curReversingSample] * reversingVolumePercentage / 100);
@@ -1028,9 +1017,6 @@ void IRAM_ATTR fixedPlaybackTimer()
 #if not defined NO_INDICATOR_SOUND
   if (indicatorSoundOn)
   {
-    fixedTimerTicks = 4000000 / indicatorSampleRate;    // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
-
     if (curIndicatorSample < indicatorSampleCount - 1)
     {
       b2 = (indicatorSamples[curIndicatorSample] * indicatorVolumePercentage / 100);
