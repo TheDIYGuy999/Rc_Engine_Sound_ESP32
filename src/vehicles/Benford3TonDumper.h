@@ -4,18 +4,18 @@
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------
 // Choose the start sound (uncomment the one you want) --------
-volatile int startVolumePercentage = 210; // Adjust the start volume (usually = 100%)
+volatile int startVolumePercentage = 168; // Adjust the start volume (usually = 80%)
 #include "sounds/BENFORD3TONStart.h" // Benford 3 Ton Dumper
 
 // Choose the motor idle sound (uncomment the one you want) --------
-volatile int idleVolumePercentage = 100; // Adjust the idle volume (usually = 100%, more also working, depending on sound, 50 - 60% if additional diesel knock sound is used)
+volatile int idleVolumePercentage = 80; // Adjust the idle volume (usually = 80%, more also working, depending on sound, 40 - 48% if additional diesel knock sound is used)
 volatile int engineIdleVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile int fullThrottleVolumePercentage = 180; // Volume Percentage while full throttle (for rev sound as well)
 #include "sounds/BENFORD3TONIdle.h" // Benford 3 Ton Dumper
 
 // Choose the motor revving sound (uncomment the one you want) --------
 #define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
-volatile int revVolumePercentage = 120; // Adjust the idle volume (usually = 100%, more also working, depending on sound)
+volatile int revVolumePercentage = 96; // Adjust the idle volume (usually = 80%, more also working, depending on sound)
 volatile int engineRevVolumePercentage = 70; // the engine volume will be throttle dependent (usually = 40%, never more than 100%!)
 volatile const uint16_t revSwitchPoint = 180; // The rev sound is played instead of the idle sound above this point 200
 volatile const uint16_t idleEndPoint = 500; // above this point, we have 100% rev and 0% idle sound volume (usually 500, min. 50 more than revSwitchPoint)
@@ -35,7 +35,7 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 400; // Adjust the Diesel knock volume (usually = 200 - 600%) 700
+volatile int dieselKnockVolumePercentage = 80; // Adjust the Diesel knock volume (usually = 40 - 120%) 140
 volatile int dieselKnockIdleVolumePercentage = 20; // Diesel knock volume while no throttle is applied (usually = 20%)
 volatile int dieselKnockStartPoint = 10; // Volume will raise above this throttle input( usually 0, for "open pipe" exhaust about 250)
 volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
@@ -54,24 +54,24 @@ uint16_t knockStartRpm = 50; // starting @ this RPM (about 50 - 400)
 #include "sounds/BENFORD3TONKnock2.h" // Benford 3 Ton Dumper
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%)
+volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 14%)
 volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
 // Adjust the additional supercharger sound (set "chargerVolumePercentage" to "0", if you don't want it) --------
-volatile int chargerVolumePercentage = 0; // Adjust the supercharger volume (usually = 70%)
+volatile int chargerVolumePercentage = 0; // Adjust the supercharger volume (usually = 14%)
 volatile int chargerIdleVolumePercentage = 10; // the supercharger volume will be engine rpm dependent (usually = 10%)
 volatile int chargerStartPoint = 10; // Volume will raise above this point ( usually 10)
 #include "sounds/supercharger.h" // supercharger sound, playing in parallel with engine sound!
 
 // Adjust the additional turbo wastegate  / blowoff valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
-volatile int wastegateVolumePercentage = 30; // Adjust the wastegate volume (usually = 70%, up to 250%)
+volatile int wastegateVolumePercentage = 6; // Adjust the wastegate volume (usually = 14%, up to 50%)
 volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, after rapid throttle drop with engaged clutch
 #include "sounds/WastegateDummy.h"
 //#include "sounds/POWERSTROKEwastegate.h" // Ford Powerstroke 7.3l V8 Diesel
 
 // Adjust the additional cooling fan sound (set "fanVolumePercentage" to "0", if you don't want it) --------
-volatile int fanVolumePercentage = 0; // Adjust the fan volume (250% for Tatra 813, else 0%)
+volatile int fanVolumePercentage = 0; // Adjust the fan volume (50% for Tatra 813, else 0%)
 volatile int fanIdleVolumePercentage = 0; // the fan volume will be engine rpm dependent (usually = 10%)
 volatile int fanStartPoint = 0; // Volume will raise above this point (250 for Tatra 813)
 //#define GEARBOX_WHINING // Disables sound, if gearbox in neutral. Fan noise is used to simulate gearbox whining (set fanStartPoint above clutchEngagingPoint)
@@ -81,7 +81,7 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 #include "sounds/GenericFan.h" // Generic engine cooling fan
 
 // Choose the horn sound (uncomment the one you want) --------
-volatile int hornVolumePercentage = 160; // Adjust the horn volume (usually = 100%)
+volatile int hornVolumePercentage = 128; // Adjust the horn volume (usually = 80%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
 //#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
@@ -96,7 +96,7 @@ volatile int hornVolumePercentage = 160; // Adjust the horn volume (usually = 10
 //#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
-volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
+volatile int sirenVolumePercentage = 80; // Adjust the siren volume (usually = 80%)
 #include "sounds/sirenDummy.h" // If you don't want siren sound
 //#include "sounds/UsPoliceSiren.h" // US Police siren
 //#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
@@ -106,7 +106,7 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
 
 // Choose the air brake release sound (uncomment the one you want) --------
-volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
+volatile int brakeVolumePercentage = 30; // Adjust the brake volume (usually = 40%)
 #include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
@@ -116,12 +116,12 @@ volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 
 //#include "sounds/UralBrakeSqueak.h" // URAL 4320 air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
-volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
+volatile int parkingBrakeVolumePercentage = 30; // Adjust the brake volume (usually = 40%)
 #include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
 //#include "sounds/ParkingBrake.h" // Parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
-volatile int shiftingVolumePercentage = 100; // Adjust the shifting volume (usually = 200%)
+volatile int shiftingVolumePercentage = 20; // Adjust the shifting volume (usually = 40%)
 //#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 //#include "sounds/AirShifting.h" // Pneumatic shifting sound
 #include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
@@ -135,11 +135,11 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-volatile int reversingVolumePercentage = 50; // Adjust the reversing sound volume (usually = 70%)
+volatile int reversingVolumePercentage = 10; // Adjust the reversing sound volume (usually = 14%)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
-volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
+volatile int indicatorVolumePercentage = 10; // Adjust the indicator sound volume (usually = 10%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
