@@ -936,7 +936,7 @@ void IRAM_ATTR fixedPlaybackTimer()
     soundVal += (sirenSamples[curSirenSample] * sirenVolumePercentage / 100);
     curSirenSample++;
 #ifdef SIREN_LOOP // Optional "endless loop" (points to be defined manually in siren file)
-    if (sirenTrigger && curSirenSample == sirenLoopEnd)
+    if (sirenTrigger && curSirenSample >= sirenLoopEnd)
       curSirenSample = sirenLoopBegin; // Loop, if trigger still present
 #endif
   }
@@ -947,15 +947,11 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // other sounds *********************************************
 
-  if (curSound1Sample < sound1SampleCount)
-  {
-    curSound1Sample = 0; // ensure, next sound will start @ first sample
-  }
   if (sound1trigger)
   {
     soundVal += (sound1Samples[curSound1Sample] * sound1VolumePercentage / 100);
     curSound1Sample++;
-    if (curSound1Sample == sound1SampleCount)
+    if (curSound1Sample >= sound1SampleCount)
     {
       sound1trigger = false;
       curSound1Sample = 0; // ensure, next sound will start @ first sample
@@ -979,15 +975,11 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // Indicator tick sound ------------------------------------------
 #if not defined NO_INDICATOR_SOUND
-  if (curIndicatorSample >= indicatorSampleCount)
-  {
-    curIndicatorSample = 0;
-  }
   if (indicatorSoundOn)
   {
     soundVal += (indicatorSamples[curIndicatorSample] * indicatorVolumePercentage / 100);
     curIndicatorSample++;
-    if (curIndicatorSample == indicatorSampleCount)
+    if (curIndicatorSample >= indicatorSampleCount)
     {
       indicatorSoundOn = false;
       curIndicatorSample = 0; // ensure, next sound will start @ first sample
@@ -996,15 +988,11 @@ void IRAM_ATTR fixedPlaybackTimer()
 #endif
 
   // Wastegate (blowoff) sound, triggered after rapid throttle drop -----------------------------------
-  if (curWastegateSample >= wastegateSampleCount)
-  {
-    curWastegateSample = 0;
-  }
   if (wastegateTrigger)
   {
     soundVal += (wastegateSamples[curWastegateSample] * rpmDependentWastegateVolume / 100 * wastegateVolumePercentage / 100);
     curWastegateSample++;
-    if (curWastegateSample == wastegateSampleCount)
+    if (curWastegateSample >= wastegateSampleCount)
     {
       wastegateTrigger = false;
       curWastegateSample = 0; // ensure, next sound will start @ first sample
@@ -1012,15 +1000,11 @@ void IRAM_ATTR fixedPlaybackTimer()
   }
 
   // Air brake release sound, triggered after stop -----------------------------------------------
-  if (curBrakeSample >= brakeSampleCount)
-  {
-    curBrakeSample = 0;
-  }
   if (airBrakeTrigger)
   {
     soundVal += (brakeSamples[curBrakeSample] * brakeVolumePercentage / 100);
     curBrakeSample++;
-    if (curBrakeSample == brakeSampleCount)
+    if (curBrakeSample >= brakeSampleCount)
     {
       airBrakeTrigger = false;
       curBrakeSample = 0; // ensure, next sound will start @ first sample
@@ -1028,15 +1012,11 @@ void IRAM_ATTR fixedPlaybackTimer()
   }
 
   // Air parking brake attaching sound, triggered after engine off --------------------------------
-  if (curParkingBrakeSample >= parkingBrakeSampleCount)
-  {
-    curParkingBrakeSample = 0;
-  }
   if (parkingBrakeTrigger)
   {
     soundVal += (parkingBrakeSamples[curParkingBrakeSample] * parkingBrakeVolumePercentage / 100);
     curParkingBrakeSample++;
-    if (curParkingBrakeSample == parkingBrakeSampleCount)
+    if (curParkingBrakeSample >= parkingBrakeSampleCount)
     {
       parkingBrakeTrigger = false;
       curParkingBrakeSample = 0; // ensure, next sound will start @ first sample
@@ -1044,15 +1024,11 @@ void IRAM_ATTR fixedPlaybackTimer()
   }
 
   // Pneumatic gear shifting sound, triggered while shifting the TAMIYA 3 speed transmission ------
-  if (curShiftingSample >= shiftingSampleCount)
-  {
-    curShiftingSample = 0;
-  }
   if (shiftingTrigger && engineRunning && !automatic && !doubleClutch)
   {
     soundVal = (shiftingSamples[curShiftingSample] * shiftingVolumePercentage / 100);
     curShiftingSample++;
-    if (curShiftingSample == shiftingSampleCount)
+    if (curShiftingSample >= shiftingSampleCount)
     {
       shiftingTrigger = false;
       curShiftingSample = 0; // ensure, next sound will start @ first sample
@@ -1150,15 +1126,11 @@ void IRAM_ATTR fixedPlaybackTimer()
 #if not defined EXCAVATOR_MODE
   // Trailer coupling sound, triggered by switch -----------------------------------------------
 #ifdef COUPLING_SOUND
-  if (curCouplingSample >= couplingSampleCount)
-  {
-    curCouplingSample = 0;
-  }
   if (couplingTrigger)
   {
     soundVal += (couplingSamples[curCouplingSample] * couplingVolumePercentage / 100);
     curCouplingSample++;
-    if (curCouplingSample == couplingSampleCount)
+    if (curCouplingSample >= couplingSampleCount)
     {
       couplingTrigger = false;
       curCouplingSample = 0; // ensure, next sound will start @ first sample
@@ -1166,15 +1138,11 @@ void IRAM_ATTR fixedPlaybackTimer()
   }
 
   // Trailer uncoupling sound, triggered by switch -----------------------------------------------
-  if (curUncouplingSample >= uncouplingSampleCount)
-  {
-    curUncouplingSample = 0;
-  }
   if (uncouplingTrigger)
   {
     soundVal += (uncouplingSamples[curUncouplingSample] * couplingVolumePercentage / 100);
     curUncouplingSample++;
-    if (curUncouplingSample == uncouplingSampleCount)
+    if (curUncouplingSample >= uncouplingSampleCount)
     {
       uncouplingTrigger = false;
       curUncouplingSample = 0;
@@ -1204,15 +1172,11 @@ void IRAM_ATTR fixedPlaybackTimer()
   curTrackRattleSample++;
 
   // Bucket rattle sound -----------------------
-  if (curBucketRattleSample >= bucketRattleSampleCount)
-  {
-    curBucketRattleSample = 0;
-  }
   if (bucketRattleTrigger)
   {
     soundVal += (bucketRattleSamples[curBucketRattleSample] * bucketRattleVolumePercentage / 100);
     curBucketRattleSample++;
-    if (curBucketRattleSample == bucketRattleSampleCount)
+    if (curBucketRattleSample >= bucketRattleSampleCount)
     {
       bucketRattleTrigger = false;
       curBucketRattleSample = 0; // ensure, next sound will start @ first sample
@@ -1234,22 +1198,17 @@ void IRAM_ATTR fixedPlaybackTimer()
 
 #if defined BATTERY_PROTECTION
   // Out of fuel sound, triggered by battery voltage -----------------------------------------------
-  if (curOutOfFuelSample >= outOfFuelSampleCount)
-  {
-    curOutOfFuelSample = 0;
-  }
   if (outOfFuelMessageTrigger)
   {
     soundVal += (outOfFuelSamples[curOutOfFuelSample] * outOfFuelVolumePercentage / 100);
     curOutOfFuelSample++;
-    if (curOutOfFuelSample == outOfFuelSampleCount)
+    if (curOutOfFuelSample >= outOfFuelSampleCount)
     {
       outOfFuelMessageTrigger = false;
       curOutOfFuelSample = 0; // ensure, next sound will start @ first sample
     }
   }
 #endif
-
 
   uint8_t value = constrain(soundVal * masterVolume / 100 + dacOffset, 0, 255);
   SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, value, RTC_IO_PDAC2_DAC_S);
@@ -4004,7 +3963,7 @@ int8_t escPulse()
 }
 
 // If you connect your ESC to pin 33, the vehicle inertia is simulated. Direct brake (crawler) ESC required
-// *** WARNING!! Do it at your own risk!! There is a falisafe function in case, the signal input from the
+// *** WARNING!! Do it at your own risk!! There is a failsafe function in case, the signal input from the
 // receiver is lost, but if the ESP32 crashes, the vehicle could get out of control!! ***
 
 void esc()
