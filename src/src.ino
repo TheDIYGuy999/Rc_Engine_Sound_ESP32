@@ -1118,8 +1118,8 @@ void IRAM_ATTR fixedPlaybackTimer()
     if (knockMedium)
       dieselVolume *= dieselKnockAdaptiveVolumePercentage / 75;
 
-    soundVal += knockSamples[curDieselKnockSample] *
-        dieselVolume / (100 * 100);
+    soundVal += (knockSamples[curDieselKnockSample] *
+        dieselVolume) / (100 * 100 * 100);
     curDieselKnockSample++;
   }
 
