@@ -183,7 +183,6 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = {13, 12, 14, 27, 35, 34}; // Input pi
 #ifdef WEMOS_D1_MINI_ESP32 // switching headlight pin depending on the board variant
 #define HEADLIGHT_PIN 22   // Headlights connected to GPIO 22
 #define CABLIGHT_PIN -1    // No Cabin lights
-noCabLights = true;
 #else
 #define HEADLIGHT_PIN 3 // Headlights connected to GPIO 3
 #define CABLIGHT_PIN 22 // Cabin lights connected to GPIO 22
@@ -377,8 +376,8 @@ boolean right;
 boolean unlock5thWheel;
 boolean winchPull;
 boolean winchRelease;
-
 boolean winchEnabled;
+int8_t winchSpeed;
 
 // Sound
 volatile boolean engineOn = false;                // Signal for engine on / off
@@ -924,9 +923,13 @@ void IRAM_ATTR variablePlaybackTimer()
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
+  // dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
   // dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
   // dacWrite(DAC1, constrain(a + 128, 0, 255));
+
+  // Direct DAC access is faster according to: https://forum.arduino.cc/t/esp32-dacwrite-ersetzen/653954/5
+  uint8_t value = constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255);
+  SET_PERI_REG_BITS(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC, value, RTC_IO_PDAC1_DAC_S);
 
   // portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -1387,10 +1390,13 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // DAC output (groups mixed together) ****************************************************************************
 
-  // dacDebug = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255); // Mix signals, add 128 offset, write result to DAC
-  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
-  // dacWrite(DAC2, constrain( a2 * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
-  // dacWrite(DAC2, 0);
+  // dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //  dacWrite(DAC2, constrain( a2 * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //  dacWrite(DAC2, 0);
+
+  // Direct DAC access is faster according to: https://forum.arduino.cc/t/esp32-dacwrite-ersetzen/653954/5
+  uint8_t value = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255);
+  SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, value, RTC_IO_PDAC2_DAC_S);
 
   // portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -2024,6 +2030,12 @@ void setup()
       &Task1,    // Task handle to keep track of created task
       0);        // pin task to core 0
 
+  // once write with the "normal" way, the write registers directly according to: https://forum.arduino.cc/t/esp32-dacwrite-ersetzen/653954/5
+  // all further writes are done directly in the register since
+  // it's much faster
+  dacWrite(DAC1, 0);
+  dacWrite(DAC2, 0);
+
   // Interrupt timer for variable sample rate playback
   variableTimer = timerBegin(0, 20, true);                           // timer 0, MWDT clock period = 12.5 ns * TIMGn_Tx_WDT_CLK_PRESCALE -> 12.5 ns * 20 -> 250 ns = 0.25 us, countUp
   timerAttachInterrupt(variableTimer, &variablePlaybackTimer, true); // edge (not level) triggered
@@ -2111,6 +2123,11 @@ void setup()
 
   // ESC setup
   setupMcpwmESC(); // ESC now using mpcpwm
+
+// Lights setup
+#ifdef WEMOS_D1_MINI_ESP32 // disable cablights depending on the board variant
+  noCabLights = true;
+#endif
 }
 
 //
@@ -2725,7 +2742,7 @@ void mcpwmOutput()
 #if defined NO_WINCH_DELAY
     uint16_t winchDelayTarget = 0; // Servo signal for winch is changed immediately
 #else
-    uint16_t winchDelayTarget = 12000; // Servo signal for winch is changed slowly
+    uint16_t winchDelayTarget = 6000; // Servo signal for winch is changed slowly (12000)
 #endif
 
 #if defined MODE2_WINCH
@@ -2747,6 +2764,37 @@ void mcpwmOutput()
         winchServoMicros--;
     }
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
+#endif
+
+// Tractor 3 point yydraulic CH3 **********************
+#if defined MODE2_HYDRAULIC
+
+    static uint16_t rampsServoMicrosTarget = CH3C;
+    static uint16_t rampsServoMicros = CH3C;
+    static unsigned long rampsDelayMicros;
+
+    unsigned long rampsDelayMicrosTarget = map(abs(winchSpeed), 1, 100, 30000, 2000); // Percentage to delay 1, 100, 30000, 2000
+    // Serial.println(rampsDelayMicrosTarget);
+    //Serial.println(winchSpeed);
+
+    if (micros() - rampsDelayMicros > rampsDelayMicrosTarget)
+    {
+      rampsDelayMicros = micros();
+
+      if (winchSpeed > 1)
+        rampsServoMicrosTarget = CH3L; // up
+      else if (winchSpeed < -1)
+        rampsServoMicrosTarget = CH3R; // down
+      else
+        rampsServoMicrosTarget = rampsServoMicros; // stop
+
+      // Movement
+      if (rampsServoMicros < rampsServoMicrosTarget)
+        rampsServoMicros++;
+      if (rampsServoMicros > rampsServoMicrosTarget)
+        rampsServoMicros--;
+    }
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, rampsServoMicros);
 #endif
 
     // Beacon CH3 **********************
@@ -3517,6 +3565,8 @@ void engineMassSimulation()
         targetRpm = reMap(curveLinear, (currentSpeed * virtualManualGearRatio[selectedGear] / 10)); // Add virtual gear ratios
         if (targetRpm > 500)
           targetRpm = 500;
+
+          // targetRpm = currentSpeed * virtualManualGearRatio[selectedGear] / 10; // TODO, reMap not working in VIRTUAL_3_SPEED mode???
 
 #elif defined STEAM_LOCOMOTIVE_MODE
         targetRpm = currentSpeed;
@@ -4333,7 +4383,7 @@ void esc()
 #endif // --------------------------------------------
 
 #if not defined TRACKED_MODE && not defined AIRPLANE_MODE // No ESC control in TRACKED_MODE or in AIRPLANE_MODE
-  // Gear dependent ramp speed for acceleration & deceleration
+                                                          // Gear dependent ramp speed for acceleration & deceleration
 #if defined VIRTUAL_3_SPEED
   escRampTime = escRampTimeThirdGear * 10 / virtualManualGearRatio[selectedGear];
 
@@ -4415,6 +4465,7 @@ void esc()
     Serial.printf("motorDriverDuty:       %i\n", motorDriverDuty);
     Serial.printf("currentSpeed:          %i\n", currentSpeed);
     Serial.printf("speedLimit:            %i\n", speedLimit);
+    Serial.printf("escRampTime:           %i\n", escRampTime);
     Serial.printf("batteryProtection:     %s\n", batteryProtection ? "true" : "false");
     Serial.printf("batteryVoltage:        %.2f\n", batteryVoltage);
     Serial.printf("--------------------------------------\n");
@@ -4604,9 +4655,9 @@ void esc()
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
 
 #else // RZ 7886 motor driver mode ----
-    // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
-    // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
-    // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
+      // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
+      // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
+      // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
 
     if (escSignal > 1500)
     { // Forward
@@ -4813,6 +4864,16 @@ void triggerHorn()
       winchRelease = true;
     else
       winchRelease = false;
+
+    // Winch speed (optional)
+    if (pulseWidth[4] > pulseMaxNeutral[4] + 120)
+      winchSpeed = map(pulseWidth[4], pulseMaxNeutral[4] + 120, pulseMax[4], 1, 100);
+    else if (pulseWidth[4] < pulseMinNeutral[4] - 120)
+      winchSpeed = map(pulseWidth[4], pulseMinNeutral[4] - 120, pulseMin[4], -1, -100);
+    else
+      winchSpeed = 0; // stop
+
+    winchSpeed = constrain(winchSpeed, -100, 100);
   }
 }
 
@@ -5013,6 +5074,12 @@ void rcTriggerRead()
   mode2 = mode2Trigger.onOff(pulseWidth[9], 1800, 1200); // CH9 (MODE2)
 
 #if defined MODE2_WINCH // Winch control mode
+  if (mode2)
+    winchEnabled = true;
+  else
+    winchEnabled = false;
+
+#elif defined MODE2_HYDRAULIC // Hydraulic control mode
   if (mode2)
     winchEnabled = true;
   else

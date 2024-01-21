@@ -7,7 +7,7 @@
  */
 
 // #define NO_SIREN // siren sound is not played, if defined
-// #define NO_INDICATOR_SOUND // If you don't want the indicator "tick - tack" sound
+ #define NO_INDICATOR_SOUND // If you don't want the indicator "tick - tack" sound
 
 // Volume adjustment
 // const  uint8_t numberOfVolumeSteps = 3; // The mumber of volume steps below

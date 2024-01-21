@@ -20,7 +20,7 @@
  */
 
 // Select the vehicle configuration you have:
-#define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
+ #define SERVOS_DEFAULT // <------- Select (remove //) one of the remote configurations below
 // #define SERVOS_LANDY_MN_MODEL
 // #define SERVOS_LANDY_DOUBLE_EAGLE
 // #define SERVOS_C34
@@ -30,6 +30,7 @@
 // #define SERVOS_KING_HAULER
 // #define SERVOS_RACING_TRUCK
 // #define SERVOS_MECCANO_DUMPER
+//#define SERVOS_OPEN_RC_TRACTOR
 
 // Default servo configuration profile -------------------------------------------------------------------------------------------
 #ifdef SERVOS_DEFAULT
@@ -233,5 +234,28 @@ uint16_t CH4L = 1300, CH4R = 1700;              // CH4 trailer coupler (5th. whe
 
 // Servo ramp time
 uint16_t STEERING_RAMP_TIME = 6000; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+
+#endif
+
+// Open RC Tractor servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_OPEN_RC_TRACTOR
+
+//#define MODE2_WINCH    // Mode 2 is used for winch mode, if defined. The winch is controlled by the CH4 pot and connected to Servo CH3. BUS mode only!
+//#define NO_WINCH_DELAY // Use this, if you don't want a winch on / off ramp
+#define MODE2_HYDRAULIC    // Mode 2 is used for hydraulic mode, if defined. The hydraulic is controlled by the CH4 pot and connected to Servo CH3. BUS mode only!
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits
+uint16_t CH1L = 1620, CH1C = 1480, CH1R = 1300; // CH1 steering left 1620, center 1460, right 1300
+uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 transmission gear 1, 2, 3
+uint16_t CH3L = 2000, CH3C = 1500, CH3R = 1000; // CH3 winch pull, off, release
+uint16_t CH4L = 1300, CH4R = 1700;              // CH4 trailer coupler (5th. wheel) locked, unlocked
+
+// Servo ramp time
+uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
 
 #endif
