@@ -135,6 +135,7 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 
 // Choose excavator specific options (use #ifdef FLYSKY_FS_I6S_EXCAVATOR remote profile) ---------
 //#define EXCAVATOR_MODE // The sound controller is running in ecxavator mode!
+#define LOADER_MODE // The sound controller is running in loader mode!
 
 // Choose the hydraulic pump sound (uncomment the one you want) --------
 volatile int hydraulicPumpVolumePercentage = 120; // Adjust the volume (usually = 120%)

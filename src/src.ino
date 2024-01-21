@@ -2775,7 +2775,7 @@ void mcpwmOutput()
 
     unsigned long rampsDelayMicrosTarget = map(abs(winchSpeed), 1, 100, 30000, 2000); // Percentage to delay 1, 100, 30000, 2000
     // Serial.println(rampsDelayMicrosTarget);
-    //Serial.println(winchSpeed);
+    // Serial.println(winchSpeed);
 
     if (micros() - rampsDelayMicros > rampsDelayMicrosTarget)
     {
@@ -3479,8 +3479,9 @@ void mapThrottle()
 void engineMassSimulation()
 {
 
-  static int32_t targetRpm = 0;   // The engine RPM target
-  static int32_t _currentRpm = 0; // Private current RPM (to prevent conflict with core 1)
+  static int32_t targetRpm = 0;         // The engine RPM target
+  static int32_t targetHydraulicRpm[3]; // The hydraulic RPM target for loader mode
+  static int32_t _currentRpm = 0;       // Private current RPM (to prevent conflict with core 1)
   static int32_t _currentThrottle = 0;
   static int32_t lastThrottle;
   uint16_t converterSlip;
@@ -3559,7 +3560,7 @@ void engineMassSimulation()
 #endif
       }
       else
-      {                                                                                             // Clutch engaged: Engine rpm synchronized with ESC power (speed)
+      { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
 
 #if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL // Virtual 3 speed or sequential 16 speed transmission
         targetRpm = reMap(curveLinear, (currentSpeed * virtualManualGearRatio[selectedGear] / 10)); // Add virtual gear ratios
@@ -3582,6 +3583,29 @@ void engineMassSimulation()
 
     if (escIsBraking && currentSpeed < clutchEngagingPoint)
       targetRpm = 0; // keep engine @idle rpm, if braking at very low speed
+
+    // Boom (upwards only) ---
+    if (pulseWidth[2] < pulseMinNeutral[2])
+      targetHydraulicRpm[2] = map(pulseWidth[2], pulseMinNeutral[2], (pulseMin[2] + 100), 0, 500);
+    // if (pulseWidth[2] > pulseMaxNeutral[2])
+    // targetHydraulicRpm = map(pulseWidth[2], pulseMaxNeutral[2], (pulseMax[2] + 100), 0, 500);
+    else
+      targetHydraulicRpm[2] = 0;
+
+    // Bucket (upwards only) ---
+    if (pulseWidth[1] < pulseMinNeutral[1])
+      targetHydraulicRpm[1] = map(pulseWidth[1], pulseMinNeutral[1], (pulseMin[1] + 100), 0, 500);
+    // if (pulseWidth[2] > pulseMaxNeutral[2])
+    // targetHydraulicRpm = map(pulseWidth[2], pulseMaxNeutral[2], (pulseMax[2] + 100), 0, 500);
+    else
+      targetHydraulicRpm[1] = 0;
+
+    targetHydraulicRpm[0] = targetHydraulicRpm[1] + targetHydraulicRpm[2];
+
+    // If requested hydraulic rpm is higher, use it (for loader)
+    if (targetHydraulicRpm[0] > targetRpm)
+      targetRpm = targetHydraulicRpm[0];
+
     if (targetRpm > 500)
       targetRpm = 500;
 
@@ -5012,7 +5036,6 @@ void rcTriggerRead()
   static uint8_t volumeIndex = 0;
   if (driveState == 0)
   {
-    // if (functionR100d.toggleLong(pulseWidth[5], 2000)) masterVolume = masterVolumePercentage[1]; else masterVolume = masterVolumePercentage[0]; // Change volume between indoor and outdoor mode
     if (functionR100d.toggleLong(pulseWidth[5], 2000) != volumeStateLock)
     {
       if (volumeIndex < numberOfVolumeSteps - 1)
@@ -5811,7 +5834,7 @@ void trailerControl()
       trailerData.indicatorR = 0;
     }
 #else // Trailer lights always on
-    trailerData.tailLight = ledcRead(2);                     // These are timer numbers, not pin numbers!
+    trailerData.tailLight = ledcRead(2); // These are timer numbers, not pin numbers!
     trailerData.sideLight = ledcRead(8);
     trailerData.reversingLight = ledcRead(6);
     trailerData.indicatorL = ledcRead(3);
@@ -5864,8 +5887,8 @@ void loop()
   mcpwmOutput();      // PWM servo signal output
 
 #elif defined IBUS_COMMUNICATION
-  readIbusCommands();       // IBUS communication (pin 36)
-  mcpwmOutput();            // PWM servo signal output
+  readIbusCommands(); // IBUS communication (pin 36)
+  mcpwmOutput();      // PWM servo signal output
 
 #elif defined SUMD_COMMUNICATION
   readSumdCommands(); // SUMD communication (pin 36)
