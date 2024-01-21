@@ -15,7 +15,9 @@ volatile int fullThrottleVolumePercentage = 140; // Volume Percentage while full
 //#include "sounds/Caterpillar323Idle.h" // Caterpillar 323 excavator
 // #include "sounds/VolvoL120HIdle.h" // Volvo L120H loader
 // #include "sounds/VolvoL120HIdle_tr-7dB.h" // Volvo L120H loader
-#include "sounds/VolvoL120HIdle_tr-7dB-bass7dB.h" // Volvo L120H loader
+// #include "sounds/VolvoL120HIdle_tr-7dB-bass7dB.h" // Volvo L120H loader
+// #include "sounds/L120H_BaumaIdle3.h" // Volvo L120H loader
+#include "sounds/L120H_BaumaIdleOutside.h" // Volvo L120H loader
 
 // Choose the motor revving sound (uncomment the one you want) --------
 //#define REV_SOUND // uncomment this, if you want to use the separate, optional rev sound
@@ -40,14 +42,14 @@ volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (a
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
 // play around here, the results are amazing, if you hit the right combination with the idle sound!) --------
-volatile int dieselKnockVolumePercentage = 300; // Adjust the Diesel knock volume (usually = 200 - 600%) 350
+volatile int dieselKnockVolumePercentage = 80; // Adjust the Diesel knock volume (usually = 200 - 600%) 350
 volatile int dieselKnockIdleVolumePercentage = 10; // Diesel knock volume while idling (usually = 20%)
 volatile int dieselKnockInterval = 6; // Idle sample length divided by this number (1 - 20, depending on sound files)
 volatile int dieselKnockStartPoint = 110; // Volume will raise above this point ( usually 0, for "open pipe" exhaust about 250)
 //#define V8 // V8 engine (Ford, Scania): pulses 4 and 8 will bel louder, because only 90° gap between exhaust cycles in same manifold
 //#define V2 // V2 engine (Harley): first 2 of 4 pulses will be louder (set dieselKnockInterval to 4)
 volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knock volume for the non-first knocks per engine cycle (usually = 50%)
-#include "sounds/Caterpillar323Knock.h" // Caterpillar 323 excavator
+#include "sounds/L120H_BaumaKnock.h" // Volvo L120H loader
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
 volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%) 15
