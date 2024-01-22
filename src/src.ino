@@ -437,6 +437,7 @@ int16_t currentThrottleFaded = 0; // faded throttle for volume calculations etc.
 const int16_t maxRpm = 500;       // always 500
 const int16_t minRpm = 0;         // always 0
 int32_t currentRpm = 0;           // 0 - 500 (signed required!)
+int32_t targetHydraulicRpm[3]; // The hydraulic RPM target for loader mode
 volatile uint8_t engineState = 0; // Engine state
 enum EngineState                  // Engine state enum
 {
@@ -1300,7 +1301,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // Group "c" (excavator sounds) **********************************************************************
 
-#if defined EXCAVATOR_MODE
+#if defined EXCAVATOR_MODE || defined LOADER_MODE
 
   // Hydraulic fluid flow sound -----------------------
   if (curHydraulicFlowSample < hydraulicFlowSampleCount - 1)
@@ -3480,7 +3481,6 @@ void engineMassSimulation()
 {
 
   static int32_t targetRpm = 0;         // The engine RPM target
-  static int32_t targetHydraulicRpm[3]; // The hydraulic RPM target for loader mode
   static int32_t _currentRpm = 0;       // Private current RPM (to prevent conflict with core 1)
   static int32_t _currentThrottle = 0;
   static int32_t lastThrottle;
@@ -3584,30 +3584,14 @@ void engineMassSimulation()
     if (escIsBraking && currentSpeed < clutchEngagingPoint)
       targetRpm = 0; // keep engine @idle rpm, if braking at very low speed
 
-    // Boom (upwards only) ---
-    if (pulseWidth[2] < pulseMinNeutral[2])
-      targetHydraulicRpm[2] = map(pulseWidth[2], pulseMinNeutral[2], (pulseMin[2] + 100), 0, 500);
-    // if (pulseWidth[2] > pulseMaxNeutral[2])
-    // targetHydraulicRpm = map(pulseWidth[2], pulseMaxNeutral[2], (pulseMax[2] + 100), 0, 500);
-    else
-      targetHydraulicRpm[2] = 0;
-
-    // Bucket (upwards only) ---
-    if (pulseWidth[1] < pulseMinNeutral[1])
-      targetHydraulicRpm[1] = map(pulseWidth[1], pulseMinNeutral[1], (pulseMin[1] + 100), 0, 500);
-    // if (pulseWidth[2] > pulseMaxNeutral[2])
-    // targetHydraulicRpm = map(pulseWidth[2], pulseMaxNeutral[2], (pulseMax[2] + 100), 0, 500);
-    else
-      targetHydraulicRpm[1] = 0;
-
-    targetHydraulicRpm[0] = targetHydraulicRpm[1] + targetHydraulicRpm[2];
-
+#if defined LOADER_MODE
     // If requested hydraulic rpm is higher, use it (for loader)
     if (targetHydraulicRpm[0] > targetRpm)
       targetRpm = targetHydraulicRpm[0];
 
     if (targetRpm > 500)
       targetRpm = 500;
+#endif      
 
     // Accelerate engine
     if (targetRpm > (_currentRpm + acc) && (_currentRpm + acc) < maxRpm && engineState == RUNNING && engineRunning)
@@ -5754,6 +5738,46 @@ void excavatorControl()
 
 //
 // =======================================================================================================
+// LOADER CONTROL
+// =======================================================================================================
+//
+
+void loaderControl()
+{
+
+  // Calculate pump rpm while lifting
+
+// Boom (upwards only) ---
+    if (pulseWidth[2] < pulseMinNeutral[2])
+      targetHydraulicRpm[2] = map(pulseWidth[2], pulseMinNeutral[2], (pulseMin[2] + 100), 0, 500);
+    else
+      targetHydraulicRpm[2] = 0;
+
+    // Bucket (upwards only) ---
+    if (pulseWidth[1] < pulseMinNeutral[1])
+      targetHydraulicRpm[1] = map(pulseWidth[1], pulseMinNeutral[1], (pulseMin[1] + 100), 0, 500);
+    else
+      targetHydraulicRpm[1] = 0;
+
+    targetHydraulicRpm[0] = targetHydraulicRpm[1] + targetHydraulicRpm[2];
+    //Serial.println(targetHydraulicRpm[0]);
+
+
+
+
+    // Calculate zylinder speed dependent hydraulic flow volume ----
+    // Boom (downwards) ---
+    if (pulseWidth[2] > pulseMaxNeutral[2])
+      hydraulicFlowVolume = map(pulseWidth[2], pulseMaxNeutral[2], (pulseMax[2] - 200), 0, 100);
+    else
+      hydraulicFlowVolume = 0;
+
+    
+  
+}
+
+//
+// =======================================================================================================
 // STEAM LOCOMOTIVE CONTROL
 // =======================================================================================================
 //
@@ -5920,6 +5944,11 @@ void loop()
     // Excavator specific controls
 #if defined EXCAVATOR_MODE
     excavatorControl();
+#endif
+
+// Excavator specific controls
+#if defined LOADER_MODE
+    loaderControl();
 #endif
 
     // Steam locomotive specific controls

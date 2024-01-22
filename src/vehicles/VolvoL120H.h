@@ -143,8 +143,9 @@ volatile int hydraulicPumpVolumePercentage = 120; // Adjust the volume (usually 
 #include "sounds/Caterpillar323Hydraulic2.h" // Caterpillar 323 excavator (slowed down by factor 2)
 
 // Choose the hydraulic fluid flow sound (uncomment the one you want) --------
-volatile int hydraulicFlowVolumePercentage = 120; // Adjust the volume (usually = 120%)
-#include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
+volatile int hydraulicFlowVolumePercentage = 20; // Adjust the volume (usually = 20%)
+//#include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
+#include "sounds/hydraulicHiss.h" // Caterpillar 323 excavator
 
 // Choose the track rattle sound (uncomment the one you want) --------
 volatile int trackRattleVolumePercentage = 150; // Adjust the volume (usually = 150%)
@@ -182,8 +183,8 @@ uint16_t clutchEngagingPoint = 500; // CEP. The "clutch" is engaging above this 
 uint32_t MAX_RPM_PERCENTAGE = 200; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
-const int8_t acc = 2; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
-const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
+const int8_t acc = 6; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t dec = 3; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
