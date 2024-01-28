@@ -5749,13 +5749,13 @@ void loaderControl()
 
 // Boom (upwards only) ---
     if (pulseWidth[2] < pulseMinNeutral[2])
-      targetHydraulicRpm[2] = map(pulseWidth[2], pulseMinNeutral[2], (pulseMin[2] + 100), 0, 500);
+      targetHydraulicRpm[2] = map(pulseWidth[2], pulseMinNeutral[2], (pulseMin[2]), 0, 300);
     else
       targetHydraulicRpm[2] = 0;
 
     // Bucket (upwards only) ---
     if (pulseWidth[1] < pulseMinNeutral[1])
-      targetHydraulicRpm[1] = map(pulseWidth[1], pulseMinNeutral[1], (pulseMin[1] + 100), 0, 500);
+      targetHydraulicRpm[1] = map(pulseWidth[1], pulseMinNeutral[1], (pulseMin[1]), 0, 150);
     else
       targetHydraulicRpm[1] = 0;
 
