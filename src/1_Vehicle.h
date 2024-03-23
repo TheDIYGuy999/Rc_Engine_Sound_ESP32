@@ -34,9 +34,9 @@
 // #include "vehicles/VolvoFH16_OpenPipe.h" // Volvo FH truck. Inline 6, open pipes, alternative version
 // #include "vehicles/ManTgx.h" // MAN TGX 680 V8 truck
 // #include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
-// #include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air coolded V8 Diesel truck
-// #include "vehicles/MagirusMercur125.h" // Magirus Mercur air coolded V6 Diesel truck
-#include "vehicles/Saurer2DM.h" // Swiss Saurer 2DM R6 Diesel truck
+// #include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air cooled V8 Diesel truck
+// #include "vehicles/MagirusMercur125.h" // Magirus Mercur air cooled V6 Diesel truck
+// #include "vehicles/Saurer2DM.h" // Swiss Saurer 2DM R6 Diesel truck
 
 // Russian trucks --------
 // #include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
@@ -49,12 +49,16 @@
 
 // Tractors -------
 // #include "vehicles/KirovetsK700.h" // Russian Kirovets K700 monster tractor. Extreme turbo sound!
+// #include "vehicles/FergusonTEA20.h" // 1940ies Ferguson TEA20 petrol engine tractor
 
 // Excavators -------
 // #include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
 
 // Dumpers -------
-// #include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper
+//  #include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper
+
+ // Loaders -------
+  #include "vehicles/VolvoL120H.h"
 
 // US motorcycles --------
 // #include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
