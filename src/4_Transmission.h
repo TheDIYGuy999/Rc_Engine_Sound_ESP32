@@ -13,7 +13,7 @@
 // Gears are virtually shifted, using the 3 position switch. Example: your crawler has a 2 speed transmission, which is used as off road reducer,
 // but no real 3 speed shifting transmission. Don't uncomment if for vehicles with electric or hydrostatic drive or automatic transmissions!
 // Also don't use it for STEAM_LOCOMOTIVE_MODE
-// #define VIRTUAL_3_SPEED
+ #define VIRTUAL_3_SPEED
 
 // #define VIRTUAL_16_SPEED_SEQUENTIAL will enable a sequencial transmission, shifted by up / down impulses via 3 position switch
 // #define VIRTUAL_16_SPEED_SEQUENTIAL // This is still experimental and not working properly! Don't use it.
@@ -21,7 +21,7 @@
 // Additional transmission options =========================================================================================================
 // Automatic transmission with overdrive (lower RPM in top gear, gear ratio lower than 1:1, 4 & 6 speed only)
 // Also usable in combination with VIRTUAL_3_SPEED. The 4th gear is switched automatically in this case, if driving in 3rd gear @ full throttle
-#define OVERDRIVE // Don't use it for: doubleClutch. Not working with SEMI_AUTOMATIC, but you can leave it on in this case.
+//#define OVERDRIVE // Don't use it for: doubleClutch. Not working with SEMI_AUTOMATIC, but you can leave it on in this case.
 
 // In some cases we want a different reverse acceleration for automatic transmission vehicles.
 uint16_t automaticReverseAccelerationPercentage = 100;

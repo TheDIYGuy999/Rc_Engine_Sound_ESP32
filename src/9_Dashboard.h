@@ -12,6 +12,7 @@
  */
 
 // #define SPI_DASHBOARD // A 0.96" SPI LCD is used as dashboard: https://www.ebay.ch/itm/174458054566?hash=item289e82a7a6:g:LpAAAOSwtL1fdDtI
+ //#define FREVIC_DASHBOARD // Alternative Dashboard from Vrevic (for now you need to define it in src/dashboard.h): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/post-490891
 /* WARNING:
  * Pins 18 (SCL), 19 (DC), 21 (RES) & 23 (SDA) are used for the dashboard in this case!
  * The dispay CS pin needs to be connected to GND.

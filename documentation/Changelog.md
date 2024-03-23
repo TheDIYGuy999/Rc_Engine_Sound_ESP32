@@ -1,5 +1,40 @@
 # Changelog
 
+### Todo:
+- Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
+- Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
+
+### 9.13.0-b7:
+- Defines removed: HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
+- Variables added (adjustable on 192.168.4.1): hazardsWhile5thWheelUnlocked
+- Neopixel animation mode selectable in dropdown menu on 192.168.4.1
+
+### 9.13.0-b6:
+- Defines removed: NO_CABLIGHTS, NO_FOGLIGHTS, XENON_LIGHTS, FLICKERING_WHILE_CRANKING, SEPARATE_FULL_BEAM
+- Variables removed: INDICATOR_DIR
+- Variables added (adjustable on 192.168.4.1): noCabLights, noFogLights, xenonLights, flickeringWileCranking, swap_L_R_indicators, separateFullBeam, flashingBlueLight
+
+### 9.13.0-b5:
+- First light settings available on 192.168.4.1
+- Website with collapsible sections to keep it more organized
+
+### 9.13.0-b4:
+- Servo positions adjustable on 192.168.4.1
+- Improved website look
+- Scania dashboard splash logo by Frikkiebester
+
+### 9.13.0-b3:
+- Dashboard requires less processing power, no engine rpm lagging anymore, if Frevic dashboard is used
+
+### 9.13.0-b2:
+- More adjustable ESC parameters on 192.168.4.1
+- Dashboard improved & optional dashboard from Frevic implemented. Select it in "dashboard.h" by uncommenting "#define FREVIC_DASHBOARD"
+
+### 9.13.0-b1:
+- New parameter "#define NEOPIXEL_ON_CH4" in "6_Lights.h" allows to connect the NEOPIXELS to servo CH 4 (BUS mode only, no 5th wheel servo in this case)
+- ESC parameters are adjustable via 192.168.4.1
+- in "#define WEMOS_D1_MINI_ESP32" mode only: Experimental Serial command interface for ESC parameters
+
 ### 9.12.0:
 - Support for 36 Pin version removed
 - Support for Wemos D1 Mini ESP32 added (#define WEMOS_D1_MINI_ESP32 in "0_generalSettings.h").  Allows to use the upcoming wireless trailer controller as modular sound controller.

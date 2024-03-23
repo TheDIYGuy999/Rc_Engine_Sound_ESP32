@@ -1,0 +1,221 @@
+<head>
+<script>
+"use strict";
+
+
+/** Decodes a .h file and returns a buffer.
+ *
+ *  @returns An array with sample rate and the buffer data.
+ */
+function headerToArray(headerText) {
+
+  const headerLines = headerText.split("\n");
+
+  // -- find the sample rate:
+  const srRe = /samplerate\s*=\s*(\d+)\s*;/i;
+  let sampleRate = 22050;
+  for (let i = 0; i < headerLines.length; i++) {
+    let results = srRe.exec(headerLines[i]);
+    if (results !== null) {
+      sampleRate = parseInt(sampleRate)
+      break;
+    }
+  }
+
+  // -- find the samples (we assume it_s a line with commas
+  let buffer = [];
+  for (let i = 0; i < headerLines.length; i++) {
+    let numbers = headerLines[i].split(",");
+    if (numbers.length > 1) {
+      // ignore everything after the last comma
+      // might be a comment or a closing }
+      for (let j = 0; j < numbers.length - 1; j++) {
+          buffer.push(parseInt(numbers[j]) / 128.0);
+      }
+    }
+  }
+
+  return [sampleRate, buffer];
+}
+
+/** Adds an unsigned 8 bit value to the given byte buffer
+ *  at the given position.
+ */
+function addInt8(pos, buffer, value) {
+  buffer[pos] = value & 0xff;
+}
+
+
+/** Adds an unsigned 16 bit value to the given byte buffer
+ *  at the given position.
+ *
+ *  It's little endian.
+ */
+function addInt16(pos, buffer, value) {
+  addInt8(pos,     buffer, value);
+  addInt8(pos + 1, buffer, value >> 8);
+}
+
+
+/** Adds an unsigned 32 bit value to the given byte buffer
+ *  at the given position.
+ *
+ *  It's little endian.
+ */
+function addInt32(pos, buffer, value) {
+  addInt16(pos,     buffer, value);
+  addInt16(pos + 2, buffer, value >> 16);
+}
+
+
+/** Converts the given text (header/include) file to a wav array.
+ *
+ *  @param repeats: The number of times the audio sample is
+ *     repeated (put one after another).
+ */
+function toWav(headerText, repeats=1) {
+
+  const [sampleRate, buffer] = headerToArray(headerText);
+
+  const bytesNo = 1;  // number of bytes per sample
+  const channels = 1;
+  const samplesNo = buffer.length * repeats;
+  const fileLength = samplesNo * bytesNo + 44;
+  
+  var buf = new Int8Array(fileLength);
+
+  // -- RIFF section
+  addInt8(0, buf, "R".charCodeAt(0));
+  addInt8(1, buf, "I".charCodeAt(0));
+  addInt8(2, buf, "F".charCodeAt(0));
+  addInt8(3, buf, "F".charCodeAt(0));
+  addInt32(4, buf, fileLength - 8)
+
+  // -- format section
+  addInt8(8,  buf, "W".charCodeAt(0));
+  addInt8(9,  buf, "A".charCodeAt(0));
+  addInt8(10, buf, "V".charCodeAt(0));
+  addInt8(11, buf, "E".charCodeAt(0));
+
+  addInt8(12, buf, "f".charCodeAt(0));
+  addInt8(13, buf, "m".charCodeAt(0));
+  addInt8(14, buf, "t".charCodeAt(0));
+  addInt8(15, buf, " ".charCodeAt(0));
+
+  addInt32(16, buf, 16); // format section length
+  addInt16(20, buf, 1);  // format type (PCM)
+  addInt16(22, buf, channels); // format type (PCM)
+  addInt32(24, buf, sampleRate);
+
+  const bitRate = bytesNo * channels * sampleRate;
+  addInt32(28, buf, bitRate);
+  addInt16(32, buf, bytesNo * channels);
+  addInt16(34, buf, bytesNo * 8);
+  
+  // -- data section
+  addInt8(36, buf, "d".charCodeAt(0));
+  addInt8(37, buf, "a".charCodeAt(0));
+  addInt8(38, buf, "t".charCodeAt(0));
+  addInt8(39, buf, "a".charCodeAt(0));
+
+  const dataSectionLength = bytesNo * samplesNo;
+  addInt32(40, buf, dataSectionLength); // data section length
+  let pos = 44;
+  for (let j = 0; j < repeats; j++) {
+    for (let i = 0; i < buffer.length; i++) {
+      if (bytesNo == 1) {
+        addInt8(pos, buf, Math.round(buffer[i] * (1 << 7) + (1 << 7)));
+        pos++;
+      } else if (bytesNo == 2) {
+        addInt16(pos, buf, Math.round(buffer[i] * (1 << 15)));
+        pos+=2;
+      } else if (bytesNo == 4) {
+        addInt32(pos, buf, Math.round(buffer[i] * (1 << 31)));
+        pos+=4;
+      }
+    }
+  }
+
+  return buf;
+}
+
+
+/** Called when the header file is loaded.
+ *
+ *  Converts the input file an set's the src of the audio element,
+ *  so that it be played back.
+ */
+function headerFileLoaded(loaded) {
+
+  const repeats = document.querySelector('#input_repeats').value;
+  const blob = new Blob(
+    [toWav(loaded.target.result, repeats)],
+    {type:'audio/wav'});
+  const URLObject = window.webkitURL || window.URL;
+  const url = URLObject.createObjectURL(blob);
+
+  let audio_source = document.querySelector('#audio_source');
+  audio_source.src = url;
+
+  document.querySelector('#audio_download').href=url;
+
+  let audio_control = document.querySelector('#audio_control');
+  audio_control.pause();
+  audio_control.load();
+  audio_control.oncanplaythrough = audio_control.play();
+}
+
+
+/** Starts downloading and then converting the given file.
+ */
+function newFileSelected(event)
+{
+  let fr = new FileReader();
+  // fr.inputFileName = event.target.files[0];
+  fr.onload = headerFileLoaded;  // onload fires after reading is complete
+  fr.readAsText(event.target.files[0]);
+}
+
+</script>
+
+<style>
+	body {
+    font-family: arial;
+	}
+  legend {
+    background-color: #000;
+    color: #fff;
+    padding: 3px 6px;
+  }
+  input {
+    margin: 0.4rem;
+  }
+  fieldset {
+    width: fit-content;
+	  background-color: #eee;
+  }
+</style>
+
+</head>
+
+<body>
+  <fieldset>
+    <legend>Reverse audio converter</legend>
+    <label for="input_file">Input file:</label>
+    <input id="input_file" type="file" accept="*.h" onchange="newFileSelected(event)"/>
+    <br />
+    <label for="input_repeats">Number of repetitions:</label>
+    <input id="input_repeats" type="number" min="1" max="100" value="1"/>
+    <br />
+    <audio id="audio_control" controls>
+      <source id="audio_source" src="" type="audio/wav"/>
+      <a id="audio_download" href="">Download audio</a>
+    </audio>
+  </fieldset>
+
+  <small>
+    Ralf Engels for <a href="https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32">ESP32 RC Engine Sound & Light Controller</a>
+  </small>
+
+</body>
+</html>

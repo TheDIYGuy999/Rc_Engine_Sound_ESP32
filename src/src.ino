@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.12.0"; // Software revision.
+char codeVersion[] = "9.13.0-b7"; // Software revision.
 
 //
 // =======================================================================================================
@@ -46,7 +46,7 @@ char codeVersion[] = "9.12.0"; // Software revision.
 #include <Arduino.h>
 
 // All the required user settings are done in the following .h files:
-#include "0_generalSettings.h" // <<------- general settings
+#include "0_GeneralSettings.h" // <<------- general settings
 #include "1_Vehicle.h"         // <<------- Select the vehicle you want to simulate
 #include "2_Remote.h"          // <<------- Remote control system related adjustments
 #include "3_ESC.h"             // <<------- ESC related adjustments
@@ -103,7 +103,7 @@ char codeVersion[] = "9.12.0"; // Software revision.
 #include <Esp.h>    // for displaying memory information
 #include <EEPROM.h> // for non volatile variable storage
 
-// This stuff is required for Visual Studio Code IDE, if .ino is renamed into .cpp!
+// Forward declare functions
 void Task1code(void *parameters);
 void readSbusCommands();
 void readIbusCommands();
@@ -117,8 +117,10 @@ float batteryVolts();
 void eepromDebugRead();
 void eepromRead();
 void eepromInit();
+void serialInterface();
+void webInterface();
 
-// The following tasks only required for Arduino IDE! ----
+// The following tasks are only required for Arduino IDE! ----
 // Install ESP32 board according to: https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 // Warning: Use Espressif ESP32 board definition v1.05 or 10.6! v2.x is not working
 // Adjust board settings according to: https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32/blob/master/pictures/settings.png
@@ -142,8 +144,12 @@ void eepromInit();
 // ------------------------------------------------------------------------------------
 
 // Serial DEBUG pins -----
-#define DEBUG_RX UART_PIN_NO_CHANGE // 99 is just a dummy, because the "RX0" pin (GPIO3) is used for the headlights and causing issues, if rx enabled! -1 (3 headlights)
-#define DEBUG_TX 1                  // The "RX0" is on pin 1
+#ifdef WEMOS_D1_MINI_ESP32 // Wemos D1 Mini board: GPIO3 is available
+#define DEBUG_RX 3
+#else // original board: GPIO3 is used for headlights!
+#define DEBUG_RX UART_PIN_NO_CHANGE
+#endif
+#define DEBUG_TX 1 // The "RX0" is on pin 1
 
 // Serial command pins for SBUS, IBUS, PPM, SUMD -----
 #define COMMAND_RX 36                 // pin 36, labelled with "VP", connect it to "Micro RC Receiver" pin "TXO"
@@ -177,7 +183,6 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = {13, 12, 14, 27, 35, 34}; // Input pi
 #ifdef WEMOS_D1_MINI_ESP32 // switching headlight pin depending on the board variant
 #define HEADLIGHT_PIN 22   // Headlights connected to GPIO 22
 #define CABLIGHT_PIN -1    // No Cabin lights
-#define NO_CABLIGHTS
 #else
 #define HEADLIGHT_PIN 3 // Headlights connected to GPIO 3
 #define CABLIGHT_PIN 22 // Cabin lights connected to GPIO 22
@@ -193,7 +198,11 @@ const uint8_t PWM_PINS[PWM_CHANNELS_NUM] = {13, 12, 14, 27, 35, 34}; // Input pi
 #define BEACON_LIGHT2_PIN 19   // Blue beacons light
 #define BEACON_LIGHT1_PIN 21   // Blue beacons light
 
-#define RGB_LEDS_PIN 0 // Pin is used for WS2812 LED control
+#ifdef NEOPIXEL_ON_CH4           // Switching NEOPIXEL pin for WS2812 LED depending on setting
+#define RGB_LEDS_PIN COUPLER_PIN // Use coupler pin on CH4
+#else
+#define RGB_LEDS_PIN 0 // Use GPIO 0 (BOOT button)
+#endif
 
 #if defined THIRD_BRAKELIGHT
 #define BRAKELIGHT_PIN 32 // Upper brake lights
@@ -367,8 +376,8 @@ boolean right;
 boolean unlock5thWheel;
 boolean winchPull;
 boolean winchRelease;
-
 boolean winchEnabled;
+int8_t winchSpeed;
 
 // Sound
 volatile boolean engineOn = false;                // Signal for engine on / off
@@ -428,6 +437,7 @@ int16_t currentThrottleFaded = 0; // faded throttle for volume calculations etc.
 const int16_t maxRpm = 500;       // always 500
 const int16_t minRpm = 0;         // always 0
 int32_t currentRpm = 0;           // 0 - 500 (signed required!)
+int32_t targetHydraulicRpm[3]; // The hydraulic RPM target for loader mode
 volatile uint8_t engineState = 0; // Engine state
 enum EngineState                  // Engine state enum
 {
@@ -530,10 +540,11 @@ uint8_t broadcastAddress2[6];
 uint8_t broadcastAddress3[6];
 
 // Eeprom size and storage addresses ----------------------------------------------
-#define EEPROM_SIZE 256 // 256 Bytes (512 is maximum)
+#define EEPROM_SIZE 512 // 512 Bytes (512 is maximum)
 
 #define adr_eprom_init 0 // Eeprom initialized or not?
 
+// Trailer
 #define adr_eprom_useTrailer1 4 // Trailer 1
 #define adr_eprom_Trailer1Mac0 8
 #define adr_eprom_Trailer1Mac1 12
@@ -559,12 +570,50 @@ uint8_t broadcastAddress3[6];
 #define adr_eprom_Trailer3Mac5 84
 
 #define adr_eprom_fifthWhweelDetectionActive 88
-#define adr_eprom_tailLightBrightness 92
-#define adr_eprom_sideLightBrightness 96
-#define adr_eprom_reversingLightBrightness 100
-#define adr_eprom_indicatorLightBrightness 104
-#define adr_eprom_ssid 192     // 192
-#define adr_eprom_password 224 // 224
+
+// Lights
+#define adr_eprom_hazardsWhile5thWheelUnlocked 96
+#define adr_eprom_xenonLights 100
+#define adr_eprom_separateFullBeam 104
+#define adr_eprom_indicatorsAsSidemarkers 108
+#define adr_eprom_flickeringWileCranking 112
+#define adr_eprom_swap_L_R_indicators 116
+#define adr_eprom_noCabLights 120
+#define adr_eprom_noFogLights 124
+#define adr_eprom_ledIndicators 128
+#define adr_eprom_flashingBlueLight 132
+#define adr_eprom_neopixelMode 136
+
+#define adr_eprom_rearLightDimmedBrightness 140
+#define adr_eprom_tailLightParkingBrightness 144
+#define adr_eprom_headLightParkingBrightness 148
+#define adr_eprom_sideLightBrightness 152
+#define adr_eprom_reversingLightBrightness 156
+#define adr_eprom_indicatorLightBrightness 160
+#define adr_eprom_cabLightBrightness 164
+#define adr_eprom_fogLightBrightness 168
+
+#define adr_eprom_esc_pulse_span 172
+#define adr_eprom_esc_takeoff_punch 176
+#define adr_eprom_esc_reverse_plus 180
+#define adr_eprom_crawler_esc_ramp_time 184
+#define adr_eprom_global_acceleration_percentage 188
+
+#define adr_eprom_rz7886_brake_margin 200
+#define adr_eprom_rz7886_frequency 204
+#define adr_eprom_rz7886_dragbrake_duty 208
+
+#define adr_eprom_steering_servo_left 220
+#define adr_eprom_steering_servo_center 224
+#define adr_eprom_steering_servo_right 228
+#define adr_eprom_transmission_servo_left 232
+#define adr_eprom_transmission_servo_center 236
+#define adr_eprom_transmission_servo_right 240
+#define adr_eprom_coupler_servo_left 244
+#define adr_eprom_coupelr_servo_right 248
+
+#define adr_eprom_ssid 384     // 384 (64)
+#define adr_eprom_password 448 // 448 (64)
 
 // DEBUG stuff
 volatile uint8_t coreId = 99;
@@ -875,9 +924,13 @@ void IRAM_ATTR variablePlaybackTimer()
 
   // DAC output (groups a, b, c mixed together) ************************************************************************
 
-  dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
+  // dacWrite(DAC1, constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write  to DAC
   // dacWrite(DAC1, constrain(a * masterVolume / 100 + dacOffset, 0, 255));
   // dacWrite(DAC1, constrain(a + 128, 0, 255));
+
+  // Direct DAC access is faster according to: https://forum.arduino.cc/t/esp32-dacwrite-ersetzen/653954/5
+  uint8_t value = constrain(((a * 8 / 10) + (b / 2) + (c / 5) + (d / 5) + (e / 5) + f + g) * masterVolume / 100 + dacOffset, 0, 255);
+  SET_PERI_REG_BITS(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC, value, RTC_IO_PDAC1_DAC_S);
 
   // portEXIT_CRITICAL_ISR(&variableTimerMux);
 }
@@ -1248,7 +1301,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // Group "c" (excavator sounds) **********************************************************************
 
-#if defined EXCAVATOR_MODE
+#if defined EXCAVATOR_MODE || defined LOADER_MODE
 
   // Hydraulic fluid flow sound -----------------------
   if (curHydraulicFlowSample < hydraulicFlowSampleCount - 1)
@@ -1338,10 +1391,13 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // DAC output (groups mixed together) ****************************************************************************
 
-  // dacDebug = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255); // Mix signals, add 128 offset, write result to DAC
-  dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
-  // dacWrite(DAC2, constrain( a2 * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
-  // dacWrite(DAC2, 0);
+  // dacWrite(DAC2, constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //  dacWrite(DAC2, constrain( a2 * masterVolume / 100 + dacOffset, 0, 255)); // Mix signals, add 128 offset, write result to DAC
+  //  dacWrite(DAC2, 0);
+
+  // Direct DAC access is faster according to: https://forum.arduino.cc/t/esp32-dacwrite-ersetzen/653954/5
+  uint8_t value = constrain(((a * 8 / 10) + (b * 2 / 10) + c + d) * masterVolume / 100 + dacOffset, 0, 255);
+  SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, value, RTC_IO_PDAC2_DAC_S);
 
   // portEXIT_CRITICAL_ISR(&fixedTimerMux);
 }
@@ -1496,8 +1552,10 @@ void setupMcpwm()
   // 1. set our servo output pins
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN); // Set steering as PWM0A
   mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN); // Set shifting as PWM0B
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN);  // Set coupling as PWM1A
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN);    // Set winch  or beacon as PWM1B
+#if not defined NEOPIXEL_ON_CH4
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN); // Set coupling as PWM1A
+#endif
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN); // Set winch  or beacon as PWM1B
 
   // 2. configure MCPWM parameters
   mcpwm_config_t pwm_config;
@@ -1521,8 +1579,17 @@ void setupMcpwm()
 
 void setupMcpwmESC()
 {
+  // ESC output range calibration
+  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; // Additional takeoff punch around zero
+  escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
+
+  escPulseMax = pulseZero[3] + escPulseSpan;
+  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; // Additional power for ESC with slow reverse
+
 #if not defined RZ7886_DRIVER_MODE // Setup for classic crawler style RC ESC ----
   Serial.printf("Standard ESC mode configured. Connect crawler ESC to ESC header. RZ7886 motor driver not usable!\n");
+
+  brakeMargin = 0; // Always 0, if not RZ7886 driver mode!
 
   // 1. set our ESC output pin
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, ESC_OUT_PIN); // Set ESC as PWM0A
@@ -1705,6 +1772,8 @@ void setupBattery()
       // wait here forever!
       indicatorL.flash(70, 75, 500, 2); // Show 2 fast flashes on indicators!
       indicatorR.flash(70, 75, 500, 2);
+      serialInterface();
+      webInterface();
       rtc_wdt_feed(); // Feed watchdog timer
     }
   }
@@ -1732,6 +1801,22 @@ void setupEeprom()
   Serial.println(EEPROM.read(adr_eprom_init));
   Serial.println("change it for default value upload!\n");
   eepromDebugRead(); // Shows content of entire eeprom, except of empty areas
+}
+
+//
+// =======================================================================================================
+// NEOPIXEL SETUP
+// =======================================================================================================
+//
+
+void setupNeopixel()
+{
+#ifdef NEOPIXEL_ENABLED
+  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
+  FastLED.setCorrection(TypicalLEDStrip);
+  FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
+  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
+#endif
 }
 
 //
@@ -1778,17 +1863,25 @@ void setup()
       Serial.printf("Core %i reset reason: %i: %s\n", coreNum, rtc_get_reset_reason(coreNum), RESET_REASONS[resetReason - 1]);
     }
   }
+  Serial.printf("**************************************************************************************************\n\n");
+
+  // Eeprom Setup
+  setupEeprom();
+
 #if defined BATTERY_PROTECTION
-  Serial.printf("Battery protection calibration data:\n");
+  Serial.printf("Battery protection calibration data: ----\n");
   Serial.printf("RESISTOR_TO_BATTTERY_PLUS: %i Ω\n", RESISTOR_TO_BATTTERY_PLUS);
   Serial.printf("RESISTOR_TO_GND: %i Ω\n", RESISTOR_TO_GND);
   Serial.printf("DIODE_DROP: %.2f V\n", DIODE_DROP);
 #endif
 
-  Serial.printf("**************************************************************************************************\n\n");
+  Serial.printf("\nESC calibration data: ----\n");
+  Serial.printf("ESC pulse span: %i (Used to adjust the top speed: 500 = full ESC power, 1000 = half ESC power etc.)\n", escPulseSpan);
+  Serial.printf("ESC takeoff punch: %i (Usually 0. Enlarge it up to about 150, if your motor is too weak around neutral.)\n", escTakeoffPunch);
+  Serial.printf("ESC reverse plus: %i (Usually 0. Enlarge it up to about 220, if your reverse speed is too slow.)\n", escReversePlus);
+  Serial.printf("ESC ramp time for crawler mode: %i (about 10 - 15), less = more direct control = less virtual inertia)\n", crawlerEscRampTime);
 
-  // Eeprom Setup
-  setupEeprom();
+  Serial.printf("**************************************************************************************************\n\n");
 
   // Semaphores are useful to stop a Task proceeding, where it should be paused to wait,
   // because it is sharing a resource, such as the PWM variable.
@@ -1839,11 +1932,11 @@ void setup()
   shakerMotor.begin(SHAKER_MOTOR_PIN, 13, 20000); // Timer 13, 20kHz
 #endif
 
-  // Battery setup
-  setupBattery();
-
   // ESP NOW setup
   setupEspNow();
+
+  // Battery setup
+  setupBattery();
 
 #if defined SPI_DASHBOARD
   // Dashboard setup
@@ -1853,12 +1946,7 @@ void setup()
 #endif
 
   // Neopixel setup
-#ifdef NEOPIXEL_ENABLED
-  FastLED.addLeds<NEOPIXEL, RGB_LEDS_PIN>(rgbLEDs, NEOPIXEL_COUNT);
-  FastLED.setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(NEOPIXEL_BRIGHTNESS);
-  FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_POWER_MILLIAMPS);
-#endif
+  setupNeopixel();
 
   // Communication setup --------------------------------------------
   indicatorL.on();
@@ -1892,6 +1980,7 @@ void setup()
 #else
   // PWM ----
 #define PWM_COMMUNICATION
+#undef NEOPIXEL_ON_CH4 // not usable, pin is required as an input
   if (MAX_RPM_PERCENTAGE > maxPwmRpmPercentage)
     MAX_RPM_PERCENTAGE = maxPwmRpmPercentage; // Limit RPM range
   for (uint8_t i = 0; i < PWM_CHANNELS_NUM; i++)
@@ -1942,6 +2031,12 @@ void setup()
       &Task1,    // Task handle to keep track of created task
       0);        // pin task to core 0
 
+  // once write with the "normal" way, the write registers directly according to: https://forum.arduino.cc/t/esp32-dacwrite-ersetzen/653954/5
+  // all further writes are done directly in the register since
+  // it's much faster
+  dacWrite(DAC1, 0);
+  dacWrite(DAC2, 0);
+
   // Interrupt timer for variable sample rate playback
   variableTimer = timerBegin(0, 20, true);                           // timer 0, MWDT clock period = 12.5 ns * TIMGn_Tx_WDT_CLK_PRESCALE -> 12.5 ns * 20 -> 250 ns = 0.25 us, countUp
   timerAttachInterrupt(variableTimer, &variablePlaybackTimer, true); // edge (not level) triggered
@@ -1968,6 +2063,8 @@ void setup()
     readSbusCommands();               // SBUS communication (pin 36)
     indicatorL.flash(70, 75, 500, 3); // Show 3 fast flashes on indicators!
     indicatorR.flash(70, 75, 500, 3);
+    serialInterface();
+    webInterface();
     rtc_wdt_feed(); // Feed watchdog timer
   }
   Serial.printf("... SBUS initialization succesful!\n");
@@ -1981,6 +2078,8 @@ void setup()
     readIbusCommands();               // IBUS communication (pin 36)
     indicatorL.flash(70, 75, 500, 3); // Show 3 fast flashes on indicators!
     indicatorR.flash(70, 75, 500, 3);
+    serialInterface();
+    webInterface();
     rtc_wdt_feed(); // Feed watchdog timer
   }
   Serial.printf("... IBUS initialization succesful!\n");
@@ -1994,6 +2093,8 @@ void setup()
     readSumdCommands();
     indicatorL.flash(70, 75, 500, 3); // Show 3 fast flashes on indicators!
     indicatorR.flash(70, 75, 500, 3);
+    serialInterface();
+    webInterface();
     rtc_wdt_feed(); // Feed watchdog timer
   }
   Serial.printf("... SUMD initialization succesful!\n");
@@ -2021,15 +2122,13 @@ void setup()
     pulseMinLimit[i] = pulseZero[i] - pulseLimit;
   }
 
-  // ESC output range calibration
-  escPulseMaxNeutral = pulseZero[3] + escTakeoffPunch; // Additional takeoff punch around zero
-  escPulseMinNeutral = pulseZero[3] - escTakeoffPunch;
-
-  escPulseMax = pulseZero[3] + escPulseSpan;
-  escPulseMin = pulseZero[3] - escPulseSpan + escReversePlus; // Additional power for ESC with slow reverse
-
   // ESC setup
   setupMcpwmESC(); // ESC now using mpcpwm
+
+// Lights setup
+#ifdef WEMOS_D1_MINI_ESP32 // disable cablights depending on the board variant
+  noCabLights = true;
+#endif
 }
 
 //
@@ -2644,7 +2743,7 @@ void mcpwmOutput()
 #if defined NO_WINCH_DELAY
     uint16_t winchDelayTarget = 0; // Servo signal for winch is changed immediately
 #else
-    uint16_t winchDelayTarget = 12000; // Servo signal for winch is changed slowly
+    uint16_t winchDelayTarget = 6000; // Servo signal for winch is changed slowly (12000)
 #endif
 
 #if defined MODE2_WINCH
@@ -2666,6 +2765,37 @@ void mcpwmOutput()
         winchServoMicros--;
     }
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, winchServoMicros);
+#endif
+
+// Tractor 3 point yydraulic CH3 **********************
+#if defined MODE2_HYDRAULIC
+
+    static uint16_t rampsServoMicrosTarget = CH3C;
+    static uint16_t rampsServoMicros = CH3C;
+    static unsigned long rampsDelayMicros;
+
+    unsigned long rampsDelayMicrosTarget = map(abs(winchSpeed), 1, 100, 30000, 2000); // Percentage to delay 1, 100, 30000, 2000
+    // Serial.println(rampsDelayMicrosTarget);
+    // Serial.println(winchSpeed);
+
+    if (micros() - rampsDelayMicros > rampsDelayMicrosTarget)
+    {
+      rampsDelayMicros = micros();
+
+      if (winchSpeed > 1)
+        rampsServoMicrosTarget = CH3L; // up
+      else if (winchSpeed < -1)
+        rampsServoMicrosTarget = CH3R; // down
+      else
+        rampsServoMicrosTarget = rampsServoMicros; // stop
+
+      // Movement
+      if (rampsServoMicros < rampsServoMicrosTarget)
+        rampsServoMicros++;
+      if (rampsServoMicros > rampsServoMicrosTarget)
+        rampsServoMicros--;
+    }
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, rampsServoMicros);
 #endif
 
     // Beacon CH3 **********************
@@ -2750,7 +2880,7 @@ void disableAllInterrupts()
   timerDetachInterrupt(variableTimer);
   timerDetachInterrupt(fixedTimer);
 
-  Serial.print("Interrupts disabled, reboot required!");
+  Serial.print("Interrupts disabled, reboot required!\n");
 }
 
 //
@@ -2829,13 +2959,51 @@ void eepromInit()
     EEPROM.write(adr_eprom_Trailer3Mac2, defaultBroadcastAddress3[2]); // Region number
     EEPROM.write(adr_eprom_Trailer3Mac3, defaultBroadcastAddress3[3]); // User Number 1
     EEPROM.write(adr_eprom_Trailer3Mac4, defaultBroadcastAddress3[4]); // User Number 2
-    EEPROM.write(adr_eprom_Trailer3Mac5, defaultBroadcastAddress3[5]); // 0x02 = trailer #2
+    EEPROM.write(adr_eprom_Trailer3Mac5, defaultBroadcastAddress3[5]); // 0x03 = trailer #3
 
     // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, defaulFifthWhweelDetectionActive);
-    // EEPROM.write(adr_eprom_tailLightBrightness, defaultLightsBrightness);
-    // EEPROM.write(adr_eprom_sideLightBrightness, defaultLightsBrightness);
-    // EEPROM.write(adr_eprom_reversingLightBrightness, defaultLightsBrightness);
-    // EEPROM.write(adr_eprom_indicatorLightBrightness, defaultLightsBrightness);
+
+    EEPROM.write(adr_eprom_hazardsWhile5thWheelUnlocked, hazardsWhile5thWheelUnlocked); // Hazards on, if 5th wheel unlocked
+    EEPROM.write(adr_eprom_xenonLights, xenonLights);                                   // Xenon simulation
+    EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);                         // Separate full beam
+    EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers);           // Indicators as sidemarkers
+    EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);             // Flickering while cranking
+    EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);                   // Swap L & R indicators
+    EEPROM.write(adr_eprom_noCabLights, noCabLights);                                   // No cab lights
+    EEPROM.write(adr_eprom_noFogLights, noFogLights);                                   // No fog lights
+    EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                               // LED indicator mode
+    EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);                       // flashing or rotating bluelight
+
+    EEPROM.writeUShort(adr_eprom_neopixelMode, neopixelMode); // Neopixel animation mode
+
+    EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
+    EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
+    EEPROM.writeUShort(adr_eprom_tailLightParkingBrightness, rearlightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+    EEPROM.writeUShort(adr_eprom_headLightParkingBrightness, headlightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+    EEPROM.writeUShort(adr_eprom_sideLightBrightness, sideLightsBrightness);              // Sidelights brightness about 100 - 200
+    EEPROM.writeUShort(adr_eprom_reversingLightBrightness, reversingLightBrightness);     // Reversing lights brightness about 140
+    EEPROM.writeUShort(adr_eprom_fogLightBrightness, fogLightBrightness);                 // Fog lights brightness about 200
+
+    EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
+    EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
+    EEPROM.writeUShort(adr_eprom_esc_reverse_plus, escReversePlus);                             // ESC reverse plus
+    EEPROM.writeUShort(adr_eprom_crawler_esc_ramp_time, crawlerEscRampTime);                    // ESC crawler ramp time
+    EEPROM.writeUShort(adr_eprom_global_acceleration_percentage, globalAccelerationPercentage); // ESC acceleration percentage
+    EEPROM.writeUShort(adr_eprom_rz7886_brake_margin, brakeMargin);                             // RZ7886 brake margin
+    EEPROM.writeUShort(adr_eprom_rz7886_frequency, RZ7886_FREQUENCY);                           // RZ7886 frequency
+    EEPROM.writeUShort(adr_eprom_rz7886_dragbrake_duty, RZ7886_DRAGBRAKE_DUTY);                 // RZ7886 dragbrake duty
+
+    EEPROM.writeUShort(adr_eprom_steering_servo_left, CH1L);   // Steering servo left
+    EEPROM.writeUShort(adr_eprom_steering_servo_center, CH1C); // Steering servo center
+    EEPROM.writeUShort(adr_eprom_steering_servo_right, CH1R);  // Steering servo right
+
+    EEPROM.writeUShort(adr_eprom_transmission_servo_left, CH2L);   // Transmission servo left (1. gear)
+    EEPROM.writeUShort(adr_eprom_transmission_servo_center, CH2C); // Transmission servo center (2. gear)
+    EEPROM.writeUShort(adr_eprom_transmission_servo_right, CH2R);  // Transmission servo right (3. gear)
+
+    EEPROM.writeUShort(adr_eprom_coupler_servo_left, CH4L);  // Trailer coupler servo left (locked)
+    EEPROM.writeUShort(adr_eprom_coupelr_servo_right, CH4R); // Trailer coupler servo right (unlocked)
+
     writeStringToEEPROM(adr_eprom_ssid, default_ssid);
     writeStringToEEPROM(adr_eprom_password, default_password);
     EEPROM.commit();
@@ -2847,7 +3015,7 @@ void eepromInit()
 void eepromWrite()
 {
 
-  disableAllInterrupts();
+  disableAllInterrupts(); // This is very important!
 
   EEPROM.write(adr_eprom_useTrailer1, useTrailer1);
   EEPROM.write(adr_eprom_Trailer1Mac0, broadcastAddress1[0]); // Should always be 0xFE!
@@ -2871,13 +3039,52 @@ void eepromWrite()
   EEPROM.write(adr_eprom_Trailer3Mac2, broadcastAddress3[2]); // Region number
   EEPROM.write(adr_eprom_Trailer3Mac3, broadcastAddress3[3]); // User Number 1
   EEPROM.write(adr_eprom_Trailer3Mac4, broadcastAddress3[4]); // User Number 2
-  EEPROM.write(adr_eprom_Trailer3Mac5, broadcastAddress3[5]); // 0x02 = trailer #2
+  EEPROM.write(adr_eprom_Trailer3Mac5, broadcastAddress3[5]); // 0x03 = trailer #3
 
   // EEPROM.write(adr_eprom_fifthWhweelDetectionActive, fifthWhweelDetectionActive);
-  // EEPROM.write(adr_eprom_tailLightBrightness, tailLightBrightness);
-  // EEPROM.write(adr_eprom_sideLightBrightness, sideLightBrightness);
-  // EEPROM.write(adr_eprom_reversingLightBrightness, reversingLightBrightness);
-  // EEPROM.write(adr_eprom_indicatorLightBrightness, indicatorLightBrightness);
+
+  EEPROM.write(adr_eprom_hazardsWhile5thWheelUnlocked, hazardsWhile5thWheelUnlocked); // Hazards on, if 5th wheel unlocked
+  EEPROM.write(adr_eprom_xenonLights, xenonLights);                                   // Xenon simulation
+  EEPROM.write(adr_eprom_separateFullBeam, separateFullBeam);                         // Separate full beam
+  EEPROM.write(adr_eprom_indicatorsAsSidemarkers, indicatorsAsSidemarkers);           // Indicators as sidemarkers
+  EEPROM.write(adr_eprom_flickeringWileCranking, flickeringWileCranking);             // Flickering while cranking
+  EEPROM.write(adr_eprom_swap_L_R_indicators, swap_L_R_indicators);                   // Swap L & R indicators
+  EEPROM.write(adr_eprom_noCabLights, noCabLights);                                   // No cab lights
+  EEPROM.write(adr_eprom_noFogLights, noFogLights);                                   // No fog lights
+  EEPROM.write(adr_eprom_ledIndicators, ledIndicators);                               // LED indicator mode
+  EEPROM.write(adr_eprom_flashingBlueLight, flashingBlueLight);                       // flashing or rotating bluelight
+
+  EEPROM.writeUShort(adr_eprom_neopixelMode, neopixelMode); // Neopixel animation mode
+
+  EEPROM.writeUShort(adr_eprom_cabLightBrightness, cabLightsBrightness);                // Cab lights brightness usually 255
+  EEPROM.writeUShort(adr_eprom_rearLightDimmedBrightness, rearlightDimmedBrightness);   // Taillight brightness, if not braking. About 30
+  EEPROM.writeUShort(adr_eprom_tailLightParkingBrightness, rearlightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  EEPROM.writeUShort(adr_eprom_headLightParkingBrightness, headlightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  EEPROM.writeUShort(adr_eprom_sideLightBrightness, sideLightsBrightness);              // Sidelights brightness about 100 - 200
+  EEPROM.writeUShort(adr_eprom_reversingLightBrightness, reversingLightBrightness);     // Reversing lights brightness about 140
+  EEPROM.writeUShort(adr_eprom_fogLightBrightness, fogLightBrightness);                 // Fog lights brightness about 200
+
+  EEPROM.writeUShort(adr_eprom_esc_pulse_span, escPulseSpan);                                 // ESC pulse span
+  EEPROM.writeUShort(adr_eprom_esc_takeoff_punch, escTakeoffPunch);                           // ESC takeoff punch
+  EEPROM.writeUShort(adr_eprom_esc_reverse_plus, escReversePlus);                             // ESC reverse plus
+  EEPROM.writeUShort(adr_eprom_crawler_esc_ramp_time, crawlerEscRampTime);                    // ESC crawler ramp time
+  EEPROM.writeUShort(adr_eprom_global_acceleration_percentage, globalAccelerationPercentage); // ESC acceleration percentage
+
+  EEPROM.writeUShort(adr_eprom_rz7886_brake_margin, brakeMargin);             // RZ7886 brake margin
+  EEPROM.writeUShort(adr_eprom_rz7886_frequency, RZ7886_FREQUENCY);           // RZ7886 frequency
+  EEPROM.writeUShort(adr_eprom_rz7886_dragbrake_duty, RZ7886_DRAGBRAKE_DUTY); // RZ7886 dragbrake duty
+
+  EEPROM.writeUShort(adr_eprom_steering_servo_left, CH1L);   // Steering servo left
+  EEPROM.writeUShort(adr_eprom_steering_servo_center, CH1C); // Steering servo center
+  EEPROM.writeUShort(adr_eprom_steering_servo_right, CH1R);  // Steering servo right
+
+  EEPROM.writeUShort(adr_eprom_transmission_servo_left, CH2L);   // Transmission servo left (1. gear)
+  EEPROM.writeUShort(adr_eprom_transmission_servo_center, CH2C); // Transmission servo center (2. gear)
+  EEPROM.writeUShort(adr_eprom_transmission_servo_right, CH2R);  // Transmission servo right (3. gear)
+
+  EEPROM.writeUShort(adr_eprom_coupler_servo_left, CH4L);  // Trailer coupler servo left (locked)
+  EEPROM.writeUShort(adr_eprom_coupelr_servo_right, CH4R); // Trailer coupler servo right (unlocked)
+
   writeStringToEEPROM(adr_eprom_ssid, ssid);
   writeStringToEEPROM(adr_eprom_password, password);
   EEPROM.commit();
@@ -2913,10 +3120,48 @@ void eepromRead()
   broadcastAddress3[5] = EEPROM.read(adr_eprom_Trailer3Mac5);
 
   // fifthWhweelDetectionActive = EEPROM.read(adr_eprom_fifthWhweelDetectionActive);
-  // tailLightBrightness = EEPROM.read(adr_eprom_tailLightBrightness);
-  // sideLightBrightness = EEPROM.read(adr_eprom_sideLightBrightness);
-  // reversingLightBrightness = EEPROM.read(adr_eprom_reversingLightBrightness);
-  // indicatorLightBrightness = EEPROM.read(adr_eprom_indicatorLightBrightness);
+
+  hazardsWhile5thWheelUnlocked = EEPROM.read(adr_eprom_hazardsWhile5thWheelUnlocked); // Hazards on, if 5th wheel unlocked
+  xenonLights = EEPROM.read(adr_eprom_xenonLights);                                   // Xenon simulation
+  separateFullBeam = EEPROM.read(adr_eprom_separateFullBeam);                         // Separate full beam
+  indicatorsAsSidemarkers = EEPROM.read(adr_eprom_indicatorsAsSidemarkers);           // Indicators as sidemarkers
+  flickeringWileCranking = EEPROM.read(adr_eprom_flickeringWileCranking);             // Flickering while cranking
+  swap_L_R_indicators = EEPROM.read(adr_eprom_swap_L_R_indicators);                   // Swap L & R indicators
+  noCabLights = EEPROM.read(adr_eprom_noCabLights);                                   // No cab lights
+  noFogLights = EEPROM.read(adr_eprom_noFogLights);                                   // No fog lights
+  ledIndicators = EEPROM.read(adr_eprom_ledIndicators);                               // LED indicator mode
+  flashingBlueLight = EEPROM.read(adr_eprom_flashingBlueLight);                       // flashing or rotating bluelight
+
+  neopixelMode = EEPROM.readUShort(adr_eprom_neopixelMode); // Neopixel animation mode
+
+  cabLightsBrightness = EEPROM.readUShort(adr_eprom_cabLightBrightness);                // Cab lights brightness usually 255
+  rearlightParkingBrightness = EEPROM.readUShort(adr_eprom_tailLightParkingBrightness); // Taillight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  headlightParkingBrightness = EEPROM.readUShort(adr_eprom_headLightParkingBrightness); // Headlight brightness, if sidelights only are on. 3 - 5, 0 for US mode
+  sideLightsBrightness = EEPROM.readUShort(adr_eprom_sideLightBrightness);              // Sidelights brightness about 100 - 200
+  reversingLightBrightness = EEPROM.readUShort(adr_eprom_reversingLightBrightness);     // Reversing lights brightness about 140
+  fogLightBrightness = EEPROM.readUShort(adr_eprom_fogLightBrightness);                 // Fog lights brightness about 200
+
+  escPulseSpan = EEPROM.readUShort(adr_eprom_esc_pulse_span);                                 // ESC pulse span
+  escTakeoffPunch = EEPROM.readUShort(adr_eprom_esc_takeoff_punch);                           // ESC takeoff punch
+  escReversePlus = EEPROM.readUShort(adr_eprom_esc_reverse_plus);                             // ESC reverse plus
+  crawlerEscRampTime = EEPROM.readUShort(adr_eprom_crawler_esc_ramp_time);                    // ESC crawler ramp time
+  globalAccelerationPercentage = EEPROM.readUShort(adr_eprom_global_acceleration_percentage); // ESC acceleration percentage
+
+  brakeMargin = EEPROM.readUShort(adr_eprom_rz7886_brake_margin);             // RZ7886 brake margin
+  RZ7886_FREQUENCY = EEPROM.readUShort(adr_eprom_rz7886_frequency);           // RZ7886 frequency
+  RZ7886_DRAGBRAKE_DUTY = EEPROM.readUShort(adr_eprom_rz7886_dragbrake_duty); // RZ7886 dragbrake duty
+
+  CH1L = EEPROM.readUShort(adr_eprom_steering_servo_left);   // Steering servo left
+  CH1C = EEPROM.readUShort(adr_eprom_steering_servo_center); // Steering servo center
+  CH1R = EEPROM.readUShort(adr_eprom_steering_servo_right);  // Steering servo right
+
+  CH2L = EEPROM.readUShort(adr_eprom_transmission_servo_left);   // Transmission servo left (1. gear)
+  CH2C = EEPROM.readUShort(adr_eprom_transmission_servo_center); // Transmission servo center (2. gear)
+  CH2R = EEPROM.readUShort(adr_eprom_transmission_servo_right);  // Transmission servo right (3. gear)
+
+  CH4L = EEPROM.readUShort(adr_eprom_coupler_servo_left);  // Trailer coupler servo left (locked)
+  CH4R = EEPROM.readUShort(adr_eprom_coupelr_servo_right); // Trailer coupler servo right (unlocked)
+
   readStringFromEEPROM(adr_eprom_ssid, &ssid);
   readStringFromEEPROM(adr_eprom_password, &password);
 
@@ -2946,6 +3191,14 @@ void eepromDebugRead()
 //
 
 #include "src/webInterface.h" // Configuration website
+
+//
+// =======================================================================================================
+// SERIAL INTERFACE
+// =======================================================================================================
+//
+
+#include "src/serialInterface.h" // Serial command interface for configuration
 
 //
 // =======================================================================================================
@@ -3227,8 +3480,8 @@ void mapThrottle()
 void engineMassSimulation()
 {
 
-  static int32_t targetRpm = 0;   // The engine RPM target
-  static int32_t _currentRpm = 0; // Private current RPM (to prevent conflict with core 1)
+  static int32_t targetRpm = 0;         // The engine RPM target
+  static int32_t _currentRpm = 0;       // Private current RPM (to prevent conflict with core 1)
   static int32_t _currentThrottle = 0;
   static int32_t lastThrottle;
   uint16_t converterSlip;
@@ -3307,12 +3560,14 @@ void engineMassSimulation()
 #endif
       }
       else
-      {                                                                                             // Clutch engaged: Engine rpm synchronized with ESC power (speed)
+      { // Clutch engaged: Engine rpm synchronized with ESC power (speed)
 
 #if defined VIRTUAL_3_SPEED || defined VIRTUAL_16_SPEED_SEQUENTIAL // Virtual 3 speed or sequential 16 speed transmission
         targetRpm = reMap(curveLinear, (currentSpeed * virtualManualGearRatio[selectedGear] / 10)); // Add virtual gear ratios
         if (targetRpm > 500)
           targetRpm = 500;
+
+          // targetRpm = currentSpeed * virtualManualGearRatio[selectedGear] / 10; // TODO, reMap not working in VIRTUAL_3_SPEED mode???
 
 #elif defined STEAM_LOCOMOTIVE_MODE
         targetRpm = currentSpeed;
@@ -3328,8 +3583,15 @@ void engineMassSimulation()
 
     if (escIsBraking && currentSpeed < clutchEngagingPoint)
       targetRpm = 0; // keep engine @idle rpm, if braking at very low speed
+
+#if defined LOADER_MODE
+    // If requested hydraulic rpm is higher, use it (for loader)
+    if (targetHydraulicRpm[0] > targetRpm)
+      targetRpm = targetHydraulicRpm[0];
+
     if (targetRpm > 500)
       targetRpm = 500;
+#endif      
 
     // Accelerate engine
     if (targetRpm > (_currentRpm + acc) && (_currentRpm + acc) < maxRpm && engineState == RUNNING && engineRunning)
@@ -3465,103 +3727,114 @@ void headLightsSub(bool head, bool fog, bool roof, bool park)
 
   fogLightOn = fog;
 
-#ifdef XENON_LIGHTS // Optional xenon ignition flash
-  if (millis() - xenonMillis > 50)
-    xenonIgnitionFlash = 0;
-  else
-    xenonIgnitionFlash = 170; // bulb is brighter for 50ms
-#endif
-
-#ifdef SEPARATE_FULL_BEAM // separate full beam bulb, wired to "rooflight" pin ----
-  // Headlights (low beam bulb)
-  if (!head && !park)
+  if (xenonLights) // Optional Xenon ignition flash
   {
-    headLight.off();
-    xenonMillis = millis();
-    if (!headLightsFlasherOn)
-      headLightsHighBeamOn = false;
+    if (millis() - xenonMillis > 50)
+      xenonIgnitionFlash = 0;
+    else
+      xenonIgnitionFlash = 170; // bulb is brighter for 50ms
   }
-  else if (park)
-  { // Parking lights
-    headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
-    xenonMillis = millis();
-    if (!headLightsFlasherOn)
-      headLightsHighBeamOn = false;
-  }
-  else
-  { // ON
-    headLight.pwm(constrain(255 - crankingDim - 170 + xenonIgnitionFlash, 0, 255));
-  }
-  // Headlights (high beam bulb)
-  if (headLightsFlasherOn || (headLightsHighBeamOn && head))
-    roofLight.pwm(200 - crankingDim);
-  else
-    roofLight.off();
 
-#else  // Bulbs wired as labeled on the board ----
-  // Headlights
-  if (!head && !park)
-  { // OFF or flasher
-    if (!headLightsFlasherOn)
+  if (separateFullBeam) // separate full beam bulb, wired to "rooflight" pin ----
+  {
+    // Headlights (low beam bulb)
+    if (!head && !park)
+    {
       headLight.off();
-    else
-      headLight.on();
-    xenonMillis = millis();
-    headLightsHighBeamOn = false;
-  }
-  else if (park)
-  { // Parking lights
-    if (!headLightsFlasherOn)
+      xenonMillis = millis();
+      if (!headLightsFlasherOn)
+        headLightsHighBeamOn = false;
+    }
+    else if (park)
+    { // Parking lights
       headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
+      xenonMillis = millis();
+      if (!headLightsFlasherOn)
+        headLightsHighBeamOn = false;
+    }
     else
-      headLight.on();
-    xenonMillis = millis();
-    headLightsHighBeamOn = false;
+    { // ON
+      headLight.pwm(constrain(255 - crankingDim - 170 + xenonIgnitionFlash, 0, 255));
+    }
+    // Headlights (high beam bulb)
+    if (headLightsFlasherOn || (headLightsHighBeamOn && head))
+      roofLight.pwm(200 - crankingDim);
+    else
+      roofLight.off();
   }
-  else
-  { // ON
-    headLight.pwm(constrain(255 - crankingDim - dipDim + xenonIgnitionFlash, 0, 255));
-  }
+  else // Bulbs wired as labeled on the board ----
+  {
+    // Headlights
+    if (!head && !park)
+    { // OFF or flasher
+      if (!headLightsFlasherOn)
+        headLight.off();
+      else
+        headLight.on();
+      xenonMillis = millis();
+      headLightsHighBeamOn = false;
+    }
+    else if (park)
+    { // Parking lights
+      if (!headLightsFlasherOn)
+        headLight.pwm(constrain(headlightParkingBrightness - crankingDim, (headlightParkingBrightness / 2), 255));
+      else
+        headLight.on();
+      xenonMillis = millis();
+      headLightsHighBeamOn = false;
+    }
+    else
+    { // ON
+      headLight.pwm(constrain(255 - crankingDim - dipDim + xenonIgnitionFlash, 0, 255));
+    }
 
-  // Roof lights
-  if (!roof)
-    roofLight.off();
-  else
-    roofLight.pwm(130 - crankingDim);
-#endif // ----
+    // Roof lights
+    if (!roof)
+      roofLight.off();
+    else
+      roofLight.pwm(130 - crankingDim);
+  } // ----
 
   // Fog lights
-  if (!fog)
+  if (!fog || noFogLights)
     fogLight.off();
   else
-    fogLight.pwm(200 - crankingDim);
+    fogLight.pwm(fogLightBrightness - crankingDim);
 }
 
 // Main LED function --------------------------------------------------------------------------------------
 void led()
 {
 
-#if defined LED_INDICATORS
-  indicatorFade = 0; // No soft indicator on / off, if LED
-#endif
+  if (ledIndicators)
+  {
+    indicatorFade = 0; // No soft indicator on / off, if LED
+  }
+  else
+  {
+    indicatorFade = 300; // Soft indicator on / off, if not LED
+  }
 
   // Lights brightness ----
-#if defined FLICKERING_WHILE_CRANKING
-  static unsigned long flickerMillis;
-  if (millis() - flickerMillis > 30)
-  { // Every 30ms
-    flickerMillis = millis();
-    if (engineStart)
-      crankingDim = random(25, 55);
-    else
-      crankingDim = 0; // lights are dimmer and flickering while engine cranking
+  if (flickeringWileCranking) // Flickering
+  {
+    static unsigned long flickerMillis;
+    if (millis() - flickerMillis > 30)
+    { // Every 30ms
+      flickerMillis = millis();
+      if (engineStart)
+        crankingDim = random(25, 55);
+      else
+        crankingDim = 0; // lights are dimmer and flickering while engine cranking
+    }
   }
-#else
-  if (engineStart)
-    crankingDim = 50;
-  else
-    crankingDim = 0; // lights are dimmer while engine cranking
-#endif
+  else // Not flickering
+  {
+    if (engineStart)
+      crankingDim = 50;
+    else
+      crankingDim = 0; // lights are dimmer while engine cranking
+  }
 
   if (headLightsFlasherOn || headLightsHighBeamOn)
     dipDim = 10;
@@ -3579,7 +3852,7 @@ void led()
 #if not defined TRACKED_MODE // Normal beacons mode
   if (blueLightTrigger)
   {
-    if (doubleFlashBlueLight)
+    if (flashingBlueLight)
     {
       beaconLight1.flash(30, 80, 400, 2);      // Simulate double flash lights
       beaconLight2.flash(30, 80, 400, 2, 330); // Simulate double flash lights (with delay for first pass)
@@ -3605,57 +3878,47 @@ void led()
 
   // Indicators (turn signals, blinkers) ----
   uint8_t indicatorOffBrightness;
-#if defined INDICATOR_SIDE_MARKERS // Indicators used as US style side markers as well
-  if (lightsState > 1)
-    indicatorOffBrightness = rearlightDimmedBrightness - crankingDim / 2;
-  else
-    indicatorOffBrightness = 0;
-#else
-  indicatorOffBrightness = 0;
-#endif
-
-#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-  if (!hazard && !unlock5thWheel && !batteryProtection)
-  { // Hazards also active, if 5th wheel unlocked
-#else
-  if (!hazard && !batteryProtection)
+  if (indicatorsAsSidemarkers) // Indicators used as US style side markers as well
   {
-#endif
+    if (lightsState > 1)
+      indicatorOffBrightness = rearlightDimmedBrightness - crankingDim / 2;
+    else
+      indicatorOffBrightness = 0;
+  }
+  else
+  {
+    indicatorOffBrightness = 0;
+  }
+
+  if (!hazard && !unlock5thWheel && !batteryProtection && hazardsWhile5thWheelUnlocked || !hazard && !batteryProtection && !hazardsWhile5thWheelUnlocked)
+  {
+    // L indicator
     if (indicatorLon)
     {
       if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
         indicatorSoundOn = true; // Left indicator
     }
-#if defined INDICATOR_SIDE_MARKERS // Indicators used as US style side markers as well
     else
     {
-      if (lightsState > 1)
-        indicatorL.pwm(rearlightDimmedBrightness - crankingDim / 2);
+      if (lightsState > 1 && indicatorsAsSidemarkers)
+        indicatorL.pwm(indicatorOffBrightness);
       else
         indicatorL.off(indicatorFade);
     }
-#else
-    else
-      indicatorL.off(indicatorFade);
-#endif
 
+    // R indicator
     if (indicatorRon)
     {
       if (indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
         indicatorSoundOn = true; // Left indicator
     }
-#if defined INDICATOR_SIDE_MARKERS // Indicators used as US style side markers as well
     else
     {
       if (lightsState > 1)
-        indicatorR.pwm(rearlightDimmedBrightness - crankingDim / 2);
+        indicatorR.pwm(indicatorOffBrightness);
       else
         indicatorR.off(indicatorFade);
     }
-#else
-    else
-      indicatorR.off(indicatorFade);
-#endif
   }
   else
   { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
@@ -3667,12 +3930,13 @@ void led()
   // Headlights, tail lights ----
 #ifdef AUTO_LIGHTS // automatic lights mode (deprecated, not maintained anymore!) ************************
 
-#ifdef XENON_LIGHTS // Optional xenon ignition flash
-  if (millis() - xenonMillis > 50)
-    xenonIgnitionFlash = 0;
-  else
-    xenonIgnitionFlash = 170; // bulb is brighter for 50ms
-#endif
+  if (xenonLights) // Optional Xenon ignition flash
+  {
+    if (millis() - xenonMillis > 50)
+      xenonIgnitionFlash = 0;
+    else
+      xenonIgnitionFlash = 170; // bulb is brighter for 50ms
+  }
   if (lightsOn && (engineRunning || engineStart))
   {
     headLight.pwm(constrain(255 - crankingDim - dipDim + xenonIgnitionFlash, 0, 255));
@@ -3718,7 +3982,7 @@ void led()
   else
     cabLight.off();
 
-#else // manual lights mode ************************
+#else  // manual lights mode ************************
   // Lights state machine
   switch (lightsState)
   {
@@ -3731,21 +3995,25 @@ void led()
     brakeLightsSub(0); // 0 brightness, if not braking
     break;
 
-  case 1:            // cab lights ---------------------------------------------------------------------
-#ifdef NO_CABLIGHTS
-    lightsState = 2; // Skip cablights
-#else
-    cabLight.pwm(cabLightsBrightness - crankingDim);
-#endif
+  case 1: // cab lights ---------------------------------------------------------------------
+    if (noCabLights)
+    {
+      lightsState = 2; // Skip cablights
+    }
+    else
+    {
+      cabLight.pwm(cabLightsBrightness - crankingDim);
+    }
     sideLight.off();
     headLightsSub(false, false, false, false);
     brakeLightsSub(0); // 0 brightness, if not braking
     break;
 
   case 2: // cab & roof & side lights ---------------------------------------------------------------------
-#ifndef NO_CABLIGHTS
-    cabLight.pwm(cabLightsBrightness - crankingDim);
-#endif
+    if (!noCabLights)
+    {
+      cabLight.pwm(cabLightsBrightness - crankingDim);
+    }
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
     headLightsSub(false, false, true, true);
     fogLight.off();
@@ -3760,20 +4028,22 @@ void led()
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
     break;
 
-  case 4:            // roof & side & head & fog lights ---------------------------------------------------------------------
-#ifdef NO_FOGLIGHTS
-    lightsState = 5; // Skip foglights
-#endif
+  case 4: // roof & side & head & fog lights ---------------------------------------------------------------------
+    if (noFogLights)
+    {
+      lightsState = 5; // Skip foglights
+    }
     cabLight.off();
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
     headLightsSub(true, true, true, false);
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
     break;
 
-  case 5:            // cab & roof & side & head & fog lights ---------------------------------------------------------------------
-#ifdef NO_CABLIGHTS
-    lightsState = 0; // Skip cablights
-#endif
+  case 5: // cab & roof & side & head & fog lights ---------------------------------------------------------------------
+    if (noCabLights)
+    {
+      lightsState = 0; // Skip cablights
+    }
     cabLight.pwm(cabLightsBrightness - crankingDim);
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
     headLightsSub(true, true, true, false);
@@ -4121,7 +4391,7 @@ void esc()
 #endif // --------------------------------------------
 
 #if not defined TRACKED_MODE && not defined AIRPLANE_MODE // No ESC control in TRACKED_MODE or in AIRPLANE_MODE
-  // Gear dependent ramp speed for acceleration & deceleration
+                                                          // Gear dependent ramp speed for acceleration & deceleration
 #if defined VIRTUAL_3_SPEED
   escRampTime = escRampTimeThirdGear * 10 / virtualManualGearRatio[selectedGear];
 
@@ -4203,6 +4473,7 @@ void esc()
     Serial.printf("motorDriverDuty:       %i\n", motorDriverDuty);
     Serial.printf("currentSpeed:          %i\n", currentSpeed);
     Serial.printf("speedLimit:            %i\n", speedLimit);
+    Serial.printf("escRampTime:           %i\n", escRampTime);
     Serial.printf("batteryProtection:     %s\n", batteryProtection ? "true" : "false");
     Serial.printf("batteryVoltage:        %.2f\n", batteryVoltage);
     Serial.printf("--------------------------------------\n");
@@ -4392,9 +4663,9 @@ void esc()
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
 
 #else // RZ 7886 motor driver mode ----
-    // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
-    // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
-    // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
+      // Note: according to the datasheet, the driver outputs are open, if both inputs are low. In order to achieve a good linearity and proportional brake,
+      // we need to make sure, that both inputs never are low @ the same time! If both inputs are high @ the same time, both outputs are low and connecting
+      // both motor outputs together. This will brake the motor. This state is also enabling drag brake in neutral.
 
     if (escSignal > 1500)
     { // Forward
@@ -4601,6 +4872,16 @@ void triggerHorn()
       winchRelease = true;
     else
       winchRelease = false;
+
+    // Winch speed (optional)
+    if (pulseWidth[4] > pulseMaxNeutral[4] + 120)
+      winchSpeed = map(pulseWidth[4], pulseMaxNeutral[4] + 120, pulseMax[4], 1, 100);
+    else if (pulseWidth[4] < pulseMinNeutral[4] - 120)
+      winchSpeed = map(pulseWidth[4], pulseMinNeutral[4] - 120, pulseMin[4], -1, -100);
+    else
+      winchSpeed = 0; // stop
+
+    winchSpeed = constrain(winchSpeed, -100, 100);
   }
 }
 
@@ -4674,7 +4955,7 @@ void triggerIndicators()
 #endif // End of manually triggered indicators
 
   // Indicator direction
-  if (!INDICATOR_DIR)
+  if (swap_L_R_indicators)
   {
     indicatorLon = L;
     indicatorRon = R;
@@ -4739,7 +5020,6 @@ void rcTriggerRead()
   static uint8_t volumeIndex = 0;
   if (driveState == 0)
   {
-    // if (functionR100d.toggleLong(pulseWidth[5], 2000)) masterVolume = masterVolumePercentage[1]; else masterVolume = masterVolumePercentage[0]; // Change volume between indoor and outdoor mode
     if (functionR100d.toggleLong(pulseWidth[5], 2000) != volumeStateLock)
     {
       if (volumeIndex < numberOfVolumeSteps - 1)
@@ -4801,6 +5081,12 @@ void rcTriggerRead()
   mode2 = mode2Trigger.onOff(pulseWidth[9], 1800, 1200); // CH9 (MODE2)
 
 #if defined MODE2_WINCH // Winch control mode
+  if (mode2)
+    winchEnabled = true;
+  else
+    winchEnabled = false;
+
+#elif defined MODE2_HYDRAULIC // Hydraulic control mode
   if (mode2)
     winchEnabled = true;
   else
@@ -4890,6 +5176,8 @@ void trailerPresenceSwitchRead()
 // =======================================================================================================
 //
 
+// Nice alternative color dashboard by Frevic: https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/post-490891
+
 /* Bugs TODO:
 
     Speed needle jump if shifting real 3 speed transmission. Better calibration needed
@@ -4957,99 +5245,102 @@ void updateDashboard()
   static uint16_t fuelNeedle = 0;
   static uint16_t adblueNeedle = 0;
 
-  // Start animation triggering
-  if ((engineState == STARTING || engineState == RUNNING) && !startAnimationFinished)
+  if (millis() - lastFrameTime > 40) // We need to save processing time!
   {
-    startAnimationFinished = engineStartAnimation();
-    return;
-  }
-  else if (engineState == OFF)
-  {
-    startAnimationFinished = false;
-  }
 
-  // Calculations
-  // RPM, fuel, adblue
-  if (engineState == STARTING || engineState == RUNNING)
-  {
-    rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
+    // Start animation triggering
+    if ((engineState == STARTING || engineState == RUNNING) && !startAnimationFinished)
+    {
+      startAnimationFinished = engineStartAnimation();
+      return;
+    }
+    else if (engineState == OFF)
+    {
+      startAnimationFinished = false;
+    }
+
+    // Calculations
+    // RPM, fuel, adblue
+    if (engineState == STARTING || engineState == RUNNING)
+    {
+      rpm = currentRpm * 450 / 500 + 50; // Idle rpm offset!
 
 #if defined BATTERY_PROTECTION
-    fuel = map_Generic<float, float, float, int16_t, int16_t>((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
-    if (fuel > 100)
-      fuel = 100;
-    if (fuel < 0)
-      fuel = 0;
-    if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE)
-      fuel = 0;
+      fuel = map_Generic<float, float, float, int16_t, int16_t>((batteryVoltage / numberOfCells), CUTOFF_VOLTAGE, FULLY_CHARGED_VOLTAGE, 0, 100);
+      if (fuel > 100)
+        fuel = 100;
+      if (fuel < 0)
+        fuel = 0;
+      if ((batteryVoltage / numberOfCells) < CUTOFF_VOLTAGE)
+        fuel = 0;
 #else
-    fuel = 90;
+      fuel = 90;
 #endif
-    adblue = 80;
-  }
-  else
-  {
-    rpm = currentRpm;
-    fuel = 0;
-    adblue = 0;
-  }
+      adblue = 80;
+    }
+    else
+    {
+      rpm = currentRpm;
+      fuel = 0;
+      adblue = 0;
+    }
 
-  // Speed
-  uint16_t speed;
+    // Speed
+    uint16_t speed;
 
 #if defined VIRTUAL_3_SPEED or defined VIRTUAL_16_SPEED_SEQUENTIAL or defined STEAM_LOCOMOTIVE_MODE
-  speed = currentSpeed; // for all transmissions
+    speed = currentSpeed; // for all transmissions
 #else
-  if (!automatic)
-    speed = currentSpeed * 100 / manualGearRatios[selectedGear - 1]; // Manual transmission
-  else
-    speed = currentSpeed; // Automatic transmission
-#endif
-
-  speed = map(speed, 0, RPM_MAX, 0, MAX_REAL_SPEED);
-
-  if (!gearUpShiftingInProgress && !gearDownShiftingInProgress)
-  { // avoid jumps between gear switches
-    dashboard.setSpeed(speed);
-  }
-
-  // Central display
-#if defined BATTERY_PROTECTION
-  dashboard.setVolt(batteryVoltage, CUTOFF_VOLTAGE * numberOfCells);
-#endif
-
-  if (neutralGear)
-  {
-    dashboard.setGear(0);
-  }
-  else if (escInReverse)
-  {
-    dashboard.setGear(-1);
-  }
-  else
-  {
     if (!automatic)
-      dashboard.setGear(selectedGear); // Manual transmission
+      speed = currentSpeed * 100 / manualGearRatios[selectedGear - 1]; // Manual transmission
     else
-      dashboard.setGear(selectedAutomaticGear); // Automatic transmission
-  }
-
-  // Indicator lamps
-#ifdef HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
-  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
-  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
-#else
-  dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
-  dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
+      speed = currentSpeed; // Automatic transmission
 #endif
-  dashboard.setLowBeamIndicator(lightsOn);
-  dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
-  dashboard.setFogLightIndicator(fogLightOn);
 
-  // Needles
-  if (millis() - lastFrameTime > 14)
-  {
+    speed = map(speed, 0, RPM_MAX, 0, MAX_REAL_SPEED);
 
+    if (!gearUpShiftingInProgress && !gearDownShiftingInProgress)
+    { // avoid jumps between gear switches
+      dashboard.setSpeed(speed);
+    }
+
+    // Central display
+#if defined BATTERY_PROTECTION
+    dashboard.setVolt(batteryVoltage, CUTOFF_VOLTAGE * numberOfCells);
+#endif
+
+    if (neutralGear)
+    {
+      dashboard.setGear(0);
+    }
+    else if (escInReverse)
+    {
+      dashboard.setGear(-1);
+    }
+    else
+    {
+      if (!automatic)
+        dashboard.setGear(selectedGear); // Manual transmission
+      else
+        dashboard.setGear(selectedAutomaticGear); // Automatic transmission
+    }
+
+    // Indicator lamps
+    if (hazardsWhile5thWheelUnlocked)
+    {
+      dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || unlock5thWheel || batteryProtection));
+      dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || unlock5thWheel || batteryProtection));
+    }
+    else
+    {
+      dashboard.setLeftIndicator(indicatorSoundOn && (indicatorLon || hazard || batteryProtection));
+      dashboard.setRightIndicator(indicatorSoundOn && (indicatorRon || hazard || batteryProtection));
+    }
+    dashboard.setLowBeamIndicator(lightsOn);
+    dashboard.setHighBeamIndicator(headLightsHighBeamOn || headLightsFlasherOn);
+    dashboard.setFogLightIndicator(fogLightOn);
+
+    // Needles
     if (engineState == RUNNING)
     {
       rpmNeedle = rpm; // No delay, if running!
@@ -5094,169 +5385,6 @@ void updateRGBLEDs()
   static bool unionJackLatch = false;
   static bool neopixelShow = false;
 
-#ifdef NEOPIXEL_DEMO // Demo -------------------------------------------------------------
-  if (millis() - lastNeopixelTime > 20)
-  { // Every 20 ms
-    lastNeopixelTime = millis();
-
-    uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
-
-    rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
-    rgbLEDs[1] = CRGB::Red;
-    rgbLEDs[2] = CRGB::White;
-    rgbLEDs[3] = CRGB::Yellow;
-    rgbLEDs[4] = CRGB::Blue;
-    rgbLEDs[5] = CRGB::Green;
-    neopixelShow = true;
-  }
-#endif
-
-#ifdef NEOPIXEL_KNIGHT_RIDER // Knight Rider scanner -------------------------------------
-  static int16_t increment = 1;
-  static int16_t counter = 0;
-
-  if (millis() - lastNeopixelTime > 91)
-  { // Every 91 ms (must match with sound)
-    lastNeopixelTime = millis();
-
-    if (sirenTrigger || knightRiderLatch)
-    { // Only active, if siren signal!
-      if (counter >= NEOPIXEL_COUNT - 1)
-        increment = -1;
-      if (counter <= 0)
-        increment = 1;
-      knightRiderLatch = (counter > 0);
-      rgbLEDs[counter] = CRGB::Red;
-      counter += increment;
-    }
-    else
-    {
-      counter = 0;
-    }
-    for (int i = 0; i < NEOPIXEL_COUNT; i++)
-    {
-      rgbLEDs[i].nscale8(160); // 160
-    }
-    neopixelShow = true;
-  }
-#endif
-
-#ifdef NEOPIXEL_BLUELIGHT // Bluelight ----------------------------------------------------
-  static uint32_t lastNeopixelBluelightTime = millis();
-
-  if (millis() - lastNeopixelTime > 20)
-  { // Every 20 ms
-    lastNeopixelTime = millis();
-    if (blueLightTrigger)
-    {
-      if (millis() - lastNeopixelBluelightTime > 0)
-      { // Step 1
-        rgbLEDs[0] = CRGB::Red;
-        rgbLEDs[1] = CRGB::Blue;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Blue;
-        rgbLEDs[6] = CRGB::Red;
-        rgbLEDs[7] = CRGB::Blue;
-      }
-      if (millis() - lastNeopixelBluelightTime > 160)
-      { // Step 2
-        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
-      }
-      if (millis() - lastNeopixelBluelightTime > 300)
-      { // Step 3
-        rgbLEDs[0] = CRGB::Blue;
-        rgbLEDs[1] = CRGB::Red;
-        rgbLEDs[3] = CRGB::Blue;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[6] = CRGB::Blue;
-        rgbLEDs[7] = CRGB::Red;
-      }
-      if (millis() - lastNeopixelBluelightTime > 460)
-      { // Step 4
-        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
-      }
-      if (millis() - lastNeopixelBluelightTime > 600)
-      { // Step 5
-        lastNeopixelBluelightTime = millis();
-      }
-    }
-    else
-      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black); // Off
-    neopixelShow = true;
-  }
-#endif
-
-#ifdef NEOPIXEL_UNION_JACK // United Kingdom animation ---------------------------------------
-  static uint32_t lastNeopixelUnionJackTime = millis();
-  static uint8_t animationStep = 1;
-
-  if (sirenTrigger || unionJackLatch)
-  {
-    unionJackLatch = true;
-    if (millis() - lastNeopixelUnionJackTime > 789)
-    { // Every 789 ms (must match with sound "BritishNationalAnthemSiren.h")
-      lastNeopixelUnionJackTime = millis();
-      if (animationStep == 1 || animationStep == 9)
-      { // Step 1 or 9
-        rgbLEDs[0] = CRGB::Red;
-        rgbLEDs[1] = CRGB::Blue;
-        rgbLEDs[2] = CRGB::Blue;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Blue;
-        rgbLEDs[6] = CRGB::Blue;
-        rgbLEDs[7] = CRGB::Red;
-      }
-      if (animationStep == 2 || animationStep == 8)
-      { // Step 2 or 8
-        rgbLEDs[0] = CRGB::White;
-        rgbLEDs[1] = CRGB::Red;
-        rgbLEDs[2] = CRGB::Blue;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Blue;
-        rgbLEDs[6] = CRGB::Red;
-        rgbLEDs[7] = CRGB::White;
-      }
-      if (animationStep == 3 || animationStep == 7)
-      { // Step 3 or 7
-        rgbLEDs[0] = CRGB::Blue;
-        rgbLEDs[1] = CRGB::White;
-        rgbLEDs[2] = CRGB::Red;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Red;
-        rgbLEDs[6] = CRGB::White;
-        rgbLEDs[7] = CRGB::Blue;
-      }
-      if (animationStep == 4 || animationStep == 5 || animationStep == 6)
-      { // Step 4
-        rgbLEDs[0] = CRGB::Red;
-        rgbLEDs[1] = CRGB::Red;
-        rgbLEDs[2] = CRGB::Red;
-        rgbLEDs[3] = CRGB::Red;
-        rgbLEDs[4] = CRGB::Red;
-        rgbLEDs[5] = CRGB::Red;
-        rgbLEDs[6] = CRGB::Red;
-        rgbLEDs[7] = CRGB::Red;
-      }
-      if (animationStep == 10)
-      { // Step 10
-        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
-        animationStep = 0;
-        unionJackLatch = false;
-      }
-      animationStep++;
-      neopixelShow = true;
-    }
-  }
-  else
-  {
-    animationStep = 1;
-    lastNeopixelUnionJackTime = millis();
-  }
-#endif
-
 #ifdef NEOPIXEL_HIGHBEAM // Neopixel bar is used as high beam as well --------------------
   static uint32_t lastNeopixelHighbeamTime = millis();
   if (millis() - lastNeopixelHighbeamTime > 20)
@@ -5274,36 +5402,203 @@ void updateRGBLEDs()
   }
 #endif
 
-#ifdef NEOPIXEL_B33LZ3BUB // B33lz3bub Austria cab light ---------------------------------
-  if (millis() - lastNeopixelTime > 20)
-  { // Every 20 ms
-    lastNeopixelTime = millis();
+  switch (neopixelMode)
+  {
 
-    uint8_t hue = map(pulseWidth[7], 1000, 2000, 0, 255); // map pulseWidth[7] from poti VRA to hue
-    if (hue <= 20)
-    { // LEDs off
-      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+  case 1: // Demo -------------------------------------------------------------
+    if (millis() - lastNeopixelTime > 20)
+    { // Every 20 ms
+      lastNeopixelTime = millis();
+
+      uint8_t hue = map(pulseWidth[1], 1000, 2000, 0, 255);
+
+      rgbLEDs[0] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+      rgbLEDs[1] = CRGB::Red;
+      rgbLEDs[2] = CRGB::White;
+      rgbLEDs[3] = CRGB::Yellow;
+      rgbLEDs[4] = CRGB::Blue;
+      rgbLEDs[5] = CRGB::Green;
+      neopixelShow = true;
     }
-    else if (hue > 20 && hue < 235)
-    { // different colors depending on potentiometer VRA CH7
+    break;
+
+  case 2: // Knight Rider scanner -------------------------------------
+    static int16_t increment = 1;
+    static int16_t counter = 0;
+
+    if (millis() - lastNeopixelTime > 91)
+    { // Every 91 ms (must match with sound)
+      lastNeopixelTime = millis();
+
+      if (sirenTrigger || knightRiderLatch)
+      { // Only active, if siren signal!
+        if (counter >= NEOPIXEL_COUNT - 1)
+          increment = -1;
+        if (counter <= 0)
+          increment = 1;
+        knightRiderLatch = (counter > 0);
+        rgbLEDs[counter] = CRGB::Red;
+        counter += increment;
+      }
+      else
+      {
+        counter = 0;
+      }
       for (int i = 0; i < NEOPIXEL_COUNT; i++)
       {
-        rgbLEDs[i] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+        rgbLEDs[i].nscale8(160); // 160
       }
+      neopixelShow = true;
     }
-    else if (hue >= 235 && hue < 250)
-    { // colors red-white-red -> flag color of Austria ;-)
-      rgbLEDs[0] = CRGB::Red;
-      rgbLEDs[1] = CRGB::White;
-      rgbLEDs[2] = CRGB::Red;
+    break;
+
+  case 3: // Bluelight ----------------------------------------------------
+    static uint32_t lastNeopixelBluelightTime = millis();
+
+    if (millis() - lastNeopixelTime > 20)
+    { // Every 20 ms
+      lastNeopixelTime = millis();
+      if (blueLightTrigger)
+      {
+        if (millis() - lastNeopixelBluelightTime > 0)
+        { // Step 1
+          rgbLEDs[0] = CRGB::Red;
+          rgbLEDs[1] = CRGB::Blue;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Blue;
+          rgbLEDs[6] = CRGB::Red;
+          rgbLEDs[7] = CRGB::Blue;
+        }
+        if (millis() - lastNeopixelBluelightTime > 160)
+        { // Step 2
+          fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+        }
+        if (millis() - lastNeopixelBluelightTime > 300)
+        { // Step 3
+          rgbLEDs[0] = CRGB::Blue;
+          rgbLEDs[1] = CRGB::Red;
+          rgbLEDs[3] = CRGB::Blue;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[6] = CRGB::Blue;
+          rgbLEDs[7] = CRGB::Red;
+        }
+        if (millis() - lastNeopixelBluelightTime > 460)
+        { // Step 4
+          fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+        }
+        if (millis() - lastNeopixelBluelightTime > 600)
+        { // Step 5
+          lastNeopixelBluelightTime = millis();
+        }
+      }
+      else
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black); // Off
+      neopixelShow = true;
+    }
+    break;
+
+  case 4: // United Kingdom animation ---------------------------------------
+    static uint32_t lastNeopixelUnionJackTime = millis();
+    static uint8_t animationStep = 1;
+
+    if (sirenTrigger || unionJackLatch)
+    {
+      unionJackLatch = true;
+      if (millis() - lastNeopixelUnionJackTime > 789)
+      { // Every 789 ms (must match with sound "BritishNationalAnthemSiren.h")
+        lastNeopixelUnionJackTime = millis();
+        if (animationStep == 1 || animationStep == 9)
+        { // Step 1 or 9
+          rgbLEDs[0] = CRGB::Red;
+          rgbLEDs[1] = CRGB::Blue;
+          rgbLEDs[2] = CRGB::Blue;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Blue;
+          rgbLEDs[6] = CRGB::Blue;
+          rgbLEDs[7] = CRGB::Red;
+        }
+        if (animationStep == 2 || animationStep == 8)
+        { // Step 2 or 8
+          rgbLEDs[0] = CRGB::White;
+          rgbLEDs[1] = CRGB::Red;
+          rgbLEDs[2] = CRGB::Blue;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Blue;
+          rgbLEDs[6] = CRGB::Red;
+          rgbLEDs[7] = CRGB::White;
+        }
+        if (animationStep == 3 || animationStep == 7)
+        { // Step 3 or 7
+          rgbLEDs[0] = CRGB::Blue;
+          rgbLEDs[1] = CRGB::White;
+          rgbLEDs[2] = CRGB::Red;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Red;
+          rgbLEDs[6] = CRGB::White;
+          rgbLEDs[7] = CRGB::Blue;
+        }
+        if (animationStep == 4 || animationStep == 5 || animationStep == 6)
+        { // Step 4
+          rgbLEDs[0] = CRGB::Red;
+          rgbLEDs[1] = CRGB::Red;
+          rgbLEDs[2] = CRGB::Red;
+          rgbLEDs[3] = CRGB::Red;
+          rgbLEDs[4] = CRGB::Red;
+          rgbLEDs[5] = CRGB::Red;
+          rgbLEDs[6] = CRGB::Red;
+          rgbLEDs[7] = CRGB::Red;
+        }
+        if (animationStep == 10)
+        { // Step 10
+          fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+          animationStep = 0;
+          unionJackLatch = false;
+        }
+        animationStep++;
+        neopixelShow = true;
+      }
     }
     else
     {
-      fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White); // only white
+      animationStep = 1;
+      lastNeopixelUnionJackTime = millis();
     }
-    neopixelShow = true;
-  }
-#endif
+    break;
+
+  case 5: // B33lz3bub Austria cab light ---------------------------------
+    if (millis() - lastNeopixelTime > 20)
+    { // Every 20 ms
+      lastNeopixelTime = millis();
+
+      uint8_t hue = map(pulseWidth[7], 1000, 2000, 0, 255); // map pulseWidth[7] from poti VRA to hue
+      if (hue <= 20)
+      { // LEDs off
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::Black);
+      }
+      else if (hue > 20 && hue < 235)
+      { // different colors depending on potentiometer VRA CH7
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+        {
+          rgbLEDs[i] = CHSV(hue, hue < 255 ? 255 : 0, hue > 0 ? 255 : 0);
+        }
+      }
+      else if (hue >= 235 && hue < 250)
+      { // colors red-white-red -> flag color of Austria ;-)
+        rgbLEDs[0] = CRGB::Red;
+        rgbLEDs[1] = CRGB::White;
+        rgbLEDs[2] = CRGB::Red;
+      }
+      else
+      {
+        fill_solid(rgbLEDs, NEOPIXEL_COUNT, CRGB::White); // only white
+      }
+      neopixelShow = true;
+    }
+    break;
+  } // End of switch case -----
 
   // Neopixel refresh for all options above ------------------------------------------------
   static uint32_t lastNeopixelRefreshTime = millis();
@@ -5439,6 +5734,46 @@ void excavatorControl()
       lastDipperPulseWidth = pulseWidth[2];
     }
   }
+}
+
+//
+// =======================================================================================================
+// LOADER CONTROL
+// =======================================================================================================
+//
+
+void loaderControl()
+{
+
+  // Calculate pump rpm while lifting
+
+// Boom (upwards only) ---
+    if (pulseWidth[2] < pulseMinNeutral[2])
+      targetHydraulicRpm[2] = map(pulseWidth[2], pulseMinNeutral[2], (pulseMin[2]), 0, 300);
+    else
+      targetHydraulicRpm[2] = 0;
+
+    // Bucket (upwards only) ---
+    if (pulseWidth[1] < pulseMinNeutral[1])
+      targetHydraulicRpm[1] = map(pulseWidth[1], pulseMinNeutral[1], (pulseMin[1]), 0, 150);
+    else
+      targetHydraulicRpm[1] = 0;
+
+    targetHydraulicRpm[0] = targetHydraulicRpm[1] + targetHydraulicRpm[2];
+    //Serial.println(targetHydraulicRpm[0]);
+
+
+
+
+    // Calculate zylinder speed dependent hydraulic flow volume ----
+    // Boom (downwards) ---
+    if (pulseWidth[2] > pulseMaxNeutral[2])
+      hydraulicFlowVolume = map(pulseWidth[2], pulseMaxNeutral[2], (pulseMax[2] - 200), 0, 100);
+    else
+      hydraulicFlowVolume = 0;
+
+    
+  
 }
 
 //
@@ -5611,6 +5946,11 @@ void loop()
     excavatorControl();
 #endif
 
+// Excavator specific controls
+#if defined LOADER_MODE
+    loaderControl();
+#endif
+
     // Steam locomotive specific controls
 #if defined STEAM_LOCOMOTIVE_MODE
     steamLocomotiveControl();
@@ -5638,6 +5978,9 @@ void loop()
 
   // Configuration website
   webInterface();
+
+  // Serial configuration comamnds
+  serialInterface();
 
   // Core ID debug
 #if defined CORE_DEBUG
