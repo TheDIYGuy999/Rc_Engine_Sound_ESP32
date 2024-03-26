@@ -1,11 +1,12 @@
 Copy of PCB Thru_Hole_30pin but with extra features:
 <ul>
   <li>7805 changed over to low drop regulater https://de.aliexpress.com/item/4000016739581.html?spm=a2g0o.productlist.main.1.2d436fe9KZS2Ma&algo_pvid=2b27d062-deea-4ad4-add2-fd247821c9de&algo_exp_id=2b27d062-deea-4ad4-add2-fd247821c9de-0&pdp_npi=4%40dis%21EUR%211.14%211.06%21%21%211.21%211.12%21%402103890117114643773835789e466c%2112000034624191356%21sea%21DE%21867780035%21&curPageLogUid=2BaKcXpoZuc1&utparam-url=scene%3Asearch%7Cquery_from%3A</li>
-  <li>Connector for LCD connection</li>
+  <li>Connector for LCD ST7735 80x160 https://de.aliexpress.com/item/1005005621788608.html?spm=a2g0o.productlist.main.7.179a712eAB0iyi&algo_pvid=bd0fb4fa-da58-473b-9568-d65965fa896b&algo_exp_id=bd0fb4fa-da58-473b-9568-d65965fa896b-3&pdp_npi=4%40dis%21EUR%213.05%211.77%21%21%2123.42%2113.58%21%402103893b17114674266914920eac9d%2112000033779985245%21sea%21DE%21867780035%21&curPageLogUid=Sw0IByL1IBbQ&utparam-url=scene%3Asearch%7Cquery_from%3A</li>
   <li>Integartion of RZ7886 ESC (https://de.aliexpress.com/item/1005003028614584.html?spm=a2g0o.productlist.main.23.6b167954EQz0zJ&algo_pvid=f2ff96c7-d6ff-486c-8097-8f27a36713e5&algo_exp_id=f2ff96c7-d6ff-486c-8097-8f27a36713e5-3&pdp_npi=4%40dis%21EUR%210.53%210.53%21%21%210.56%210.56%21%402103849717114650681307173e4067%2112000033978164313%21sea%21DE%21867780035%21&curPageLogUid=EAmN992JWTgq&utparam-url=scene%3Asearch%7Cquery_from%3A) for very low current devices</li>
   <li>Solder Jumper for using VBAT as 5V Supply for LEDs and Soundamplifire</li>
   <li>Solder Jumper for using VBAT as Supply for Servos,ESC ...</li>
   <li>Connector for 2.4GHz reciever for further inclusion of RC RCV</li>
+  <li>HW Support to use high current esc bts7960 https://de.aliexpress.com/item/1005006570513212.html?spm=a2g0o.cart.0.0.37074ae4aM6l7a&mp=1&gatewayAdapt=glo2deu</li>
 </ul>
 
 Size is the same es Thru_Hole_30pin PCB
