@@ -16,3 +16,8 @@ Planed to use this PCB as
   <li>2.4GHz RC reciever with original funktionality integrated using NRF24L01 DIP https://de.aliexpress.com/item/1005005649263594.html?spm=a2g0o.productlist.main.7.a5e2643bjxxtaV&algo_pvid=e0eeb384-fe82-4862-a79e-41297eed1d95&algo_exp_id=e0eeb384-fe82-4862-a79e-41297eed1d95-3&pdp_npi=4%40dis%21EUR%213.45%211.00%21%21%2126.48%217.68%21%402103854017114653699303688ead28%2112000033919080500%21sea%21DE%21867780035%21&curPageLogUid=kKtkLXyyLMde&utparam-url=scene%3Asearch%7Cquery_from%3A </li>
   <li>Bluetooth Reciever for PS3 Gamepad with original funktionality https://de.aliexpress.com/item/1005006138816464.html?spm=a2g0o.productlist.main.15.55e86904qWwMo7&algo_pvid=495b5ba8-dcce-4c50-a277-ee9e93ce0a09&algo_exp_id=495b5ba8-dcce-4c50-a277-ee9e93ce0a09-7&pdp_npi=4%40dis%21EUR%2120.09%215.83%21%21%21154.05%2144.67%21%402103854017114657626535196ead28%2112000035934788954%21sea%21DE%21867780035%21&curPageLogUid=JMOOHLxTPgHf&utparam-url=scene%3Asearch%7Cquery_from%3A</li>
 </ul>
+
+
+PCB_RC_Engine_Sound_ESP32.svg picture of the PCB
+PCB_RC_Engine_Sound_ESP32.json for EASYEDA.com import if you like to modify PCB
+PCB_RC_Engine_Sound_ESP32.zip gerber file of the PCB for PCB maufacturing for example at JLCPCB.com
