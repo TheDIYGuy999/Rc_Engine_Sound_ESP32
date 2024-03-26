@@ -19,6 +19,6 @@ Planed to use this PCB as
 </ul>
 
 
-PCB_RC_Engine_Sound_ESP32.svg picture of the PCB
-PCB_RC_Engine_Sound_ESP32.json for EASYEDA.com import if you like to modify PCB
+PCB_RC_Engine_Sound_ESP32.svg picture of the PCB<p>
+PCB_RC_Engine_Sound_ESP32.json for EASYEDA.com import if you like to modify PCB<p>
 PCB_RC_Engine_Sound_ESP32.zip gerber file of the PCB for PCB maufacturing for example at JLCPCB.com
