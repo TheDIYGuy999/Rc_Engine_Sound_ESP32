@@ -96,7 +96,7 @@ uint16_t brakeMargin = 10; // For RZ7886 motor driver and 370 motor = 10, otherw
 // - Modellbau-Regler.de AS-12/6RW EASY ESC = 600
 // - Meccano Dumper = 500
 // - Volvo L120H loader = 500
-uint16_t escPulseSpan = 600; // 500 = full ESC power available, 1000 half ESC power available etc.
+uint16_t escPulseSpan = 500; // 500 = full ESC power available, 1000 half ESC power available etc.
 
 // Additional takeoff punch:
 // Usually 0. Enlarge it, if your motor is too weak around neutral.
@@ -129,7 +129,7 @@ uint16_t globalAccelerationPercentage = 100; // about 100 - 200% (200 for Jeep, 
 
 /* Battery low discharge protection (only for boards with voltage divider resistors):
  *  IMPORTANT: Enter used resistor values in Ohms (Ω) and THEN adjust DIODE_DROP, until your readings match the actual battery voltage! */
-#define BATTERY_PROTECTION               // This will disable the ESC output, if the battery cutout voltage is reached. 2 fast flashes = battery error!
+// #define BATTERY_PROTECTION               // This will disable the ESC output, if the battery cutout voltage is reached. 2 fast flashes = battery error!
 const float CUTOFF_VOLTAGE = 3.3;        // Usually 3.3 V per LiPo cell. NEVER below 3.2 V!
 const float FULLY_CHARGED_VOLTAGE = 4.2; // Usually 4.2 V per LiPo cell, NEVER above!
 const float RECOVERY_HYSTERESIS = 0.2;   // around 0.2 V

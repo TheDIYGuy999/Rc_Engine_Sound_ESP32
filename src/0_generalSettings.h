@@ -7,7 +7,7 @@
  */
 
 // Hardware settings -------------------------------------------------------------------------------------------------------------------------------
-//#define WEMOS_D1_MINI_ESP32 // Software is running on ESP32 RC Trailer controller, if defined (Headlights on GPIO 22 instead of 3, no cab lights support)
+#define WEMOS_D1_MINI_ESP32 // Software is running on ESP32 RC Trailer controller, if defined (Headlights on GPIO 22 instead of 3, no cab lights support)
 
 // Debug settings -----------------------------------------------------------------------------------------------------------------------------------
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!

@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.13.0"; // Software revision.
+char codeVersion[] = "9.14.0-b1"; // Software revision.
 
 //
 // =======================================================================================================

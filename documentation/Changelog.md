@@ -4,7 +4,10 @@
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
 - Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
 
-### 9.13.0-b7:
+### 9.14.0-b1
+- first CAT 730 implementation
+
+### 9.13.0:
 - Defines removed: HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
 - Variables added (adjustable on 192.168.4.1): hazardsWhile5thWheelUnlocked
 - Neopixel animation mode selectable in dropdown menu on 192.168.4.1

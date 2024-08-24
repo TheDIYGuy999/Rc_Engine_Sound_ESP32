@@ -58,7 +58,10 @@
 //  #include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper
 
  // Loaders -------
-  #include "vehicles/VolvoL120H.h"
+// #include "vehicles/VolvoL120H.h"
+
+// Articulated Dump Trucks -------
+#include "vehicles/CAT730.h" // Caterpillar 730 heavy dump truck
 
 // US motorcycles --------
 // #include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle
