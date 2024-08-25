@@ -4,6 +4,9 @@
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
 - Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
 
+### 9.14.0-b2
+- CAT 730 now with dump hydraulic sound
+
 ### 9.14.0-b1
 - first CAT 730 implementation
 

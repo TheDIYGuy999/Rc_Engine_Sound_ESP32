@@ -154,7 +154,7 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 #endif
 
-// Flysky FS-i6S remote configuration profile ---------------------------------------------------------------------------------------------------
+// Flysky FS-i6S remote configuration profile (CAT 730) --------------------------------------------------------------------------------------------
 #ifdef FLYSKY_FS_I6S
 
 // Channel assignment (use NONE for non existing channels!)
@@ -165,8 +165,8 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define HORN 6               // CH4 horn and bluelight / siren
 #define FUNCTION_R 2         // CH5 jake brake, high / low beam, headlight flasher, engine on / off
 #define FUNCTION_L 4         // CH6 indicators, hazards
-#define POT2 NONE            // CH7 pot 2
-#define MODE1 NONE           // CH8 mode 1 switch
+#define POT2 7               // CH7 pot 2 dump bed
+#define MODE1 8              // CH8 mode 1 switch
 #define MODE2 NONE           // CH9 mode 2 switch
 #define MOMENTARY1 NONE      // CH10
 #define HAZARDS NONE         // CH11

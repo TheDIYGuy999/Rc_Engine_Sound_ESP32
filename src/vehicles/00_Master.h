@@ -299,3 +299,4 @@ const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
+// #define DUMP_BED // Vehicle with hydraulic dump bed (CAT 730 for example)
