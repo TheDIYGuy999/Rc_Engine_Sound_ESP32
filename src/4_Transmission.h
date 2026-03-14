@@ -30,7 +30,7 @@ uint16_t automaticReverseAccelerationPercentage = 100;
 uint16_t lowRangePercentage = 58; // WPL 2 speed ratios = 29:1, 17:1 = 58% in low range. You may want to change this for other 2 speed transmissions
 
 // Transmission controls options ===========================================================================================================
-// #define SEMI_AUTOMATIC This will simulate a semi automatic transmission. Shifting is not controlled by the 3 position switch in this mode!
+// #define SEMI_AUTOMATIC // This will simulate a semi automatic transmission. Shifting is not controlled by the 3 position switch in this mode!
 // #define SEMI_AUTOMATIC // Works for VIRTUAL_3_SPEED or real 3 speed transmission. Don't select this @ the same time as VIRTUAL_16_SPEED_SEQUENTIAL
 
 // #define MODE1_SHIFTING The 2 speed transmission is shifted by the "Mode 1" button instead of the 3 position switch.
@@ -45,6 +45,6 @@ uint16_t lowRangePercentage = 58; // WPL 2 speed ratios = 29:1, 17:1 = 58% in lo
 uint16_t maxClutchSlippingRpm = 250; // The clutch will never slip above this limit! (about 250) 500 for vehicles like locomotives
 // and the Kirovets tractor with hydrostatic or electric drive! Mainly required for "VIRTUAL_3_SPEED" mode
 
-// #define DOUBLE_CLUTCH // Double-clutch (Zwischengas) Enable this for older manual transmission trucks without synchronised gears
+ #define DOUBLE_CLUTCH // Double-clutch (Zwischengas) Enable this for older manual transmission trucks without synchronised gears
 
 // #define HIGH_SLIPPINGPOINT // Clutch will engage @ higher RPM, if defined. Comment this out for heavy vehicles like semi trucks

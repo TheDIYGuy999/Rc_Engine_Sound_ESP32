@@ -139,10 +139,32 @@ volatile int reversingVolumePercentage = 50; // Adjust the reversing sound volum
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------
-volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
+volatile int indicatorVolumePercentage = 60; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
+
+// Choose excavator specific options (use #ifdef FLYSKY_FS_I6S_EXCAVATOR remote profile) ---------
+//#define EXCAVATOR_MODE // The sound controller is running in ecxavator mode!
+//#define LOADER_MODE // The sound controller is running in loader mode!
+
+// Choose the hydraulic pump sound (uncomment the one you want) --------
+volatile int hydraulicPumpVolumePercentage = 50; // Adjust the volume (usually = 120%)
+//#include "sounds/Caterpillar323Hydraulic.h" // Caterpillar 323 excavator
+#include "sounds/Caterpillar323Hydraulic2.h" // Caterpillar 323 excavator (slowed down by factor 2)
+
+// Choose the hydraulic fluid flow sound (uncomment the one you want) --------
+volatile int hydraulicFlowVolumePercentage = 8; // Adjust the volume (usually = 20%)
+//#include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
+#include "sounds/hydraulicHiss.h" // Caterpillar 323 excavator
+
+// Choose the track rattle sound (uncomment the one you want) --------
+volatile int trackRattleVolumePercentage = 150; // Adjust the volume (usually = 150%)
+#include "sounds/Caterpillar323TrackRattle.h" // Caterpillar 323 excavator
+
+// Choose the bucket rattle sound (uncomment the one you want) --------
+volatile int bucketRattleVolumePercentage = 160; // Adjust the volume (usually = 160%)
+#include "sounds/Caterpillar323BucketRattle.h" // Caterpillar 323 excavator
 
 // Choose the light options --------
 //#define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
@@ -176,3 +198,4 @@ const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
+#define DUMP_BED // Vehicle with hydraulic dump bed (CAT 730 for example)

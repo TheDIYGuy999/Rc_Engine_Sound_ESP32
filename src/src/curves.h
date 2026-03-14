@@ -32,6 +32,10 @@ int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 30, 16, 10, 7}; // Overdriv
 uint8_t torqueconverterSlipPercentage = 100;
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 25, 15, 10}; // GM Turbo HydraMatic 400
 
+#elif NumberOfAutomaticGears == 2
+uint8_t torqueconverterSlipPercentage = 100;
+int32_t gearRatio[NumberOfAutomaticGears + 1] = {15, 15, 10}; // for slow, heavy construction equipment with 2 forward gears
+
 #else
 uint8_t torqueconverterSlipPercentage = 100;
 int32_t gearRatio[NumberOfAutomaticGears + 1] = {10, 10}; // Construction vehicles with hydrostatic drive and just one forward gear
@@ -71,8 +75,7 @@ float curveLinear[][2] = {
     {800, 500},
     {900, 500},
     {1000, 500},
-    {1100, 500}
-};
+    {1100, 500}};
 
 #else // Curve for heavy trucks (low clutch engaging rpm)
 float curveLinear[][2] = {
@@ -89,8 +92,7 @@ float curveLinear[][2] = {
     {800, 500},
     {900, 500},
     {1000, 500},
-    {1100, 500}
-};
+    {1100, 500}};
 #endif
 
 //
@@ -177,21 +179,104 @@ float curveExponentialThrottle[][2] = {
 
 //
 // =======================================================================================================
+// ARRAY FOR HYDRAULIC VALVES WITH HUGE DEAD ZONE
+// =======================================================================================================
+//
+
+// See: https://www.youtube.com/watch?v=woLxibQ7H88&list=LL&index=1&t=1523s
+// and servoCurves.xlsx
+
+float curveHydraulicValve[][2] = {
+
+    {0, 0}, // {input value, output value}
+    {1000, 1000},
+    {1100, 1025},
+    {1200, 1050},
+    {1300, 1075},
+    {1400, 1100},
+    {1500, 1500}, // Neutral
+    {1600, 1900},
+    {1700, 1925},
+    {1800, 1950},
+    {1900, 1975},
+    {2000, 2000},
+    {3000, 3000} // overload range
+
+    /*
+        {0, 0}, // {input value, output value}
+        {1000, 1000},
+        {1100, 1050},
+        {1200, 1100},
+        {1300, 1150},
+        {1400, 1200},
+        {1500, 1500}, // Neutral
+        {1600, 1800},
+        {1700, 1850},
+        {1800, 1900},
+        {1900, 1950},
+        {2000, 2000},
+        {3000, 3000} // overload range
+      */
+};
+
+//
+// =======================================================================================================
+// ARRAY FOR HYDRAULIC PUMP MIXER
+// =======================================================================================================
+//
+
+// See: https://www.youtube.com/watch?v=woLxibQ7H88&list=LL&index=1&t=1523s
+// and servoCurves.xlsx
+
+float curveHydraulicPump[][2] = {
+
+    {0, 2000}, // {input value, output value}
+    {1000, 2000},
+    {1450, 1700},
+    {1500, 1500}, // Neutral
+    {1550, 1700},
+    {2000, 2000},
+    {3000, 2000} // overload range
+};
+
+//
+// =======================================================================================================
 // ARRAY INTERPOLATION FUNCTION
 // =======================================================================================================
 //
 
 // Credit: http://interface.khm.de/index.php/lab/interfaces-advanced/nonlinear-mapping/
 
-  uint32_t reMap(float pts[][2], uint32_t input) {
+uint32_t reMap(float pts[][2], uint32_t input)
+{
   uint32_t rr = 0;
   float mm = 0;
 
-  for (uint8_t nn = 0; nn < 13; nn++) {
-    if (input >= pts[nn][0] && input <= pts[nn + 1][0]) {
-      mm = ( pts[nn][1] - pts[nn + 1][1] ) / ( pts[nn][0] - pts[nn + 1][0] );
+  for (uint8_t nn = 0; nn < 13; nn++)
+  {
+    if (input >= pts[nn][0] && input <= pts[nn + 1][0])
+    {
+      mm = (pts[nn][1] - pts[nn + 1][1]) / (pts[nn][0] - pts[nn + 1][0]);
       mm = mm * (input - pts[nn][0]);
-      mm = mm +  pts[nn][1];
+      mm = mm + pts[nn][1];
+      rr = mm;
+    }
+  }
+  return (rr);
+}
+
+uint32_t reMap7(float pts[][2], uint32_t input)
+{
+  uint32_t rr = 0;
+  float mm = 0;
+
+  for (uint8_t nn = 0; nn < 7; nn++)
+  {
+    if (input >= pts[nn][0] && input <= pts[nn + 1][0])
+    {
+      mm = (pts[nn][1] - pts[nn + 1][1]) / (pts[nn][0] - pts[nn + 1][0]);
+      mm = mm * (input - pts[nn][0]);
+      mm = mm + pts[nn][1];
       rr = mm;
     }
   }

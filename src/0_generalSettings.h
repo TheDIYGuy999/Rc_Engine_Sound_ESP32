@@ -7,7 +7,7 @@
  */
 
 // Hardware settings -------------------------------------------------------------------------------------------------------------------------------
-//#define WEMOS_D1_MINI_ESP32 // Software is running on ESP32 RC Trailer controller, if defined (Headlights on GPIO 22 instead of 3, no cab lights support)
+// #define WEMOS_D1_MINI_ESP32 // Software is running on ESP32 RC Trailer controller, if defined (Headlights on GPIO 22 instead of 3, no cab lights support)
 
 // Debug settings -----------------------------------------------------------------------------------------------------------------------------------
 // DEBUG options can slow down the playback loop! Only uncomment them for debugging, may slow down your system!
@@ -27,7 +27,7 @@ uint8_t eeprom_id = 5; // change this id (between 1 and 255, compare with serial
 // only define it in order to clean up junk from old projects in your EEPROM
 
 // Wireless settings -------------------------------------------------------------------------------------------------------------------------------
-//#define ENABLE_WIRELESS // Define this, if you want to use an ESP-Now wireless trailer or the WiFi configuration via 192.168.4.1
+#define ENABLE_WIRELESS // Define this, if you want to use an ESP-Now wireless trailer or the WiFi configuration via 192.168.4.1
 
 /* Wifi & ESP-Now and ESP-Now transmission power: less power = less speaker noise & longer battery life. Valid options are:
 WIFI_POWER_19_5dBm = 78     // full power

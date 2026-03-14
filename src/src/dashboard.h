@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include <TFT_eSPI.h> // https://github.com/Bodmer/TFT_eSPI
 
-#define FREVIC_DASHBOARD // Define this, if you awant to use the nice alternative dashboard from Frevic
+//#define FREVIC_DASHBOARD // Define this, if you awant to use the nice alternative dashboard from Frevic
 
 #ifndef FREVIC_DASHBOARD // Standard dashboard *********************************************************************************************************************
 /*

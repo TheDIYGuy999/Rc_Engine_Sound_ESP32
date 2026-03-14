@@ -11,7 +11,7 @@
  * modify the Setup43_ST7735_ESP32_80x160.h file if you use other pins for the display connection
  */
 
-// #define SPI_DASHBOARD // A 0.96" SPI LCD is used as dashboard: https://www.ebay.ch/itm/174458054566?hash=item289e82a7a6:g:LpAAAOSwtL1fdDtI
+ // #define SPI_DASHBOARD // A 0.96" SPI LCD is used as dashboard: https://www.ebay.ch/itm/174458054566?hash=item289e82a7a6:g:LpAAAOSwtL1fdDtI
  //#define FREVIC_DASHBOARD // Alternative Dashboard from Vrevic (for now you need to define it in src/dashboard.h): https://www.rc-modellbau-portal.de/index.php?threads/esp32-arduino-rc-sound-und-licht-controller.7183/post-490891
 /* WARNING:
  * Pins 18 (SCL), 19 (DC), 21 (RES) & 23 (SDA) are used for the dashboard in this case!
@@ -19,7 +19,7 @@
  * Shaker, sidelights and both beacon flashers will not work!
  */
 
-uint8_t dashRotation = 3; // 3 = normal, 1 = upside down
+uint8_t dashRotation = 1; // 3 = normal, 1 = upside down
 
 #define MAX_REAL_SPEED 110                 // max speed in km/h to show on the dashboard
 int manualGearRatios[3] = {305, 165, 100}; // TAMIYA gear ratios: 1st 1:32.49, 2nd 1:17.66, 3rd 1:10.66, value div 100 (used for real shifting transmissions only!)

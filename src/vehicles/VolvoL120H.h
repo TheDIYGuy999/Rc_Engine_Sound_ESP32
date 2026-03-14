@@ -52,7 +52,7 @@ volatile int dieselKnockAdaptiveVolumePercentage = 50; // Adjust the Diesel knoc
 #include "sounds/L120H_BaumaKnock.h" // Volvo L120H loader
 
 // Adjust the additional turbo sound (set "turboVolumePercentage" to "0", if you don't want it) --------
-volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%) 15
+volatile int turboVolumePercentage = 0; // Adjust the turbo volume (usually = 70%) 0
 volatile int turboIdleVolumePercentage = 0; // the turbo volume will be engine rpm dependent (usually = 10%)
 #include "sounds/TurboWhistle.h" // Turbo sound, playing in parallel with engine sound!
 
@@ -163,10 +163,10 @@ volatile int bucketRattleVolumePercentage = 160; // Adjust the volume (usually =
 const boolean doubleFlashBlueLight = true; // double flash blue lights if "true", "rotating" beacons if "false"
 
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
-const uint8_t escRampTimeFirstGear = 5; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
-const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
+const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
+const uint8_t escRampTimeSecondGear = 40; // 50 for King Hauler (this value is always in use for automatic transmission, 40)
 const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
-const uint8_t escBrakeSteps = 100; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
+const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 5; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
@@ -176,15 +176,15 @@ const boolean doubleClutch = false; // do not activate it at the same time as au
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
 // Clutch parameters ---------------------------------------------------------------------------------------------------
-uint16_t clutchEngagingPoint = 500; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power
+uint16_t clutchEngagingPoint = 10; // CEP. The "clutch" is engaging above this point = engine rpm sound in synch with ESC power (100, 10 for automatic, was 500)
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
 uint32_t MAX_RPM_PERCENTAGE = 200; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
-const int8_t acc = 6; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck
-const int8_t dec = 3; // Deceleration step (1) 1 = slow for locomotive engine, 5 = fast for trophy truck
+const int8_t acc = 6; // Acceleration step (6) 1 = slow for locomotive engine, 9 = fast for trophy truck
+const int8_t dec = 3; // Deceleration step (3) 1 = slow for locomotive engine, 5 = fast for trophy truck
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3

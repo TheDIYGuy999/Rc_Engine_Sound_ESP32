@@ -30,7 +30,11 @@
 // #define SERVOS_KING_HAULER
 // #define SERVOS_RACING_TRUCK
 // #define SERVOS_MECCANO_DUMPER
-//#define SERVOS_OPEN_RC_TRACTOR
+// #define SERVOS_OPEN_RC_TRACTOR
+// NOTICE: The following profiles are for EXCAVATOR_MODE only! ---------------------
+// #define SERVOS_EXCAVATOR // For excavators with electric actuators
+// #define SERVOS_HYDRAULIC_EXCAVATOR // For hydraulic excavators
+// #define SERVOS_CRANE // For Mushroom3D rough terrain crane (servo outputs used as outrigger channels SBUS decoder)
 
 // Default servo configuration profile -------------------------------------------------------------------------------------------
 #ifdef SERVOS_DEFAULT
@@ -257,5 +261,81 @@ uint16_t CH4L = 1300, CH4R = 1700;              // CH4 trailer coupler (5th. whe
 
 // Servo ramp time
 uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+
+#endif
+
+// NOTICE: The following profiles are for EXCAVATOR_MODE only! **********************************************************************************************
+// Electric excavator servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_EXCAVATOR
+
+boolean boomDownwardsHydraulic = true; // hydraulic load sound as well for boom downwards
+boolean reverseBoomSoundDirection = false; // reverse sound direction, if needed (for example if hoses can't be swapped)
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits
+uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 bucket ESC
+uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 dipper ESC
+uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 boom ESC
+uint16_t CH4L = 1000, CH4C = 1500, CH4R = 2000; // CH4 swing ESC
+
+// Servo ramp times
+uint16_t CH1_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+uint16_t CH2_RAMP_TIME = 100;
+uint16_t CH3_RAMP_TIME = 1000;
+uint16_t CH4_RAMP_TIME = 2000;
+
+#endif
+
+// Hydraulic excavator servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_HYDRAULIC_EXCAVATOR
+
+#define PINGON_MODE // Wheel lift for Pingon excavators
+
+boolean boomDownwardsHydraulic = true; // hydraulic load sound as well for boom downwards
+boolean reverseBoomSoundDirection = true; // reverse sound direction, if needed (for example if hoses can't be swapped)
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Valve servo limits
+uint16_t CH1L = 1100, CH1C = 1500, CH1R = 2000; // CH1 bucket valve
+uint16_t CH2L = 1040, CH2C = 1500, CH2R = 2040; // CH2 dipper valve
+uint16_t CH3L = 960, CH3C = 1500, CH3R = 2060; // CH3 boom valve
+
+// Swing ESC limits
+uint16_t CH4L = 1250, CH4C = 1500, CH4R = 1750; // CH4 swing ESC 1375, 1625 (1250, 1500, 1750 for Pingon)
+
+// Hydraulic pump limits
+uint16_t ESC_L = 1000, ESC_C = 1500, ESC_R = 2000; // ESC output for oil pump (always 1000, 1500, 2000)
+uint16_t ESC_MIN = 1500; // Pump off
+uint16_t ESC_MAX = 1800; // Pump max. RPM (1800 for Pingon)
+
+// Servo ramp times
+uint16_t CH1_RAMP_TIME = 0; // always 0 for now
+uint16_t CH2_RAMP_TIME = 0; // always 0 for now
+uint16_t CH3_RAMP_TIME = 0; // always 0 for now
+uint16_t CH4_RAMP_TIME = 2500; // 2000 for swing motor protection (2500 for Pingon)
+
+#endif
+
+// Mushroom3D rough terrain crane -------------------------------------------------------------------------------------------
+#ifdef SERVOS_CRANE
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits (not used, SBUS decoder only, adjust it in the transmitter, if needed!)
+uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 (decoded CH13)
+uint16_t CH2L = 1000, CH2C = 1500, CH2R = 2000; // CH2 (decoded CH14)
+uint16_t CH3L = 1000, CH3C = 1500, CH3R = 2000; // CH3 (decoded CH15)
+uint16_t CH4L = 1000, CH4C = 1500, CH4R = 2000; // CH4 (decoded CH16)          
 
 #endif

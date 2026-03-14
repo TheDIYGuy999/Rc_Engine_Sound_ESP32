@@ -138,6 +138,7 @@ volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usu
 volatile int shiftingVolumePercentage = 100; // Adjust the shifting volume (usually = 200%)
 //#include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 //#include "sounds/AirShifting.h" // Pneumatic shifting sound
+//#include "sounds/Mercedes_SK_1935_V8_AirShifting.h" // Mercedes SK air shifting
 #include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
 
 // Choose the additional "sound1" (uncomment the one you want) --------

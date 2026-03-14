@@ -25,6 +25,8 @@
 // #include "vehicles/UnimogU1000.h" // Umimog U 1000 with turbocharged R6 Diesel incl. Feuerwehr "Martinshorn" siren
 // #include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 // #include "vehicles/MercedesActrosV6.h" // Mercedes Actros V6 Race Truck incl. tire squealing
+// #include "vehicles/MercedesSK_1838_V8.h" // Mercedes SK 1838 V8
+  #include "vehicles/MercedesSK_1935_V8.h" // Mercedes SK 1935 V8
 // #include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Bad quality!
 // #include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 // #include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
@@ -52,13 +54,23 @@
 // #include "vehicles/FergusonTEA20.h" // 1940ies Ferguson TEA20 petrol engine tractor
 
 // Excavators -------
+// #include "vehicles/Volvo EC550ElExcavator.h" // Volvo EC550EL 55 ton ecxavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile and SERVOS_EXCAVATOR servo profile)
 // #include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
+// #include "vehicles/Pingon14CExcavator.h" // Pingon 14C excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
 
 // Dumpers -------
-//  #include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper
+// #include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper
 
- // Loaders -------
-  #include "vehicles/VolvoL120H.h"
+// Wheel Loaders -------
+// #include "vehicles/VolvoL120H.h"
+// #include "vehicles/HitachiZW370.h" // Hitachi ZW 370-6 heavy wheel loader (for Lukas Cajkar Harmony 370 3D printed loader)
+
+// Articulated Dump Trucks -------
+// #include "vehicles/CAT730.h" // Caterpillar 730 heavy dump truck
+
+// Rough Terrain Cranes -------
+// #include "vehicles/RoughTerrainCrane.h" // Mushroom3D Rough Terrain Crane
+// #include "vehicles/RoughTerrainCrane_Cummins.h" // Mushroom3D Rough Terrain Crane with Cummins 6BTA (sounds better)
 
 // US motorcycles --------
 // #include "vehicles/HarleyDavidsonFXSB.h" // Harley Davidson FXSB V2 motorcycle

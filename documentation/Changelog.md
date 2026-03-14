@@ -1,10 +1,37 @@
 # Changelog
 
+### Known issues:
+- PWM mode may still not work, use version v9.11.0, if you want to use PWM mode
+
 ### Todo:
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
 - Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
 
-### 9.13.0-b7:
+### 9.14.0
+- Documentation files in German added
+- Documentation Files made by Frikkie Bester added
+- Mercedes SK 1935 V8 truck added
+- Mercedes SK 1838 V8 truck added
+- Rough terrain crane added
+- CRANE_MODE added (many hydraulic channels)
+- SBUS can now decode 16 instead of 13 channels, used for additional servo outputs in rough terrain crane
+- Hitachi ZW 370-6 wheel loader added
+- FRSKY_TANDEM_HARMONY_LOADER remote profile added for TANDEM XE with touchscreen
+- ESC settings added: HYDROSTATIC_MODE, directionChangeLimit
+- Lights settings added: ROTATINGBEACON_ON_B1, INDICATOR_TOGGLING_MODE
+- Audio2Header.html now including "reversing beep" category
+- REVERSING_LOOP in the reversing beep file allows to use sounds with different start beep (see CATreversingBeep.h)
+- Servo stroke limitation bug in EXCAVATOR_MODE fixed
+- Hydraulic pump mixer added
+- eeprom only active, if ENABLE_WIRELESS is defined (configuration website is enabled). This allows to change default values (for exampe servo positions) without changing the eeprom ID, if you don't want to use the website.
+- Pingon 14C excavator added
+- 7_Servos.h: SERVOS_HYDRAULIC_EXCAVATOR mode added. This allows to use non linear control curves for hydraulic valves, which eliminate the "dead zone" of most hydraulic valves. The curves are stored in curves.h. Also see servoCurves.xlsx
+- Volvo EC550EL excavator sounds added
+- CH 1 - 4 servo outputs now usable for bucket, dipper, boom and swing in EXCAVATOR_MODE, including simulation of virtual inertia
+- 2 position switch on CH 5 allows to switch between ISO and SAE control pattern whithout changing the wiring (swapping dipper and boom channels)
+- CAT 730 added
+
+### 9.13.0:
 - Defines removed: HAZARDS_WHILE_5TH_WHEEL_UNLOCKED
 - Variables added (adjustable on 192.168.4.1): hazardsWhile5thWheelUnlocked
 - Neopixel animation mode selectable in dropdown menu on 192.168.4.1

@@ -218,6 +218,7 @@ volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 
 // #include "sounds/AirBrakeSqueak2.h" // Squeaky air brake sound
 // #include "sounds/UralBrakeSqueak.h" // URAL 4320 air brake sound
 // #include "sounds/Saurer2DMbrake.h" // // Saurer 2DM air brake sound
+// #include "sounds/Mercedes_SK_AirBrakes.h" // Mercedes SK
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
@@ -229,6 +230,7 @@ volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usu
 volatile int shiftingVolumePercentage = 200; // Adjust the shifting volume (usually = 200%)
 // #include "sounds/AirShiftingDummy.h" // If you don't want pneumatic shifting sound
 // #include "sounds/AirShifting.h" // Pneumatic shifting sound
+// #include "sounds/Mercedes_SK_1935_V8_AirShifting.h" // Mercedes SK air shifting
 #include "sounds/ClunkingGearShifting.h" // Manual clunking shifting sound
 
 // Choose the additional "sound1" (uncomment the one you want) --------
@@ -244,6 +246,7 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 // Choose the reversing beep sound --------
 volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%)
 #include "sounds/TruckReversingBeep.h"       // 1000Hz peep sound
+// #include "sounds/CATreversingBeep.h" // CAT beep sound
 
 // Choose the indicator / turn signal options --------
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
@@ -299,3 +302,4 @@ const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
+// #define DUMP_BED // Vehicle with hydraulic dump bed (CAT 730 for example)
