@@ -26,7 +26,7 @@
 // #include "vehicles/MercedesActros1836.h" // Mercedes Actros 1863 or 3363 truck with R6 Diesel
 // #include "vehicles/MercedesActrosV6.h" // Mercedes Actros V6 Race Truck incl. tire squealing
 // #include "vehicles/MercedesSK_1838_V8.h" // Mercedes SK 1838 V8
-  #include "vehicles/MercedesSK_1935_V8.h" // Mercedes SK 1935 V8
+// #include "vehicles/MercedesSK_1935_V8.h" // Mercedes SK 1935 V8
 // #include "vehicles/ScaniaV8_50ton.h" // SCANIA V8 50 ton truck. Unknown model. Bad quality!
 // #include "vehicles/ScaniaV8.h" // SCANIA V8 truck, unknown model
 // #include "vehicles/1000HpScaniaV8.h" // 1000 HP SCANIA V8 truck with open pipes. Insane sound! Good bass speakers reqired
@@ -57,6 +57,9 @@
 // #include "vehicles/Volvo EC550ElExcavator.h" // Volvo EC550EL 55 ton ecxavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile and SERVOS_EXCAVATOR servo profile)
 // #include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
 // #include "vehicles/Pingon14CExcavator.h" // Pingon 14C excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
+
+// Dozers -------
+ #include "vehicles/CaterpillarD6Dozer.h" // Caterpillar D6 Dozer
 
 // Dumpers -------
 // #include "vehicles/Benford3TonDumper.h" // Benford 3 ton dumper

@@ -7,6 +7,9 @@
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
 - Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
 
+### 9.15.0-b1
+- Implementing dozer mode in progress, added #define TRACK_RATTLE_2 and #define HYDROSTATIC_TRACK_MOTORS in vehicle.h
+
 ### 9.14.0
 - Documentation files in German added
 - Documentation Files made by Frikkie Bester added

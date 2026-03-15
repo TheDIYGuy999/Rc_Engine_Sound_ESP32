@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.14.0"; // Software revision.
+char codeVersion[] = "9.15.0-b1"; // Software revision.
 
 //
 // =======================================================================================================
@@ -392,6 +392,7 @@ volatile boolean engineJakeBraking = false;       // Active, if engine is jake b
 volatile boolean wastegateTrigger = false;        // Trigger wastegate (blowoff) after rapid throttle drop
 volatile boolean blowoffTrigger = false;          // Trigger jake brake sound (blowoff) after rapid throttle drop
 volatile boolean dieselKnockTrigger = false;      // Trigger Diesel ignition "knock"
+volatile boolean trackRattle2Trigger = false;     // Trigger for track rattling sound 2 (only in excavator mode)
 volatile boolean dieselKnockTriggerFirst = false; // The first Diesel ignition "knock" per sequence
 volatile boolean airBrakeTrigger = false;         // Trigger for air brake noise
 volatile boolean parkingBrakeTrigger = false;     // Trigger for air parking brake noise
@@ -425,6 +426,8 @@ volatile uint16_t hydraulicPumpVolume = 0;             // hydraulic pump volume
 volatile uint16_t hydraulicPumpVolumeArray[17];        // hydraulic pump volume
 volatile uint16_t hydraulicFlowVolume = 0;             // hydraulic flow volume
 volatile uint16_t trackRattleVolume = 0;               // track rattling volume
+volatile uint16_t trackRattle2Volume = 0;              // track rattling volume 2
+volatile uint32_t trackRattle2TriggerInterval = 0;     // delay for rattle 2 trigger
 volatile uint16_t hydraulicDependentKnockVolume = 100; // engine Diesel knock volume according to hydraulic load
 volatile uint16_t hydraulicLoad = 0;                   // Hydraulic load dependent RPM drop
 
@@ -968,12 +971,13 @@ void IRAM_ATTR fixedPlaybackTimer()
   static uint32_t curUncouplingSample = 0;                      // Index of currently loaded trailer uncoupling sample
   static uint32_t curHydraulicFlowSample = 0;                   // Index of currently loaded hydraulic flow sample
   static uint32_t curTrackRattleSample = 0;                     // Index of currently loaded track rattle sample
+  static uint32_t curTrackRattle2Sample = 0;                    // Index of currently loaded track rattle 2 sample
   static uint32_t curBucketRattleSample = 0;                    // Index of currently loaded bucket rattle sample
   static uint32_t curTireSquealSample = 0;                      // Index of currently loaded tire squeal sample
   static uint32_t curOutOfFuelSample = 0;                       // Index of currently loaded out of fuel sample
   static int32_t a, a1, a2 = 0;                                 // Input signals "a" for mixer
   static int32_t b, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = 0; // Input signals "b" for mixer
-  static int32_t c, c1, c2, c3 = 0;                             // Input signals "c" for mixer
+  static int32_t c, c1, c2, c3, c4 = 0;                         // Input signals "c" for mixer
   static int32_t d, d1, d2 = 0;                                 // Input signals "d" for mixer
   static boolean knockSilent = 0;                               // This knock will be more silent
   static boolean knockMedium = 0;                               // This knock will be medium
@@ -1337,6 +1341,21 @@ void IRAM_ATTR fixedPlaybackTimer()
     curTrackRattleSample = 0;
   }
 
+#ifdef TRACK_RATTLE_2
+  // Track rattle 2 sound (the periodic rattling itself)-----------------------
+  if (trackRattle2Trigger)
+  {
+    trackRattle2Trigger = false;
+    curTrackRattle2Sample = 0;
+  }
+
+  if (curTrackRattle2Sample < trackRattle2SampleCount - 1)
+  {
+    c4 = (trackRattle2Samples[curTrackRattle2Sample] * trackRattle2VolumePercentage / 100 * trackRattleVolume / 100);
+    curTrackRattle2Sample++;
+  }
+#endif
+
   // Bucket rattle sound -----------------------
   if (bucketRattleTrigger)
   {
@@ -1398,7 +1417,7 @@ void IRAM_ATTR fixedPlaybackTimer()
   a = a1 + a2; // Horn & siren
   // if (a < 2 && a > -2) a = 0; // Remove noise floor TODO, experimental
   b = b0 * 5 + b1 + b2 / 2 + b3 + b4 + b5 + b6 + b7 + b8 + b9; // Other sounds
-  c = c1 + c2 + c3;                                            // Excavator sounds
+  c = c1 + c2 + c3 + c4;                                       // Excavator sounds
   d = d1 + d2;                                                 // Additional sounds
 
   // DAC output (groups mixed together) ****************************************************************************
@@ -4189,17 +4208,31 @@ void led()
 
 #else // manual lights mode ************************
 
-#ifdef EXCAVATOR_MODE
+#if defined EXCAVATOR_MODE
   // Excavator lights on CH9 switch (impulse length > 1900us) -------------
   if (pulseWidth[9] > 1900 && pulseWidth[9] < pulseMaxLimit[9])
   {
     headLightsSub(true, true, false, false); // Headlights on (head, fog, roof, park)
     sideLight.on();
+    tailLight.on();
+  }
+  else if (pulseWidth[9] > 1400 && pulseWidth[9] < pulseMaxLimit[9])
+  {
+    headLightsSub(true, false, false, false); // Headlights on (head, fog, roof, park)
+    sideLight.on();
+    tailLight.on();
+  }
+  else if (pulseWidth[9] > 1200 && pulseWidth[9] < pulseMaxLimit[9])
+  {
+    headLightsSub(false, false, false, false); // Headlights off
+    sideLight.off();
+    tailLight.on();
   }
   else
   {
     headLightsSub(false, false, false, false); // Headlights off
     sideLight.off();
+    tailLight.off();
   }
 #else // normal manual mode
   // Lights state machine
@@ -5012,9 +5045,9 @@ void triggerHorn()
 {
 #ifndef CRANE_MODE
   if (!winchEnabled && !unlock5thWheel && !hazard) // Why is this?
-  #else
+#else
   if (!winchEnabled)
-  #endif
+#endif
   { // Horn & siren control mode *************
     winchPull = false;
     winchRelease = false;
@@ -5965,7 +5998,27 @@ void excavatorControl()
     else
       hydraulicPumpVolumeInternal[8] = 0;
 
-    hydraulicPumpVolumeInternalUndelayed = constrain(hydraulicPumpVolumeInternal[1] + hydraulicPumpVolumeInternal[2] + hydraulicPumpVolumeInternal[5] + hydraulicPumpVolumeInternal[8], 0, 100) * map(currentRpm, 0, 500, 30, 100) / 100;
+#if defined HYDROSTATIC_TRACK_MOTORS
+    // Hydrostatic track motors ---
+    // Left
+    if (pulseWidth[6] > pulseMaxNeutral[6])
+      hydraulicPumpVolumeInternal[6] = map(pulseWidth[6], pulseMaxNeutral[6], pulseMax[6], 0, 100);
+    else if (pulseWidth[6] < pulseMinNeutral[6])
+      hydraulicPumpVolumeInternal[6] = map(pulseWidth[6], pulseMinNeutral[6], pulseMin[6], 0, 100);
+    else
+      hydraulicPumpVolumeInternal[6] = 0;
+
+    // Right
+    if (pulseWidth[7] > pulseMaxNeutral[7])
+      hydraulicPumpVolumeInternal[7] = map(pulseWidth[7], pulseMaxNeutral[7], pulseMax[7], 0, 100);
+    else if (pulseWidth[7] < pulseMinNeutral[7])
+      hydraulicPumpVolumeInternal[7] = map(pulseWidth[7], pulseMinNeutral[7], pulseMin[7], 0, 100);
+    else
+      hydraulicPumpVolumeInternal[7] = 0;
+#endif
+
+    // Hydraulic calculations ---
+    hydraulicPumpVolumeInternalUndelayed = constrain(hydraulicPumpVolumeInternal[1] + hydraulicPumpVolumeInternal[2] + hydraulicPumpVolumeInternal[5] + hydraulicPumpVolumeInternal[6] + hydraulicPumpVolumeInternal[7] + hydraulicPumpVolumeInternal[8], 0, 100) * map(currentRpm, 0, 500, 30, 100) / 100;
 
     if (hydraulicPumpVolumeInternalUndelayed < hydraulicPumpVolume)
       hydraulicPumpVolume--;
@@ -6010,6 +6063,15 @@ void excavatorControl()
       trackRattleVolume--;
     if (trackRattleVolumeInternalUndelayed > trackRattleVolume)
       trackRattleVolume++;
+
+    static uint32_t lastTrackRattle2Time = millis();
+
+    trackRattle2TriggerInterval = map(trackRattleVolume, 0, 100, 1500, 150); // Map track rattle volume to delay for second track rattle sound (the higher the volume, the shorter the delay)
+    if (millis() - lastTrackRattle2Time > trackRattle2TriggerInterval)
+    {
+      trackRattle2Trigger = true;
+      lastTrackRattle2Time = millis();
+    }
 
     // Calculate hydraulic load dependent Diesel knock volume
     hydraulicDependentKnockVolume = map(hydraulicPumpVolume, 0, 100, 50, 100);
@@ -6102,16 +6164,16 @@ void hydraulicSound(int i, int rpm, int rpmRev, int vol, int volRev)
 void craneControl()
 {
   // Calculate pump rpm --------------------------
-  hydraulicSound(1, 300, 0, 50, 0);       // Boom lift (increase rpm upwards only)
-  hydraulicSound(2, 300, 300, 50, 50);    // Boom extension
-  hydraulicSound(8, 250, 250, 50, 50);    // Swing
-  hydraulicSound(7, 300, 300, 50, 50);    // Main rope
-  hydraulicSound(9, 200, 200, 50, 50);    // Fast rope
+  hydraulicSound(1, 300, 0, 50, 0);         // Boom lift (increase rpm upwards only)
+  hydraulicSound(2, 300, 300, 50, 50);      // Boom extension
+  hydraulicSound(8, 250, 250, 50, 50);      // Swing
+  hydraulicSound(7, 300, 300, 50, 50);      // Main rope
+  hydraulicSound(9, 200, 200, 50, 50);      // Fast rope
   hydraulicSound(12, 1400, 1400, 120, 120); // Outrigger booms (more, because ESC is used @ only at about 35%)
-  hydraulicSound(13, 100, 100, 10, 10);   // Support cylinder front left
-  hydraulicSound(14, 100, 100, 10, 10);   // Support cylinder front right
-  hydraulicSound(15, 100, 100, 10, 10);   // Support cylinder rear left
-  hydraulicSound(16, 100, 100, 10, 10);   // Support cylinder rear right
+  hydraulicSound(13, 100, 100, 10, 10);     // Support cylinder front left
+  hydraulicSound(14, 100, 100, 10, 10);     // Support cylinder front right
+  hydraulicSound(15, 100, 100, 10, 10);     // Support cylinder rear left
+  hydraulicSound(16, 100, 100, 10, 10);     // Support cylinder rear right
 
   targetHydraulicRpm[0] = targetHydraulicRpm[1] + targetHydraulicRpm[2] + targetHydraulicRpm[7] + targetHydraulicRpm[8] + targetHydraulicRpm[9] + targetHydraulicRpm[12] + targetHydraulicRpm[13] + targetHydraulicRpm[14] + targetHydraulicRpm[15] + targetHydraulicRpm[16];
   currentThrottleHydraulic = targetHydraulicRpm[0];
@@ -6159,7 +6221,7 @@ void dumpBedControl()
   else
     hydraulicFlowVolume = 0;
 
-    // Calculate hydraulic load dependent Diesel knock volume
+  // Calculate hydraulic load dependent Diesel knock volume
   hydraulicDependentKnockVolume = map(targetHydraulicRpm[0], 0, 80, 50, 100);
   currentThrottleHydraulic = targetHydraulicRpm[0];
 }

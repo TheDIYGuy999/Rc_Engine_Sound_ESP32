@@ -2,12 +2,12 @@
 
 // Select (remove //) the remote configuration profile you have:
 // #define FLYSKY_FS_I6X            // <------- Flysky FS-i6x
- #define FLYSKY_FS_I6S            // <------- Flysky FS-i6s
+//#define FLYSKY_FS_I6S            // <------- Flysky FS-i6s
 // #define FLYSKY_FS_I6S_LOADER     // <------- Flysky FS-i6s for BURNIE222 Volvo L120H loader (use IBUS communication setting)
+ #define FLYSKY_FS_I6S_DOZER     // <------- Flysky FS-i6s for dozer (use IBUS communication setting)
 // #define FLYSKY_FS_I6S_EXCAVATOR  // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
 // #define FRSKY_TANDEM_EXCAVATOR   // <------- Frsky Tandem XE for hydraulic excavator (use SBUS communication setting)
 // #define FRSKY_TANDEM_HARMONY_LOADER // <------- Frsky Tandem XE for Lukas Cajkar Harmony 370 (use SBUS communication setting)
-// #define FRSKY_TANDEM_EXCAVATOR  // <------- Frsky Tandem XE for hydraulic excavator (use SBUS communication setting)
 // #define FRSKY_TANDEM_CRANE      // <------- Frsky Tandem XE for Mushroom3D rough terrain crane (use SBUS communication setting)
 // #define FLYSKY_GT5              // <------- Flysky GT5 / Reely GT6 EVO / Absima CR6P
 // #define RGT_EX86100             // <------- MT-305 remote delivered with RGT EX86100 crawler (use PWM communication setting)
@@ -29,14 +29,14 @@
 // PWM mode active, if SBUS, IBUS, SUMD and PPM are disabled (// in front of #define)
 
 // SBUS communication (RX header, 16 channels. This is my preferred communication protocol)--------
-// #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+ #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
 // NOTE: "boolean sbusInverted = true / false" was moved to the remote configuration profiles, so you don't have to change it
 uint32_t sbusBaud = 100000;         // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
 #define EMBEDDED_SBUS               // Embedded SBUS code is used instead of SBUS library, if defined (recommended, don't change it)
 uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout in milliseconds (about 100)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
- #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+// #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
 // SUMD communication (RX header, 12 channels, For Graupner remotes) --------
 // #define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
@@ -326,6 +326,88 @@ const uint16_t pulseSpan = 480;
 boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 #endif
+
+
+// Flysky FS-i6S remote configuration profile (for excavators only) ---------------------------------------------------------------------------------
+#ifdef FLYSKY_FS_I6S_DOZER
+
+// NOTE: The vehicle file needs to contain #define EXCAVATOR_MODE
+
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 4           // CH1 bucket or tilt
+#define GEARBOX 7            // CH2 multi bucket or swivel
+#define THROTTLE 9           // CH3 3 position switch off, idle, rev. 9
+#define HORN 10              // CH4 horn
+#define FUNCTION_R 3         // CH5 lift
+#define FUNCTION_L 1         // CH6 left track
+#define POT2 2               // CH7 right track
+#define MODE1 6              // CH8 ripper
+#define MODE2 8              // CH9 light switch
+#define MOMENTARY1 NONE      // CH10
+#define HAZARDS NONE         // CH11
+#define INDICATOR_LEFT NONE  // CH12
+#define INDICATOR_RIGHT NONE // CH13
+#define CH_14 14             // CH14
+#define CH_15 15             // CH15
+#define CH_16 16             // CH16
+
+// Channels reversed or not
+boolean channelReversed[17] = {
+    false, // CH0 (unused)
+    false, // CH1
+    false, // CH2
+    false, // CH3
+    false, // CH4
+    true,  // CH5
+    false, // CH6
+    false, // CH7
+    false, // CH8
+    false, // CH9
+    false, // CH10
+    false, // CH11
+    false, // CH12
+    false, // CH13
+    false, // CH14
+    false, // CH15
+    false  // CH16
+};
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[17] = {
+    false, // CH0 (unused)
+    true,  // CH1
+    true,  // CH2
+    false, // CH3
+    false, // CH4
+    true,  // CH5
+    true,  // CH6
+    true,  // CH7
+    true,  // CH8
+    false, // CH9
+    false, // CH10
+    false, // CH11
+    false, // CH12
+    false, // CH13
+    false, // CH14
+    false, // CH15
+    false  // CH16
+};
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+// #define AUTO_LIGHTS
+// #define AUTO_ENGINE_ON_OFF
+// #define AUTO_INDICATORS
+
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
+#endif
+
 
 // Flysky FS-i6S remote configuration profile (for excavators only) ---------------------------------------------------------------------------------
 #ifdef FLYSKY_FS_I6S_EXCAVATOR
