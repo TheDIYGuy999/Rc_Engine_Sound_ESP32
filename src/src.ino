@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.15.0-b1"; // Software revision.
+char codeVersion[] = "9.15.0-b2"; // Software revision.
 
 //
 // =======================================================================================================
@@ -386,6 +386,7 @@ boolean pingonLiftingMode;
 volatile boolean engineOn = false;                // Signal for engine on / off
 volatile boolean engineStart = false;             // Active, if engine is starting up
 volatile boolean engineRunning = false;           // Active, if engine is running
+volatile boolean tracksAreRotating = false;       // Active, if tracks are rotating (only for tracked vehicles)
 volatile boolean engineStop = false;              // Active, if engine is shutting down
 volatile boolean jakeBrakeRequest = false;        // Active, if engine jake braking is requested
 volatile boolean engineJakeBraking = false;       // Active, if engine is jake braking
@@ -1331,7 +1332,7 @@ void IRAM_ATTR fixedPlaybackTimer()
   }
 
   // Track rattle sound -----------------------
-  if (curTrackRattleSample < trackRattleSampleCount - 1)
+  if (tracksAreRotating && curTrackRattleSample < trackRattleSampleCount - 1)
   {
     c2 = (trackRattleSamples[curTrackRattleSample] * trackRattleVolumePercentage / 100 * trackRattleVolume / 100);
     curTrackRattleSample++;
@@ -1343,16 +1344,24 @@ void IRAM_ATTR fixedPlaybackTimer()
 
 #ifdef TRACK_RATTLE_2
   // Track rattle 2 sound (the periodic rattling itself)-----------------------
-  if (trackRattle2Trigger)
+  if (trackRattle2Trigger)// || !tracksAreRotating)
   {
-    trackRattle2Trigger = false;
-    curTrackRattle2Sample = 0;
-  }
+    if (curTrackRattle2Sample < trackRattle2SampleCount - 1)
+    {
+      c4 = (trackRattle2Samples[curTrackRattle2Sample] * trackRattle2VolumePercentage / 100 * trackRattleVolume / 100);
+      curTrackRattle2Sample++;
+    }
+    else
+    {
+      trackRattle2Trigger = false;
+      curTrackRattle2Sample = 0;
+    }
 
-  if (curTrackRattle2Sample < trackRattle2SampleCount - 1)
-  {
-    c4 = (trackRattle2Samples[curTrackRattle2Sample] * trackRattle2VolumePercentage / 100 * trackRattleVolume / 100);
-    curTrackRattle2Sample++;
+    if (curTrackRattle2Sample < trackRattle2SampleCount - 1)
+    {
+      c4 = (trackRattle2Samples[curTrackRattle2Sample] * trackRattle2VolumePercentage / 100 * trackRattleVolume / 100);
+      curTrackRattle2Sample++;
+    }
   }
 #endif
 
@@ -4219,7 +4228,7 @@ void led()
   else if (pulseWidth[9] > 1400 && pulseWidth[9] < pulseMaxLimit[9])
   {
     headLightsSub(true, false, false, false); // Headlights on (head, fog, roof, park)
-    sideLight.on();
+    sideLight.off();
     tailLight.on();
   }
   else if (pulseWidth[9] > 1200 && pulseWidth[9] < pulseMaxLimit[9])
@@ -5945,6 +5954,8 @@ void excavatorControl()
   static uint16_t trackRattleVolumeInternalUndelayed;
   static uint16_t lastBucketPulseWidth = pulseWidth[1];
   static uint16_t lastDipperPulseWidth = pulseWidth[2];
+  static boolean trackLisRotating = false;
+  static boolean trackRisRotating = false;
 
   if (millis() - lastFrameTime > 4)
   {
@@ -6039,34 +6050,65 @@ void excavatorControl()
 
     // Calculate speed dependent track rattle volume ----
     // Left ---
-    if (pulseWidth[6] > pulseMaxNeutral[6])
-      trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMaxNeutral[6], (pulseMax[6] - 150), 0, 100);
-    else if (pulseWidth[6] < pulseMinNeutral[6])
-      trackRattleVolumeInternal[6] = map(pulseWidth[6], pulseMinNeutral[6], (pulseMin[6] + 150), 0, 100);
+    if (pulseWidth[6] > (1500 + pwmStrokeChainDriveStartRotation))
+    {
+      trackRattleVolumeInternal[6] = map(pulseWidth[6], (1500 + pwmStrokeChainDriveStartRotation), (1500 + pwmStrokeChainDriveTopSpeed), 0, 100);
+      trackLisRotating = true;
+    }
+    else if (pulseWidth[6] < (1500 - pwmStrokeChainDriveStartRotation))
+    {
+      trackRattleVolumeInternal[6] = map(pulseWidth[6], (1500 - pwmStrokeChainDriveStartRotation), (1500 - pwmStrokeChainDriveTopSpeed), 0, 100);
+      trackRisRotating = true;
+    }
     else
+    {
       trackRattleVolumeInternal[6] = 0;
+      trackLisRotating = false;
+    }
 
     // Right
-    if (pulseWidth[7] > pulseMaxNeutral[7])
-      trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMaxNeutral[7], (pulseMax[7] - 100), 0, 100);
-    else if (pulseWidth[7] < pulseMinNeutral[7])
-      trackRattleVolumeInternal[7] = map(pulseWidth[7], pulseMinNeutral[7], (pulseMin[7] + 100), 0, 100);
+    if (pulseWidth[7] > (1500 + pwmStrokeChainDriveStartRotation))
+    {
+      trackRattleVolumeInternal[7] = map(pulseWidth[7], (1500 + pwmStrokeChainDriveStartRotation), (1500 + pwmStrokeChainDriveTopSpeed), 0, 100);
+      trackRisRotating = true;
+    }
+    else if (pulseWidth[7] < (1500 - pwmStrokeChainDriveStartRotation))
+    {
+      trackRattleVolumeInternal[7] = map(pulseWidth[7], (1500 - pwmStrokeChainDriveStartRotation), (1500 - pwmStrokeChainDriveTopSpeed), 0, 100);
+      trackRisRotating = true;
+    }
     else
+    {
       trackRattleVolumeInternal[7] = 0;
+      trackRisRotating = false;
+    }
+
+    if (trackLisRotating || trackRisRotating)
+      tracksAreRotating = true;
+    else
+      tracksAreRotating = false;
 
     if (engineRunning)
+    {
       trackRattleVolumeInternalUndelayed = constrain(trackRattleVolumeInternal[6] + trackRattleVolumeInternal[7], 0, 100) * map(currentRpm, 0, 500, 100, 150) / 100;
+      trackRattle2TriggerInterval = max(trackRattleVolumeInternal[6], trackRattleVolumeInternal[7]);
+    }
     else
+    {
       trackRattleVolumeInternalUndelayed = 0;
+      trackRattle2TriggerInterval = 0;
+    }
 
     if (trackRattleVolumeInternalUndelayed < trackRattleVolume)
       trackRattleVolume--;
     if (trackRattleVolumeInternalUndelayed > trackRattleVolume)
       trackRattleVolume++;
 
+    // Calculate track rattling interval
     static uint32_t lastTrackRattle2Time = millis();
+    trackRattle2TriggerInterval = constrain(trackRattle2TriggerInterval, 0, 100);
+    trackRattle2TriggerInterval = map(trackRattle2TriggerInterval, 0, 100, trackRattleIntervalMax, trackRattleIntervalMin); // Map track rattle volume to delay for second track rattle sound (the higher the volume, the shorter the delay)
 
-    trackRattle2TriggerInterval = map(trackRattleVolume, 0, 100, 1500, 150); // Map track rattle volume to delay for second track rattle sound (the higher the volume, the shorter the delay)
     if (millis() - lastTrackRattle2Time > trackRattle2TriggerInterval)
     {
       trackRattle2Trigger = true;
