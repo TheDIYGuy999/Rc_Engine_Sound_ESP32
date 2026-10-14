@@ -108,22 +108,38 @@ volatile int hornVolumePercentage = 200; // Adjust the horn volume (usually = 10
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
-#include "sounds/sirenDummy.h" // If you don't want siren sound
-//#include "sounds/UsPoliceSiren.h" // US Police siren
-//#include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
-//#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
-//#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
-//#include "sounds/siren01norskere22.h" // Norwegian siren
-//#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
+// #include "sounds/sirenDummy.h" // If you don't want siren sound
+// #include "sounds/UsPoliceSiren.h" // US Police siren
+// #include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
+// #include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
+// #include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+// #include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
+// #include "sounds/siren01norskere22.h" // Norwegian siren
+// #include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
+// #include "sounds/brasil(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/in_the_summertime(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/JEEP+HORN+2(1).h" // sound from nenno @ rc-modellbau-portal.de
+ #include "sounds/la_carica(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/la_cucaracha(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/marseillaise(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/river_kwai(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
+//#include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/DixieSiren.h" // Dixie siren
+// #include "sounds/SwissPsalm.h" // Swiss national anthem
+// #include "sounds/Alphorn.h" // Alphorn
+// #include "sounds/kittScanner.h" // Knight Rider KITT scanner. Use it in combination with Neopixel animation.
 
 // Choose the air brake release sound (uncomment the one you want) --------
-volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
+volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
 //#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
-#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
+//#include "sounds/TruckAirBrakes2.h" // Another truck air brake sound
 //#include "sounds/AirBrakeSqueak.h" // Squeaky air brake sound
 //#include "sounds/UralBrakeSqueak.h" // URAL 4320 air brake sound
+#include "sounds/Mercedes_SK_AirBrakes.h" // Mercedes SK
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
@@ -152,7 +168,8 @@ volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volum
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
-#include "sounds/Indicator.h" // "Tick-Tack" sound
+//#include "sounds/Indicator.h" // "Tick-Tack" sound
+#include "sounds/Mercedes_SK_2635_V8_Indicator.h" // Mercedes SK
 
 // Choose the trailer couplig & uncoupling sounds (uncomment the ones you want) --------
 #define COUPLING_SOUND // uncomment this, if you want to use the trailer coupling & uncoupling sounds

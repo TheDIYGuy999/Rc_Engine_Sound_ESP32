@@ -17,7 +17,7 @@
    Arduino IDE is supported as well, but I recommend to use VS Code, because libraries and boards are managed automatically.
 */
 
-char codeVersion[] = "9.15.0-b5"; // Software revision.
+char codeVersion[] = "9.15.0-b8"; // Software revision.
 
 //
 // =======================================================================================================
@@ -327,7 +327,7 @@ bfs::SbusRx sBus(&Serial2);
 std::array<int16_t, bfs::SbusRx::NUM_CH()> SBUSchannels;
 #endif // -----------------------------------------------
 bool sbusInit;
-uint32_t maxSbusRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
+uint32_t maxSbusRpmPercentage = 300; // Limit required to prevent controller from crashing @ high engine RPM was 390
 
 // SUMD signal processing variables
 HardwareSerial serial(2);
@@ -337,12 +337,12 @@ uint16_t SUMDchannels[16]; // only 12 are usable!
 bool SUMD_failsafe;
 bool SUMD_frame_lost;
 bool SUMD_init;
-uint32_t maxSumdRpmPercentage = 390; // Limit required to prevent controller from crashing @ high engine RPM
+uint32_t maxSumdRpmPercentage = 300; // Limit required to prevent controller from crashing @ high engine RPM
 
 // IBUS signal processing variables
 IBusBM iBus; // IBUS object
 bool ibusInit;
-uint32_t maxIbusRpmPercentage = 320; // Limit required to prevent controller from crashing @ high engine RPM (was 350, but sometimes crashing)
+uint32_t maxIbusRpmPercentage = 270; // Limit required to prevent controller from crashing @ high engine RPM (was 320, but sometimes crashing)
 
 // Interrupt latches
 volatile boolean couplerSwitchInteruptLatch; // this is enabled, if the coupler switch pin change interrupt is detected
@@ -654,6 +654,24 @@ hw_timer_t *fixedTimer = NULL;
 portMUX_TYPE fixedTimerMux = portMUX_INITIALIZER_UNLOCKED;
 volatile uint32_t fixedTimerTicks = maxSampleInterval;
 
+static inline void setVariableTimerPeriod(uint32_t ticks)
+{
+  if (variableTimer && ticks != variableTimerTicks)
+  {
+    variableTimerTicks = ticks;
+    timerAlarmWrite(variableTimer, variableTimerTicks, true);
+  }
+}
+
+static inline void setFixedTimerPeriod(uint32_t ticks)
+{
+  if (fixedTimer && ticks != fixedTimerTicks)
+  {
+    fixedTimerTicks = ticks;
+    timerAlarmWrite(fixedTimer, fixedTimerTicks, true);
+  }
+}
+
 // Declare a mutex Semaphore Handles.
 // It will be used to ensure only only one Task is accessing this resource at any time.
 SemaphoreHandle_t xPwmSemaphore;
@@ -702,9 +720,8 @@ void IRAM_ATTR variablePlaybackTimer()
   switch (engineState)
   {
 
-  case OFF:                                                   // Engine off -----------------------------------------------------------------------
-    variableTimerTicks = 4000000 / startSampleRate;           // our fixed sampling rate
-    timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+  case OFF: // Engine off -----------------------------------------------------------------------
+    setVariableTimerPeriod(4000000 / startSampleRate); // our fixed sampling rate
 
     a = 0; // volume = zero
     if (engineOn)
@@ -714,9 +731,8 @@ void IRAM_ATTR variablePlaybackTimer()
     }
     break;
 
-  case STARTING:                                              // Engine start --------------------------------------------------------------------
-    variableTimerTicks = 4000000 / startSampleRate;           // our fixed sampling rate
-    timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+  case STARTING: // Engine start --------------------------------------------------------------------
+    setVariableTimerPeriod(4000000 / startSampleRate); // our fixed sampling rate
 
     if (curStartSample < startSampleCount - 1)
     {
@@ -740,8 +756,7 @@ void IRAM_ATTR variablePlaybackTimer()
   case RUNNING: // Engine running ------------------------------------------------------------------
 
     // Engine idle & revving sounds (mixed together according to engine rpm, new in v5.0)
-    variableTimerTicks = engineSampleRate;                    // our variable idle sampling rate!
-    timerAlarmWrite(variableTimer, variableTimerTicks, true); // // change timer ticks, autoreload true
+    setVariableTimerPeriod(engineSampleRate); // our variable idle sampling rate!
 
     if (!engineJakeBraking && !blowoffTrigger)
     {
@@ -861,7 +876,7 @@ void IRAM_ATTR variablePlaybackTimer()
     }
 
     // Hydraulic pump sound -----------------------
-#if defined EXCAVATOR_MODE || defined DUMP_BED || defined CRANE_MODE
+#if defined EXCAVATOR_MODE || defined DUMP_BED || defined HOOK_LIFT || defined CRANE_MODE
     if (curHydraulicPumpSample < hydraulicPumpSampleCount - 1)
     {
       f = (hydraulicPumpSamples[curHydraulicPumpSample] * hydraulicPumpVolumePercentage / 100 * hydraulicPumpVolume / 100);
@@ -896,9 +911,8 @@ void IRAM_ATTR variablePlaybackTimer()
     }
     break;
 
-  case STOPPING:                                                       // Engine stop --------------------------------------------------------------------
-    variableTimerTicks = 4000000 / sampleRate * speedPercentage / 100; // our fixed sampling rate
-    timerAlarmWrite(variableTimer, variableTimerTicks, true);          // // change timer ticks, autoreload true
+  case STOPPING: // Engine stop --------------------------------------------------------------------
+    setVariableTimerPeriod(4000000 / sampleRate * speedPercentage / 100); // our fixed sampling rate
 
     if (curEngineSample < sampleCount - 1)
     {
@@ -994,8 +1008,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   if (hornTrigger || hornLatch)
   {
-    fixedTimerTicks = 4000000 / hornSampleRate;         // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+    setFixedTimerPeriod(4000000 / hornSampleRate); // our fixed sampling rate
 
     if (curHornSample < hornSampleCount - 1)
     {
@@ -1016,8 +1029,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   if (sirenTrigger || sirenLatch)
   {
-    fixedTimerTicks = 4000000 / sirenSampleRate;        // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+    setFixedTimerPeriod(4000000 / sirenSampleRate); // our fixed sampling rate
 
 #if defined SIREN_STOP
     if (!sirenTrigger)
@@ -1054,8 +1066,7 @@ void IRAM_ATTR fixedPlaybackTimer()
   // Sound 1 "b0" ----
   if (sound1trigger)
   {
-    fixedTimerTicks = 4000000 / sound1SampleRate;       // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+    setFixedTimerPeriod(4000000 / sound1SampleRate); // our fixed sampling rate
 
     if (curSound1Sample < sound1SampleCount - 1)
     {
@@ -1076,8 +1087,7 @@ void IRAM_ATTR fixedPlaybackTimer()
   // Reversing beep sound "b1" ----
   if (engineRunning && escInReverse)
   {
-    fixedTimerTicks = 4000000 / reversingSampleRate;    // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+    setFixedTimerPeriod(4000000 / reversingSampleRate); // our fixed sampling rate
 
     if (curReversingSample < reversingSampleCount - 1)
     {
@@ -1103,8 +1113,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 #if not defined NO_INDICATOR_SOUND
   if (indicatorSoundOn)
   {
-    fixedTimerTicks = 4000000 / indicatorSampleRate;    // our fixed sampling rate
-    timerAlarmWrite(fixedTimer, fixedTimerTicks, true); // // change timer ticks, autoreload true
+    setFixedTimerPeriod(4000000 / indicatorSampleRate); // our fixed sampling rate
 
     if (curIndicatorSample < indicatorSampleCount - 1)
     {
@@ -1266,7 +1275,7 @@ void IRAM_ATTR fixedPlaybackTimer()
   {
 #if defined RPM_DEPENDENT_KNOCK // knock volume also depending on engine rpm
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100 * rpmDependentKnockVolume / 100);
-#elif defined EXCAVATOR_MODE || defined DUMP_BED || defined CRANE_MODE // knock volume also depending on hydraulic load
+#elif defined EXCAVATOR_MODE || defined DUMP_BED || defined HOOK_LIFT || defined CRANE_MODE // knock volume also depending on hydraulic load
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100 * hydraulicDependentKnockVolume / 100);
 #else                                                                  // Just depending on throttle
     b7 = (knockSamples[curDieselKnockSample] * dieselKnockVolumePercentage / 100 * throttleDependentKnockVolume / 100);
@@ -1322,7 +1331,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 
   // Group "c" (excavator sounds) **********************************************************************
 
-#if defined EXCAVATOR_MODE || defined LOADER_MODE || defined CRANE_MODE || defined DUMP_BED
+#if defined EXCAVATOR_MODE || defined LOADER_MODE || defined CRANE_MODE || defined DUMP_BED || defined HOOK_LIFT
 
   // Hydraulic fluid flow sound -----------------------
   if (engineRunning && curHydraulicFlowSample < hydraulicFlowSampleCount - 1)
@@ -1348,7 +1357,7 @@ void IRAM_ATTR fixedPlaybackTimer()
 
 #ifdef TRACK_RATTLE_2
   // Track rattle 2 sound (the periodic rattling itself)-----------------------
-  if (trackRattle2Trigger)// || !tracksAreRotating)
+  if (trackRattle2Trigger) // || !tracksAreRotating)
   {
     if (curTrackRattle2Sample < trackRattle2SampleCount - 1)
     {
@@ -1553,7 +1562,7 @@ void IRAM_ATTR readPpm()
 // TRAILER PRESENCE SWITCH INTERRUPT (not usable with third brake light, RZ7886 motor driver or hydraulic excavator)
 // =======================================================================================================
 //
-#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE and not defined SERVOS_HYDRAULIC_EXCAVATOR
+#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE and not defined SERVOS_HYDRAULIC_EXCAVATOR and not defined SERVOS_KABOLITE_K336_EXCAVATOR
 void IRAM_ATTR trailerPresenceSwitchInterrupt()
 {
   couplerSwitchInteruptLatch = true;
@@ -1598,7 +1607,7 @@ void setupMcpwm()
 {
   // 1. Configure GPIO pins for servo output
   gpio_config_t io_conf;
-  
+
   // Configure steering pin
   io_conf.pin_bit_mask = (1ULL << STEERING_PIN);
   io_conf.mode = GPIO_MODE_OUTPUT;
@@ -1606,36 +1615,36 @@ void setupMcpwm()
   io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
   io_conf.intr_type = GPIO_INTR_DISABLE;
   gpio_config(&io_conf);
-  
+
   // Configure shifting pin
   io_conf.pin_bit_mask = (1ULL << SHIFTING_PIN);
   gpio_config(&io_conf);
-  
+
 #if not defined NEOPIXEL_ON_CH4
   // Configure coupler pin
   io_conf.pin_bit_mask = (1ULL << COUPLER_PIN);
   gpio_config(&io_conf);
 #endif
-  
+
   // Configure winch pin
   io_conf.pin_bit_mask = (1ULL << WINCH_PIN);
   gpio_config(&io_conf);
-  
+
   // 2. Connect GPIO pins to MCPWM peripherals
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN);   // Set steering as PWM0A
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN);   // Set shifting as PWM0B
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, STEERING_PIN); // Set steering as PWM0A
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, SHIFTING_PIN); // Set shifting as PWM0B
 #if not defined NEOPIXEL_ON_CH4
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN);    // Set coupling as PWM1A
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, COUPLER_PIN); // Set coupling as PWM1A
 #endif
-  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN);      // Set winch or beacon as PWM1B
+  mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, WINCH_PIN); // Set winch or beacon as PWM1B
 
   // 3. Configure MCPWM parameters
   mcpwm_config_t pwm_config;
-  pwm_config.frequency = SERVO_FREQUENCY;        // frequency usually = 50Hz, some servos may run smoother @ 100Hz
-  pwm_config.cmpr_a = 0;                         // duty cycle of PWMxa = 0
-  pwm_config.cmpr_b = 0;                         // duty cycle of PWMxb = 0
-  pwm_config.counter_mode = MCPWM_UP_COUNTER;    // Counter mode
-  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;      // 0 = not inverted, 1 = inverted
+  pwm_config.frequency = SERVO_FREQUENCY;     // frequency usually = 50Hz, some servos may run smoother @ 100Hz
+  pwm_config.cmpr_a = 0;                      // duty cycle of PWMxa = 0
+  pwm_config.cmpr_b = 0;                      // duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER; // Counter mode
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
 
   // 4. Initialize MCPWM timers with settings above
   mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config); // Configure PWM0A & PWM0B
@@ -1671,8 +1680,8 @@ void setupMcpwmESC()
   io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
   io_conf.intr_type = GPIO_INTR_DISABLE;
   gpio_config(&io_conf);
-  
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
+
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
   io_conf.pin_bit_mask = (1ULL << RZ7886_PIN2);
   gpio_config(&io_conf);
 #endif
@@ -1680,17 +1689,17 @@ void setupMcpwmESC()
   // 2. Connect GPIO pins to MCPWM peripherals
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0A, ESC_OUT_PIN); // Set ESC as PWM0A
 
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
   mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM0B, RZ7886_PIN2); // Set pin 32 as PWM0B
 #endif
 
   // 3. Configure MCPWM parameters
   mcpwm_config_t pwm_config;
-  pwm_config.frequency = 50;                      // frequency always 50Hz
-  pwm_config.cmpr_a = 0;                          // duty cycle of PWMxa = 0
-  pwm_config.cmpr_b = 0;                          // duty cycle of PWMxb = 0
-  pwm_config.counter_mode = MCPWM_UP_COUNTER;     // Counter mode
-  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;       // 0 = not inverted, 1 = inverted
+  pwm_config.frequency = 50;                  // frequency always 50Hz
+  pwm_config.cmpr_a = 0;                      // duty cycle of PWMxa = 0
+  pwm_config.cmpr_b = 0;                      // duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER; // Counter mode
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
 
   // 4. Initialize MCPWM timer with settings above
   mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config); // Configure PWM0A & PWM0B
@@ -1706,7 +1715,7 @@ void setupMcpwmESC()
   io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
   io_conf.intr_type = GPIO_INTR_DISABLE;
   gpio_config(&io_conf);
-  
+
   io_conf.pin_bit_mask = (1ULL << RZ7886_PIN2);
   gpio_config(&io_conf);
 
@@ -1716,11 +1725,11 @@ void setupMcpwmESC()
 
   // 3. Configure MCPWM parameters
   mcpwm_config_t pwm_config;
-  pwm_config.frequency = RZ7886_FREQUENCY;        // frequency
-  pwm_config.cmpr_a = 0;                          // duty cycle of PWMxa = 0
-  pwm_config.cmpr_b = 0;                          // duty cycle of PWMxb = 0
-  pwm_config.counter_mode = MCPWM_UP_COUNTER;     // Counter mode
-  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;       // 0 = not inverted, 1 = inverted
+  pwm_config.frequency = RZ7886_FREQUENCY;    // frequency
+  pwm_config.cmpr_a = 0;                      // duty cycle of PWMxa = 0
+  pwm_config.cmpr_b = 0;                      // duty cycle of PWMxb = 0
+  pwm_config.counter_mode = MCPWM_UP_COUNTER; // Counter mode
+  pwm_config.duty_mode = MCPWM_DUTY_MODE_0;   // 0 = not inverted, 1 = inverted
 
   // 4. Initialize MCPWM timer with settings above
   mcpwm_init(MCPWM_UNIT_1, MCPWM_TIMER_0, &pwm_config); // Configure PWM0A & PWM0B
@@ -1893,8 +1902,8 @@ void setupEeprom()
 #if defined ERASE_EEPROM_ON_BOOT
   eepromErase(); // uncomment this option, if you want to erase all stored settings!
 #endif
-  eepromInit(); // Init new board with default values
-  eepromRead(); // Read settings from Eeprom
+  eepromInit();                   // Init new board with default values
+  eepromRead();                   // Read settings from Eeprom
   selectedVehicle = VEHICLE_NAME; // Set to current vehicle name
   Serial.print("current eeprom_id: ");
   Serial.println(EEPROM.read(adr_eprom_init));
@@ -2023,7 +2032,7 @@ void setup()
   beaconLight2.begin(BEACON_LIGHT2_PIN, 10, 20000); // Timer 10, 20kHz
 #endif
 
-#if defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE and not defined SERVOS_HYDRAULIC_EXCAVATOR
+#if defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE and not defined SERVOS_HYDRAULIC_EXCAVATOR and not defined SERVOS_KABOLITE_K336_EXCAVATOR
   brakeLight.begin(BRAKELIGHT_PIN, 11, 20000); // Timer 11, 20kHz
 #endif
   cabLight.begin(CABLIGHT_PIN, 12, 20000); // Timer 12, 20kHz
@@ -2090,24 +2099,23 @@ void setup()
   }
   // New: PWM read setup, using rmt. Thanks to croky-b
   uint8_t i;
-  
+
   // Configure RMT channels for PWM signal reception
   // Using direct register configuration for compatibility across platform versions
   for (i = 0; i < PWM_CHANNELS_NUM; i++)
   {
     uint8_t channel = PWM_CHANNELS[i];
     gpio_num_t pin = (gpio_num_t)PWM_PINS[i];
-    
+
     // Configure GPIO pin for RMT input
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << pin),
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE
-    };
+        .intr_type = GPIO_INTR_DISABLE};
     gpio_config(&io_conf);
-    
+
     // Configure RMT channel via the ESP32 RMT driver
     rmt_config_t rmt_rx = RMT_DEFAULT_CONFIG_RX(pin, (rmt_channel_t)channel);
     rmt_rx.clk_div = RMT_RX_CLK_DIV;
@@ -2585,8 +2593,8 @@ void processRawChannels()
     for (uint8_t i = 1; i < PULSE_ARRAY_SIZE; i++)
     { // For each channel:
 
-      // Position valid for auto calibration? Must be between 1400 and 1600 microseconds
-      if (channelAutoZero[i] && !autoZeroDone && (pulseWidthRaw[i] > 1600 || pulseWidthRaw[i] < 1400))
+      // Position valid for auto calibration? Must be between 1350 and 1650 microseconds
+      if (channelAutoZero[i] && !autoZeroDone && (pulseWidthRaw[i] > 1650 || pulseWidthRaw[i] < 1350))
       {
         channel = i;
         Serial.printf(" CH%i: signal out of auto calibration range, check transmitter & receiver!\n", channel);
@@ -2840,7 +2848,7 @@ bool beaconControl(uint8_t pulses)
 
 void mcpwmOutput()
 {
-#if not defined SERVOS_EXCAVATOR && not defined SERVOS_EXCAVATOR_1060_ESC && not defined SERVOS_HYDRAULIC_EXCAVATOR && not defined SERVOS_WB_EXCAVATOR && not defined SERVOS_CRANE // Servo outputs, if not used in special vehicle servo mode **********************
+#if not defined SERVOS_EXCAVATOR && not defined SERVOS_EXCAVATOR_1060_ESC && not defined SERVOS_HYDRAULIC_EXCAVATOR && not defined SERVOS_WB_EXCAVATOR && not defined SERVOS_KABOLITE_K336_EXCAVATOR && not defined SERVOS_CRANE // Servo outputs, if not used in special vehicle servo mode **********************
 
   if (autoZeroDone) // Only generate servo signals, if auto zero was successful!
   {
@@ -2995,13 +3003,25 @@ void mcpwmOutput()
     }
 #endif
 
-    // Trailer coupler (5th wheel) CH4 **********************
+// Trailer coupler (5th wheel) CH4 **********************
+#if not defined CH4_FAN
     static uint16_t couplerServoMicros;
     if (unlock5thWheel)
       couplerServoMicros = CH4R;
     else
       couplerServoMicros = CH4L;
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, couplerServoMicros);
+
+#else
+    // Fan CH4 **********************
+    static uint16_t EngineFanRpm;
+    // Calculate engine rpm dependent fan rpm
+    if (engineStart || engineRunning)
+      EngineFanRpm = map(currentRpm, 0, 500, CH4L, CH4R);
+    else
+      EngineFanRpm = 1500;
+    mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, EngineFanRpm);
+#endif
   }
 
   // Print servo signal debug infos **********************
@@ -3063,7 +3083,7 @@ void mcpwmOutput()
 #endif
 
 // Hydraulic pump on ESC output **********************
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
     static uint16_t pumpPulseWidth = ESC_C;
 
     // Mix cylinder pump rpm requests together
@@ -3092,7 +3112,7 @@ void mcpwmOutput()
     }
     else // mode without delay
     {
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
       pulseWidth[1] = reMap(curveHydraulicValve, pulseWidth[1]);
       pulseWidth[1] = map(pulseWidth[1], pulseMin[1], pulseMax[1], CH1L, CH1R);
       // Serial.printf(" Bucket: %i µs\n", pulseWidth[1]);
@@ -3123,7 +3143,7 @@ void mcpwmOutput()
     }
     else // mode without delay
     {
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
       pulseWidth[2] = reMap(curveHydraulicValve, pulseWidth[2]);
       pulseWidth[2] = map(pulseWidth[2], pulseMin[2], pulseMax[2], CH2L, CH2R);
       // Serial.printf(" Dipper: %i µs\n", pulseWidth[2]);
@@ -3154,7 +3174,7 @@ void mcpwmOutput()
     }
     else // mode without delay
     {
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
       pulseWidth[5] = reMap(curveHydraulicValve, pulseWidth[5]);
       pulseWidth[5] = map(pulseWidth[5], pulseMin[5], pulseMax[5], CH3L, CH3R);
       // Serial.printf(" Boom: %i µs\n", pulseWidth[5]);
@@ -3189,8 +3209,8 @@ void mcpwmOutput()
   }
   else // autoZero not done = failsafe positions!
   {
-#if defined SERVOS_HYDRAULIC_EXCAVATOR
-    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, ESC_MIN); // Pump
+#if defined SERVOS_HYDRAULIC_EXCAVATOR || defined SERVOS_KABOLITE_K336_EXCAVATOR
+    mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, ESC_MIN); // Pump on "ESC" output
 #endif
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, CH1C); // Bucket
     mcpwm_set_duty_in_us(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, CH2C); // Dipper
@@ -3923,7 +3943,7 @@ void engineMassSimulation()
     if (escIsBraking && currentSpeed < clutchEngagingPoint)
       targetRpm = 0; // keep engine @idle rpm, if braking at very low speed
 
-#if defined LOADER_MODE || defined CRANE_MODE || defined DUMP_BED
+#if defined LOADER_MODE || defined CRANE_MODE || defined DUMP_BED || defined HOOK_LIFT
     // If requested hydraulic rpm is higher, use it (for loader)
     if (targetHydraulicRpm[0] > targetRpm)
       targetRpm = targetHydraulicRpm[0];
@@ -4045,18 +4065,58 @@ uint8_t xenonIgnitionFlash;
 static unsigned long xenonMillis;
 uint32_t indicatorFade = 300; // 300 is the fading time, simulating an incandescent bulb
 
+// Side lights sub function ---------------------------------
+void sideLightsSub(uint8_t brightness)
+{
+  if (!taillightsAndIndicatorsCombined) // if taillights and indicators not combined (otherwise controlled by brake lights sub function)
+  {
+    if (brightness > 0)
+    {
+      sideLight.pwm(constrain(brightness - crankingDim, (sideLightsBrightness / 2), 255));
+    }
+    else
+    {
+      sideLight.off();
+    }
+  }
+}
+
 // Brake light sub function ---------------------------------
 void brakeLightsSub(uint8_t brightness)
 {
-  if (escIsBraking)
+  if (taillightsAndIndicatorsCombined) // if taillights and indicators combined (US style)
   {
-    tailLight.pwm(255 - crankingDim);  // Taillights (full brightness)
-    brakeLight.pwm(255 - crankingDim); // Brakelight on
+    if (escIsBraking) // Full brightness, if braking
+    {
+      if (!indicatorLon && !hazard && !unlock5thWheel && !batteryProtection)
+        tailLight.pwm(255 - crankingDim); // Taillights (full brightness)
+      brakeLight.pwm(255 - crankingDim);  // Third brakelight on
+      if (!indicatorRon && !hazard && !unlock5thWheel && !batteryProtection)
+        sideLight.pwm(255 - crankingDim); // Right taillight, connected to side lights output (full brightness)
+    }
+    else // Taillight brightness, if not braking
+    {
+      if (!indicatorLon && !hazard && !unlock5thWheel && !batteryProtection)
+        tailLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255)); // Taillights (reduced brightness)
+      brakeLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255));  // Third brakelight (reduced brightness)
+      if (!indicatorRon && !hazard && !unlock5thWheel && !batteryProtection)
+        sideLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255)); // Right taillight, connected to side lights output (reduced brightness)
+    }
   }
   else
   {
-    tailLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255));  // Taillights (reduced brightness)
-    brakeLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255)); // Brakelight (reduced brightness)
+    if (escIsBraking) // Full brightness, if braking
+    {
+      tailLight.pwm(255 - crankingDim);  // Taillights (full brightness)
+      brakeLight.pwm(255 - crankingDim); // Third brakelight on
+      // sideLight.pwm(255 - crankingDim);  // Right taillight, connected to side lights output (full brightness)
+    }
+    else // Taillight brightness, if not braking
+    {
+      tailLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255));  // Taillights (reduced brightness)
+      brakeLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255)); // Third brakelight (reduced brightness)
+      // sideLight.pwm(constrain(brightness - (crankingDim / 2), (brightness / 2), 255));  // Right taillight, connected to side lights output (reduced brightness)
+    }
   }
 }
 
@@ -4216,11 +4276,12 @@ void led()
 #endif
 
   // Indicators (turn signals, blinkers) ----
-  uint8_t indicatorOffBrightness;
+  uint8_t indicatorOffBrightness = 0;
+  uint8_t indicatorPauseBrightness = 0;
   if (indicatorsAsSidemarkers) // Indicators used as US style side markers as well
   {
     if (lightsState > 1)
-      indicatorOffBrightness = rearlightDimmedBrightness - crankingDim / 2;
+      indicatorOffBrightness = constrain(rearlightDimmedBrightness - crankingDim / 2, 3, 255);
     else
       indicatorOffBrightness = 0;
   }
@@ -4231,24 +4292,24 @@ void led()
 
   if (!hazard && !unlock5thWheel && !batteryProtection && hazardsWhile5thWheelUnlocked || !hazard && !batteryProtection && !hazardsWhile5thWheelUnlocked)
   {
-    // L indicator
+    // L indicator ***************************************************************************
     if (indicatorLon)
     {
-      if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
+      if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorPauseBrightness))
         indicatorSoundOn = true; // Left indicator
     }
     else
     {
-      if (lightsState > 1 && indicatorsAsSidemarkers)
+      if (lightsState > 1)
         indicatorL.pwm(indicatorOffBrightness);
       else
         indicatorL.off(indicatorFade);
     }
 
-    // R indicator
+    // R indicator ***************************************************************************
     if (indicatorRon)
     {
-      if (indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
+      if (indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorPauseBrightness))
         indicatorSoundOn = true; // Left indicator
     }
     else
@@ -4261,9 +4322,9 @@ void led()
   }
   else
   { // Hazard lights on, if no connection to transmitter (serial & SBUS control mode only)
-    if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness))
+    if (indicatorL.flash(375, 375, 0, 0, 0, indicatorFade, indicatorPauseBrightness))
       indicatorSoundOn = true;
-    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorOffBrightness);
+    indicatorR.flash(375, 375, 0, 0, 0, indicatorFade, indicatorPauseBrightness);
   }
 
   // Headlights, tail lights ----
@@ -4329,19 +4390,19 @@ void led()
   {
     headLightsSub(true, true, false, false); // Headlights on (head, fog, roof, park)
     sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
-    tailLight.pwm(255 - crankingDim); 
+    tailLight.pwm(255 - crankingDim);
   }
   else if (pulseWidth[9] > 1400 && pulseWidth[9] < pulseMaxLimit[9])
   {
     headLightsSub(true, false, false, false); // Headlights on (head, fog, roof, park)
     sideLight.off();
-    tailLight.pwm(255 - crankingDim); 
+    tailLight.pwm(255 - crankingDim);
   }
   else if (pulseWidth[9] > 1200 && pulseWidth[9] < pulseMaxLimit[9])
   {
     headLightsSub(false, false, false, false); // Headlights off
     sideLight.off();
-    tailLight.pwm(255 - crankingDim); 
+    tailLight.pwm(255 - crankingDim);
   }
   else
   {
@@ -4356,7 +4417,7 @@ void led()
 
   case 0: // lights off ---------------------------------------------------------------------
     cabLight.off();
-    sideLight.off();
+    sideLightsSub(0);
     lightsOn = false;
     headLightsSub(false, false, false, false);
     brakeLightsSub(0); // 0 brightness, if not braking
@@ -4371,7 +4432,7 @@ void led()
     {
       cabLight.pwm(cabLightsBrightness - crankingDim);
     }
-    sideLight.off();
+    sideLightsSub(0);
     headLightsSub(false, false, false, false);
     brakeLightsSub(0); // 0 brightness, if not braking
     break;
@@ -4381,7 +4442,7 @@ void led()
     {
       cabLight.pwm(cabLightsBrightness - crankingDim);
     }
-    sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
+    sideLightsSub(sideLightsBrightness);
     headLightsSub(false, false, true, true);
     fogLight.off();
     brakeLightsSub(rearlightParkingBrightness); // () = brightness, if not braking
@@ -4389,7 +4450,7 @@ void led()
 
   case 3: // roof & side & head lights ---------------------------------------------------------------------
     cabLight.off();
-    sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
+    sideLightsSub(sideLightsBrightness);
     lightsOn = true;
     headLightsSub(true, false, true, false);
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
@@ -4401,7 +4462,7 @@ void led()
       lightsState = 5; // Skip foglights
     }
     cabLight.off();
-    sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
+    sideLightsSub(sideLightsBrightness);
     headLightsSub(true, true, true, false);
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
     break;
@@ -4412,7 +4473,7 @@ void led()
       lightsState = 0; // Skip cablights
     }
     cabLight.pwm(cabLightsBrightness - crankingDim);
-    sideLight.pwm(constrain(sideLightsBrightness - crankingDim, (sideLightsBrightness / 2), 255));
+    sideLightsSub(sideLightsBrightness);
     headLightsSub(true, true, true, false);
     brakeLightsSub(rearlightDimmedBrightness); // 50 brightness, if not braking
     break;
@@ -4420,6 +4481,16 @@ void led()
   } // End of state machine
 
 #endif
+
+  // US style taillight indicatoroverride: taillight, brake light and indicator are combined in one lamp
+  if (taillightsAndIndicatorsCombined)
+  {
+    if (indicatorLon || hazard || unlock5thWheel || batteryProtection)
+      tailLight.pwm(ledcRead(3)); // Timer 3 is the left indicator, read its brightness and use it for the left rear indicator, which is connected to the taillight output
+    if (indicatorRon || hazard || unlock5thWheel || batteryProtection)
+      sideLight.pwm(ledcRead(4)); // Timer 4 is the right indicator, read its brightness and use it for the right rear indicator, which is connected to the side light output
+  }
+
 #endif // End of manual lights mode ************************
 }
 
@@ -5050,7 +5121,7 @@ void esc()
     escSignal = map(escPulseWidthOut, escPulseMax, escPulseMin, 1000, 2000); // direction inversed
 #endif // --------------------------------------------
 
-#if not defined SERVOS_HYDRAULIC_EXCAVATOR
+#if not defined SERVOS_HYDRAULIC_EXCAVATOR && not defined SERVOS_KABOLITE_K336_EXCAVATOR // No ESC control in excavator mode, because the excavator is controlled by servos
 #if not defined RZ7886_DRIVER_MODE                                             // Classic crawler style RC ESC mode ----
     mcpwm_set_duty_in_us(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_OPR_A, escSignal); // ESC now using MCPWM
 
@@ -5115,18 +5186,18 @@ void tone(uint8_t pin, unsigned int frequency, unsigned long duration, uint8_t u
   // Using LEDC channel 15 (arbitrary choice, not used elsewhere)
   const uint8_t ledcChannel = 15;
   const uint8_t ledcResolution = 8;
-  
+
   // Configure LEDC PWM
-  ledcSetup(ledcChannel, frequency, ledcResolution);  // Channel, frequency, resolution
-  ledcAttachPin(pin, ledcChannel);                     // Attach pin to channel
-  ledcWrite(ledcChannel, 128);                         // 50% duty cycle for tone
-  
+  ledcSetup(ledcChannel, frequency, ledcResolution); // Channel, frequency, resolution
+  ledcAttachPin(pin, ledcChannel);                   // Attach pin to channel
+  ledcWrite(ledcChannel, 128);                       // 50% duty cycle for tone
+
   // Play tone for specified duration
   delay(duration);
-  
+
   // Stop tone
-  ledcWrite(ledcChannel, 0);  // Silence
-  ledcDetachPin(pin);         // Detach pin from channel
+  ledcWrite(ledcChannel, 0); // Silence
+  ledcDetachPin(pin);        // Detach pin from channel
 }
 
 //
@@ -5363,15 +5434,22 @@ void triggerIndicators()
   // Reset by steering -------------
   static int steeringOld;
 
-  if (pulseWidth[1] < steeringOld - 50)
+  if (pulseWidth[1] < steeringOld - 50) // L
   {
-    L = false;
+    if (invertIndicatorResetDirection)
+      R = false;
+    else
+      L = false;
     steeringOld = pulseWidth[1];
   }
 
-  if (pulseWidth[1] > steeringOld + 50)
+  if (pulseWidth[1] > steeringOld + 50) // R
   {
-    R = false;
+
+    if (invertIndicatorResetDirection)
+      L = false;
+    else
+      R = false;
     steeringOld = pulseWidth[1];
   }
 
@@ -6143,7 +6221,7 @@ void excavatorControl()
     else
       hydraulicPumpVolumeInternal[8] = 0;
 
-      // AUX1 hydraulics ---
+    // AUX1 hydraulics ---
     if (pulseWidth[15] > pulseMaxNeutral[15])
       hydraulicPumpVolumeInternal[15] = map(pulseWidth[15], pulseMaxNeutral[15], (pulseMax[15] - 150), 0, 50);
     else if (pulseWidth[15] < pulseMinNeutral[15])
@@ -6151,7 +6229,7 @@ void excavatorControl()
     else
       hydraulicPumpVolumeInternal[15] = 0;
 
-      // AUX2 hydraulics---
+    // AUX2 hydraulics---
     if (pulseWidth[16] > pulseMaxNeutral[16])
       hydraulicPumpVolumeInternal[16] = map(pulseWidth[16], pulseMaxNeutral[16], (pulseMax[16] - 150), 0, 50);
     else if (pulseWidth[16] < pulseMinNeutral[16])
@@ -6179,7 +6257,7 @@ void excavatorControl()
 #endif
 
     // Hydraulic calculations ---
-    hydraulicPumpVolumeInternalUndelayed = constrain(hydraulicPumpVolumeInternal[1] + hydraulicPumpVolumeInternal[2] + hydraulicPumpVolumeInternal[5] + hydraulicPumpVolumeInternal[6] + hydraulicPumpVolumeInternal[7] + hydraulicPumpVolumeInternal[8]+ hydraulicPumpVolumeInternal[15]+ hydraulicPumpVolumeInternal[16], 0, 100) * map(currentRpm, 0, 500, 30, 100) / 100;
+    hydraulicPumpVolumeInternalUndelayed = constrain(hydraulicPumpVolumeInternal[1] + hydraulicPumpVolumeInternal[2] + hydraulicPumpVolumeInternal[5] + hydraulicPumpVolumeInternal[6] + hydraulicPumpVolumeInternal[7] + hydraulicPumpVolumeInternal[8] + hydraulicPumpVolumeInternal[15] + hydraulicPumpVolumeInternal[16], 0, 100) * map(currentRpm, 0, 500, 30, 100) / 100;
 
     if (hydraulicPumpVolumeInternalUndelayed < hydraulicPumpVolume)
       hydraulicPumpVolume--;
@@ -6208,7 +6286,7 @@ void excavatorControl()
     else if (pulseWidth[6] < (1500 - pwmStrokeChainDriveStartRotation))
     {
       trackRattleVolumeInternal[6] = map(pulseWidth[6], (1500 - pwmStrokeChainDriveStartRotation), (1500 - pwmStrokeChainDriveTopSpeed), 0, 100);
-      trackRisRotating = true;
+      trackLisRotating = true;
     }
     else
     {
@@ -6390,7 +6468,6 @@ void craneControl()
 
 void dumpBedControl()
 {
-
   // Calculate pump rpm while lifting
 
   // Dump bed (upwards) ---
@@ -6416,6 +6493,26 @@ void dumpBedControl()
   // Calculate hydraulic load dependent Diesel knock volume
   hydraulicDependentKnockVolume = map(targetHydraulicRpm[0], 0, 80, 50, 100);
   currentThrottleHydraulic = targetHydraulicRpm[0];
+}
+
+//
+// =======================================================================================================
+// HOOK LIFT CONTROL
+// =======================================================================================================
+//
+
+void hookLiftControl()
+{
+  // Calculate pump rpm --------------------------
+  hydraulicSound(7, 350, 350, 30, 30);         // hook lift cylinder
+  hydraulicSound(16, 250, 250, 20, 20);     // hook sliding cylinder
+
+  targetHydraulicRpm[0] = targetHydraulicRpm[1] + targetHydraulicRpm[2] + targetHydraulicRpm[7] + targetHydraulicRpm[8] + targetHydraulicRpm[9] + targetHydraulicRpm[12] + targetHydraulicRpm[13] + targetHydraulicRpm[14] + targetHydraulicRpm[15] + targetHydraulicRpm[16];
+  currentThrottleHydraulic = targetHydraulicRpm[0];
+  hydraulicPumpVolume = hydraulicPumpVolumeArray[1] + hydraulicPumpVolumeArray[2] + hydraulicPumpVolumeArray[7] + hydraulicPumpVolumeArray[8] + hydraulicPumpVolumeArray[9] + hydraulicPumpVolumeArray[12] + hydraulicPumpVolumeArray[13] + hydraulicPumpVolumeArray[14] + hydraulicPumpVolumeArray[15] + hydraulicPumpVolumeArray[16];
+
+  // Calculate hydraulic load dependent Diesel knock volume
+  hydraulicDependentKnockVolume = map(targetHydraulicRpm[0], 0, 100, 50, 100);
 }
 
 //
@@ -6603,6 +6700,11 @@ void loop()
     dumpBedControl();
 #endif
 
+// Hook lift truck specific controls
+#if defined HOOK_LIFT
+    hookLiftControl();
+#endif
+
     // Steam locomotive specific controls
 #if defined STEAM_LOCOMOTIVE_MODE
     steamLocomotiveControl();
@@ -6616,7 +6718,7 @@ void loop()
   }
 
   // Read trailer switch state
-#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE and not defined SERVOS_HYDRAULIC_EXCAVATOR
+#if not defined THIRD_BRAKELIGHT and not defined RZ7886_DRIVER_MODE and not defined SERVOS_HYDRAULIC_EXCAVATOR and not defined SERVOS_KABOLITE_K336_EXCAVATOR
   trailerPresenceSwitchRead();
 #endif
 

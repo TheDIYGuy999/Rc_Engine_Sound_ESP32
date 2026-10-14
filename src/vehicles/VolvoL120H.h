@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#define VEHICLE_NAME "Volvo L120H wheel loader"
+
 // Vehicle specific settings for sound, lights, ESC, transmission. This is a vehicle specific file.
 
 // Sound files (22'050 Hz, 8 bit PCM recommended) -----------------------------------------------------------------------

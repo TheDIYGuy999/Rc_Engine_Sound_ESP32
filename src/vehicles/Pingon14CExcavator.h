@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define VEHICLE_NAME "Pingon 14C excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)"
+#define VEHICLE_NAME "Pingon 14C excavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile)"
 
 // Vehicle specific settings for sound, lights, ESC, transmission. This is a vehicle specific file.
 

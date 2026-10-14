@@ -4,7 +4,7 @@
 
 // Select the shaker configuration you have:
 #define GT_POWER_STOCK // <------- Select (remove //) one of the shaker configurations below
-//#define GT_POWER_PLASTIC
+// #define GT_POWER_PLASTIC
 
 
 // SHAKER SETTINGS ********************************************************************************************************************
@@ -16,7 +16,7 @@
 
 // Shaker parameters (simulating engine vibrations)
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
-const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
+const uint8_t shakerIdle = 50; // Shaker power while idling (max. 255, about 49)
 const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
 const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
 #endif
@@ -28,7 +28,7 @@ const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, abou
 
 // Shaker parameters (simulating engine vibrations)
 const uint8_t shakerStart = 100; // Shaker power while engine start (max. 255, about 100)
-const uint8_t shakerIdle = 49; // Shaker power while idling (max. 255, about 49)
+const uint8_t shakerIdle = 50; // Shaker power while idling (max. 255, about 49)
 const uint8_t shakerFullThrottle = 40; // Shaker power while full throttle (max. 255, about 40)
 const uint8_t shakerStop = 60; // Shaker power while engine stop (max. 255, about 60)
 #endif

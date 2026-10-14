@@ -7,6 +7,18 @@
 - Remove in vehicle files: XENON_LIGHTS, LED_INDICATORS, INDICATOR_DIR, doubleFlashBlueLight
 - Add to EEPROM & select box: DOUBLE_CLUTCH and other transmission options
 
+### 9.15.0-b7
+- Sound interrupt handling changed. This should fix the "crashhing during full throttle" issue
+- CAT 980 added
+- hookLiftControl() added
+- taillightsAndIndicatorsCombined added for US style vehicles. Used in my Paystar truck
+- Many smaller adjustments in vehicle files
+
+### 9.15.0-b6
+- VEHICLE_NAME quotation marks errors fixed in vehicle files
+- new light option "invertIndicatorResetDirection"
+- First Web-UI implementation by turbotike added. It still contains bugs which may mess up your files. Use it with care! See: https://github.com/turbotike/web-UI-for-the-diy-guy-999-light-speed-and-sound-unit.-
+
 ### 9.15.0-b5
 - PWM input mode fixed. After a long time it is now usable again!
 - IBUS and SBUS mode tested as well and working

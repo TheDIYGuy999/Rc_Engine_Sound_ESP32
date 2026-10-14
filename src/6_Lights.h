@@ -12,13 +12,13 @@
 
 // Neopixel settings ----------------------------------------------------------------------------------------------------------------------------------------
 // Note: Neopixels only usable, if not in PWM mode, otherwise disable it!
- #define NEOPIXEL_ENABLED  // GPIO0 used for WS2812 Neopixel control, if defined! you can disable it, if not requierd
+// #define NEOPIXEL_ENABLED  // GPIO0 used for WS2812 Neopixel control, if defined! you can disable it, if not requierd
 #if defined NEOPIXEL_ENABLED // only selectable, if NEOPIXELS are in use ---
 // #define NEOPIXEL_ON_CH4 // The CH 4 servo header is used as Neopixel output, if defined (BUS communication mode only, intended for RC trailer controller, no coupler servo)
 #endif                          // ---
-#define NEOPIXEL_COUNT 8        // How many Neopixels? 8 for Knight Rider, 3 for B33lz3bub
-#define NEOPIXEL_BRIGHTNESS 127 // Brightness (255 is the maximum)
-#define MAX_POWER_MILLIAMPS 100 // Maximum allowed Neopixel current draw in mA (100 recommended, depending on your 5V supply)
+#define NEOPIXEL_COUNT 8
+#define NEOPIXEL_BRIGHTNESS 125
+#define MAX_POWER_MILLIAMPS 100
 
 #define NEOPIXEL_HIGHBEAM // Neopixel bar is used as high beam as well, if defined. Also usable in combination with NEOPIXEL_KNIGHT_RIDER & NEOPIXEL_BLUELIGHT
 
@@ -37,16 +37,18 @@ uint8_t neopixelMode = 3; // See above
 //#define INDICATOR_TOGGLING_MODE // The indicators are toggled on and off, each time the trigger signal is detected. For vehicles in loader mode
 
 // These light options are adjustable on the configuration website and stored in the EEPROM -----------------------------------------------------------------
-bool noCabLights = false;                 // The cablights step in the lights sequence is skipped, if true
+bool noCabLights = true;                 // The cablights step in the lights sequence is skipped, if true
 bool noFogLights = false;                 // The foglights step in the lights sequence is skipped, if true
 bool xenonLights = false;                 // Headlights will show a xenon bulb ignition flash, if true
 bool flickeringWileCranking = false;       // if true: The lights will flicker a bit during engine cranking, otherwise they are just a bit dimmed
 bool ledIndicators = false;               // indicators are switching "hard" (without fading like an incandescent bulb), if true (was LED_INDICATORS)
 bool swap_L_R_indicators = false;         // If you want to swap L & R indicators
 bool indicatorsAsSidemarkers = false;      // "US Mode" The indicators are used as side markers as well. This is commonly used in US trucks.
-bool separateFullBeam = false;            // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
+bool taillightsAndIndicatorsCombined = false; // Another "US Mode": Taillights / brake lights and indicators are combined in one lamp. Right taillight connects to the side light output. Connect side markers to the indicator output
+bool separateFullBeam = true;            // The full beam is a separate bulb, connected to roof lights pin. Connect roof lights to side lights in this case
 bool flashingBlueLight = true;            // double flash blue lights if "true", "rotating" beacons if "false"
 bool hazardsWhile5thWheelUnlocked = true; // Hazards on, if 5th wheel is unlocked
+bool invertIndicatorResetDirection = true; // If true, the indicators will reset in the opposite direction, when the steering wheel is turned back to the center position. 
 
 // Light brightness values 0 - 255
 uint8_t cabLightsBrightness = 100;      // Usually 255, 100 for Actros & Ural
@@ -54,5 +56,5 @@ uint8_t sideLightsBrightness = 140;     // Usually 200, 100 for WPL C44, 50 for 
 uint8_t rearlightDimmedBrightness = 30; // tailligt brightness, if not braking, about 30
 uint8_t rearlightParkingBrightness = 5; // 0, if you want the taillights being off, if side lights are on, or about 5 if you want them on (0 for US Mode)
 uint8_t headlightParkingBrightness = 5; // 0, if you want the headlights being off, if side lights are on, or about 5 if you want them on (0 for US Mode)
-uint8_t reversingLightBrightness = 140; // Around 140, 50 for Landy & Ural
-uint8_t fogLightBrightness = 255;       // Around 255, less if too bright
+uint8_t reversingLightBrightness = 120; // Around 140, 50 for Landy & Ural
+uint8_t fogLightBrightness = 210;       // Around 255, less if too bright

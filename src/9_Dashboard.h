@@ -21,6 +21,6 @@
 
 uint8_t dashRotation = 1; // 3 = normal, 1 = upside down
 
-#define MAX_REAL_SPEED 110                 // max speed in km/h to show on the dashboard
+#define MAX_REAL_SPEED 110
 int manualGearRatios[3] = {305, 165, 100}; // TAMIYA gear ratios: 1st 1:32.49, 2nd 1:17.66, 3rd 1:10.66, value div 100 (used for real shifting transmissions only!)
-#define RPM_MAX 500                        // always 500
+#define RPM_MAX 500

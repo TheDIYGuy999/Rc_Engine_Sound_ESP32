@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define VEHICLE_NAME "Land Rover Defender "Spectre" with Chevy LS3 V8"
+#define VEHICLE_NAME "Land Rover Defender 'Spectre' with Chevy LS3 V8"
 
 // Vehicle specific settings for sound, lights, ESC, transmission. This is a vehicle specific file.
 

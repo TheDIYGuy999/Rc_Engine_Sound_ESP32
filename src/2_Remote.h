@@ -2,8 +2,9 @@
 
 // Select (remove //) the remote configuration profile you have:
 // #define FLYSKY_FS_I6X            // <------- Flysky FS-i6x
- #define FLYSKY_FS_I6S            // <------- Flysky FS-i6s
-// #define FLYSKY_FS_I6S_LOADER     // <------- Flysky FS-i6s for BURNIE222 Volvo L120H loader (use IBUS communication setting)
+// #define FLYSKY_FS_I6S            // <------- Flysky FS-i6s
+// #define FLYSKY_FS_I6S_HORN_CH9   // <------- Flysky FS-i6s with horn on CH9
+ #define FLYSKY_FS_I6S_LOADER     // <------- Flysky FS-i6s for BURNIE222 Volvo L120H loader (use IBUS communication setting)
 // #define FLYSKY_FS_I6S_DOZER     // <------- Flysky FS-i6s for dozer (use IBUS communication setting)
 // #define WB_EXCAVATOR  // <------- WB excavator (use SBUS communication setting)
 // #define FLYSKY_FS_I6S_EXCAVATOR  // <------- Flysky FS-i6s for KABOLITE K336 hydraulic excavator (use IBUS communication setting)
@@ -30,14 +31,14 @@
 // PWM mode active, if SBUS, IBUS, SUMD and PPM are disabled (// in front of #define)
 
 // SBUS communication (RX header, 16 channels. This is my preferred communication protocol)--------
-// #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
-// NOTE: "boolean sbusInverted = true / false" was moved to the remote configuration profiles, so you don't have to change it
-uint32_t sbusBaud = 100000;         // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
+ #define SBUS_COMMUNICATION // control signals are coming in via the SBUS interface (comment it out for classic PWM RC signals)
+// NOTE: "boolean sbusInverted = true, so you don't have to change it
+uint32_t sbusBaud = 102000;         // Standard is 100000. Try to lower it, if your channels are coming in unstable. Working range is about 96000 - 104000.
 #define EMBEDDED_SBUS               // Embedded SBUS code is used instead of SBUS library, if defined (recommended, don't change it)
-uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout in milliseconds (about 100)
+uint16_t sbusFailsafeTimeout = 102; // Failsafe is triggered after this timeout in milliseconds (about 100)
 
 // IBUS communication (RX header, 13 channels not recommended, NO FAILSAFE, if bad contact in iBUS wiring!) --------
- #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
+// #define IBUS_COMMUNICATION // control signals are coming in via the IBUS interface (comment it out for classic PWM RC signals)
 
 // SUMD communication (RX header, 12 channels, For Graupner remotes) --------
 // #define SUMD_COMMUNICATION // control signals are coming in via the SUMD interface (comment it out for classic PWM RC signals)
@@ -47,8 +48,8 @@ uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout 
 
 // CHANNEL LINEARITY SETTINGS  ****************************************************************************************************************
 // Note: avoid these options for excavators!
-// #define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
-// #define EXPONENTIAL_STEERING // Exponential steering curve. More steering accuracy around center position
+ #define EXPONENTIAL_THROTTLE // Exponential throttle curve. Ideal for enhanced slow speed control in crawlers
+ #define EXPONENTIAL_STEERING // Exponential steering curve. More steering accuracy around center position
 
 // CHANNEL AVERAGING (EXPERIMENTAL!) **********************************************************************************************************
 // #define CHANNEL_AVERAGING // This is recommended, if you have issues with unstable channels
@@ -108,9 +109,9 @@ uint16_t sbusFailsafeTimeout = 100; // Failsafe is triggered after this timeout 
 #define HAZARDS NONE         // CH11
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define CH_14 14
+#define CH_15 15
+#define CH_16 16
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -168,7 +169,7 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 #endif
 
-// Flysky FS-i6S remote configuration profile (CAT 730) --------------------------------------------------------------------------------------------
+// Flysky FS-i6S remote configuration profile (CAT 730 & Standard trucks) --------------------------------------------------------------------------------------------
 #ifdef FLYSKY_FS_I6S
 
 // Channel assignment (use NONE for non existing channels!)
@@ -186,7 +187,7 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define HAZARDS NONE         // CH11
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
+#define CH_14 14             // CH1
 #define CH_15 15             // CH15
 #define CH_16 16             // CH16
 
@@ -246,7 +247,83 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 #endif
 
+// Flysky FS-i6S remote configuration profile (MAN 8x8, horn on CH 9) --------------------------------------------------------------------------------------------
+#ifdef FLYSKY_FS_I6S_HORN_CH9
 
+// Channel assignment (use NONE for non existing channels!)
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 1           // CH1 steering
+#define GEARBOX 10           // CH2 3 position switch for gearbox (left throttle in tracked mode)
+#define THROTTLE 3           // CH3 throttle & brake (right throttle in tracked mode)
+#define HORN 9               // CH4 horn and bluelight / siren
+#define FUNCTION_R 2         // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L 4         // CH6 indicators, hazards
+#define POT2 7               // CH7 pot 2 dump bed
+#define MODE1 8              // CH8 mode 1 switch
+#define MODE2 NONE           // CH9 mode 2 switch
+#define MOMENTARY1 NONE      // CH10
+#define HAZARDS NONE         // CH11
+#define INDICATOR_LEFT NONE  // CH12
+#define INDICATOR_RIGHT NONE // CH13
+#define CH_14 14             // CH14
+#define CH_15 15             // CH15
+#define CH_16 6              // CH16 hook sliding for hook lift thruck
+
+// Channels reversed or not
+boolean channelReversed[17] = {
+    false, // CH0 (unused)
+    false, // CH1
+    false, // CH2
+    false, // CH3
+    false, // CH4
+    true,  // CH5
+    false, // CH6
+    false, // CH7
+    false, // CH8
+    false, // CH9
+    false, // CH10
+    false, // CH11
+    false, // CH12
+    false, // CH13
+    false, // CH14
+    false, // CH15
+    false  // CH16
+};
+
+// Channels auto zero adjustment or not (don't use it for channels without spring centered neutral position, switches or unused channels)
+boolean channelAutoZero[17] = {
+    false, // CH0 (unused)
+    false,  // CH1
+    false, // CH2
+    true,  // CH3
+    false, // CH4
+    true,  // CH5
+    true,  // CH6
+    false, // CH7
+    false, // CH8
+    false, // CH9
+    false, // CH10
+    false, // CH11
+    false, // CH12
+    false, // CH13
+    false, // CH14
+    false, // CH15
+    false  // CH16
+};
+
+// Channels signal range calibration -----
+const uint16_t pulseNeutral = 30;
+const uint16_t pulseSpan = 480;
+
+// Automatic or manual modes -----
+// #define AUTO_LIGHTS
+// #define AUTO_ENGINE_ON_OFF
+// #define AUTO_INDICATORS
+
+// SBUS mode ----
+boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
+
+#endif
 
 // Flysky FS-i6S remote configuration profile (for loaders only) --------------------------------------------------------------------------------------
 #ifdef FLYSKY_FS_I6S_LOADER
@@ -268,9 +345,9 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define HAZARDS NONE         // CH11
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define CH_14 14
+#define CH_15 15
+#define CH_16 16
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -297,7 +374,7 @@ boolean channelReversed[17] = {
 boolean channelAutoZero[17] = {
     false, // CH0 (unused)
     true,  // CH1
-    false, // CH2
+    true, // CH2
     true,  // CH3
     false, // CH4
     true,  // CH5
@@ -336,22 +413,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 4           // CH1 bucket or tilt
-#define GEARBOX 7            // CH2 multi bucket or swivel
-#define THROTTLE 9           // CH3 3 position switch off, idle, rev. 9
-#define HORN 10              // CH4 horn
-#define FUNCTION_R 3         // CH5 lift
-#define FUNCTION_L 1         // CH6 left track
-#define POT2 2               // CH7 right track
-#define MODE1 6              // CH8 ripper
-#define MODE2 8              // CH9 light switch
-#define MOMENTARY1 NONE      // CH10
-#define HAZARDS NONE         // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 1
+#define GEARBOX 6
+#define THROTTLE 3
+#define HORN 5
+#define FUNCTION_R 2
+#define FUNCTION_L 4
+#define POT2 8
+#define MODE1 7
+#define MODE2 9
+#define MOMENTARY1 NONE
+#define HAZARDS NONE
+#define INDICATOR_LEFT NONE
+#define INDICATOR_RIGHT NONE
+#define CH_14 14
+#define CH_15 15
+#define CH_16 16
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -418,22 +495,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 bucket
-#define GEARBOX 3            // CH2 dipper
-#define THROTTLE 9           // CH3 3 position switch off, idle, rev. 9 (6 for test)
-#define HORN 11              // CH4 horn
-#define FUNCTION_R 2         // CH5 boom
-#define FUNCTION_L 5         // CH6 left track
-#define POT2 6               // CH7 right track
-#define MODE1 4              // CH8 swing
-#define MODE2 10             // CH9 light switch
-#define MOMENTARY1 12        // CH10 2 position switch for ISO / SAE mode selection
-#define HAZARDS NONE         // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 NONE           // CH14
-#define CH_15 7              // CH15 Hydraulics AUX1
-#define CH_16 8              // CH16 Hydraulics AUX2
+#define STEERING 1
+#define GEARBOX 6
+#define THROTTLE 3
+#define HORN 5
+#define FUNCTION_R 2
+#define FUNCTION_L 4
+#define POT2 8
+#define MODE1 7
+#define MODE2 9
+#define MOMENTARY1 NONE
+#define HAZARDS NONE
+#define INDICATOR_LEFT NONE
+#define INDICATOR_RIGHT NONE
+#define CH_14 14
+#define CH_15 15
+#define CH_16 16
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -498,22 +575,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 bucket
-#define GEARBOX 2            // CH2 dipper
-#define THROTTLE 9           // CH3 3 position switch off, idle, rev. 9 (6 for test)
-#define HORN 10              // CH4 horn
-#define FUNCTION_R 3         // CH5 boom
-#define FUNCTION_L 6         // CH6 left track 6 (none for test)
-#define POT2 7               // CH7 right track
-#define MODE1 4              // CH8 swing
-#define MODE2 8              // CH9 light switch
-#define MOMENTARY1 5         // CH10 2 position switch for ISO / SAE mode selection
-#define HAZARDS NONE         // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 1          // CH1 bucket
+#define GEARBOX 2           // CH2 dipper
+#define THROTTLE 9          // CH3 3 position switch off, idle, rev. 9 (6 for test)
+#define HORN 10             // CH4 horn
+#define FUNCTION_R 3        // CH5 boom
+#define FUNCTION_L 6        // CH6 left track 6 (none for test)
+#define POT2 7              // CH7 right track
+#define MODE1 4             // CH8 swing
+#define MODE2 NONE          // CH9
+#define MOMENTARY1 5        // CH10 2 position switch for ISO / SAE mode selection
+#define HAZARDS NONE        // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -591,9 +668,9 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define HAZARDS NONE         // CH11
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define CH_14 14
+#define CH_15 15
+#define CH_16 16
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -671,9 +748,9 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 #define HAZARDS NONE         // CH11
 #define INDICATOR_LEFT NONE  // CH12
 #define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define CH_14 14
+#define CH_15 15
+#define CH_16 16
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -719,7 +796,7 @@ boolean channelAutoZero[17] = {
 
 // Channels signal range calibration -----
 const uint16_t pulseNeutral = 30;
-const uint16_t pulseSpan = 495;
+const uint16_t pulseSpan = 480;
 
 // Automatic or manual modes -----
 // #define AUTO_LIGHTS
@@ -818,22 +895,23 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 bucket
-#define GEARBOX 2            // CH2 dipper
-#define THROTTLE 6           // CH3 3 position switch off, idle, rev. 9 (6 for test)
-#define HORN 10              // CH4 horn
-#define FUNCTION_R 3         // CH5 boom
-#define FUNCTION_L NONE      // CH6 left track 6 (none for test)
-#define POT2 NONE            // CH7 right track
-#define MODE1 4              // CH8 swing
-#define MODE2 NONE           // CH9
-#define MOMENTARY1 NONE      // CH10
-#define HAZARDS NONE         // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+// Remote channel #######   // Sound controller channel ##########################################
+#define STEERING 1          // CH1 bucket
+#define GEARBOX 2           // CH2 dipper
+#define THROTTLE 6          // CH3 3 position switch off, idle, rev. 9 (6 for test)
+#define HORN 10             // CH4 horn
+#define FUNCTION_R 3        // CH5 boom
+#define FUNCTION_L NONE        // CH6 left track 6 (none for test)
+#define POT2 NONE              // CH7 right track
+#define MODE1 4             // CH8 swing
+#define MODE2 NONE          // CH9
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS NONE        // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -922,22 +1000,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 steering
-#define GEARBOX 4            // CH2 3 position switch for gearbox (left throttle in tracked mode)
-#define THROTTLE 2           // CH3 throttle & brake (right throttle in tracked mode)
-#define HORN 5               // CH4 horn and bluelight / siren
-#define FUNCTION_R 6         // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-#define FUNCTION_L 1         // CH6 indicators, hazards
-#define POT2 NONE            // CH7 pot 2
-#define MODE1 NONE           // CH8 mode 1 switch
-#define MODE2 NONE           // CH9 mode 2 switch
-#define MOMENTARY1 NONE      // CH10
-#define HAZARDS 3            // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 1          // CH1 steering
+#define GEARBOX 4           // CH2 3 position switch for gearbox (left throttle in tracked mode)
+#define THROTTLE 2          // CH3 throttle & brake (right throttle in tracked mode)
+#define HORN 5              // CH4 horn and bluelight / siren
+#define FUNCTION_R 6        // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L 1        // CH6 indicators, hazards
+#define POT2 NONE           // CH7 pot 2
+#define MODE1 NONE          // CH8 mode 1 switch
+#define MODE2 NONE          // CH9 mode 2 switch
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS 3           // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -988,7 +1066,7 @@ const uint16_t pulseSpan = 480;
 // Automatic or manual modes -----
 // #define AUTO_LIGHTS
 // #define AUTO_ENGINE_ON_OFF
-#define AUTO_INDICATORS
+// #define AUTO_INDICATORS
 
 // SBUS mode ----
 boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
@@ -1021,22 +1099,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 steering
-#define GEARBOX NONE         // CH2 3 position switch for gearbox (left throttle in tracked mode)
-#define THROTTLE 2           // CH3 throttle & brake (right throttle in tracked mode)
-#define HORN 3               // CH4 horn and bluelight / siren
-#define FUNCTION_R NONE      // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-#define FUNCTION_L NONE      // CH6 indicators, hazards
-#define POT2 NONE            // CH7 pot 2
-#define MODE1 NONE           // CH8 mode 1 switch
-#define MODE2 NONE           // CH9 mode 2 switch
-#define MOMENTARY1 NONE      // CH10
-#define HAZARDS NONE         // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 1          // CH1 steering
+#define GEARBOX NONE        // CH2 3 position switch for gearbox (left throttle in tracked mode)
+#define THROTTLE 2          // CH3 throttle & brake (right throttle in tracked mode)
+#define HORN 3              // CH4 horn and bluelight / siren
+#define FUNCTION_R NONE     // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L NONE     // CH6 indicators, hazards
+#define POT2 NONE           // CH7 pot 2
+#define MODE1 NONE          // CH8 mode 1 switch
+#define MODE2 NONE          // CH9 mode 2 switch
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS NONE        // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -1082,12 +1160,12 @@ boolean channelAutoZero[17] = {
 
 // Channels signal range calibration -----
 const uint16_t pulseNeutral = 30;
-const uint16_t pulseSpan = 500;
+const uint16_t pulseSpan = 480;
 
 // Automatic or manual modes -----
-#define AUTO_LIGHTS
-#define AUTO_ENGINE_ON_OFF
-#define AUTO_INDICATORS
+// #define AUTO_LIGHTS
+// #define AUTO_ENGINE_ON_OFF
+// #define AUTO_INDICATORS
 
 // SBUS mode ----
 boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
@@ -1099,22 +1177,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 4           // CH1 steering
-#define GEARBOX 5            // CH2 3 position switch for gearbox
-#define THROTTLE 1           // CH3 throttle & brake
-#define HORN 7               // CH4 horn
-#define FUNCTION_R 3         // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-#define FUNCTION_L 2         // CH6 indicators, hazards
-#define POT2 8               // CH7 pot 2
-#define MODE1 6              // CH8 mode 1 switch
-#define MODE2 NONE           // CH9 mode 2 switch
-#define MOMENTARY1 NONE      // CH10
-#define HAZARDS 9            // CH11
-#define INDICATOR_LEFT NONE  // CH12
-#define INDICATOR_RIGHT NONE // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 4          // CH1 steering
+#define GEARBOX 5           // CH2 3 position switch for gearbox
+#define THROTTLE 1          // CH3 throttle & brake
+#define HORN 7              // CH4 horn
+#define FUNCTION_R 3        // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L 2        // CH6 indicators, hazards
+#define POT2 8              // CH7 pot 2
+#define MODE1 6             // CH8 mode 1 switch
+#define MODE2 NONE          // CH9 mode 2 switch
+#define MOMENTARY1 NONE     // CH10
+#define HAZARDS 9           // CH11
+#define INDICATOR_LEFT NONE // CH12
+#define INDICATOR_RIGHT NONE// CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -1165,7 +1243,7 @@ const uint16_t pulseSpan = 480;
 // Automatic or manual modes -----
 // #define AUTO_LIGHTS
 // #define AUTO_ENGINE_ON_OFF
-#define AUTO_INDICATORS
+// #define AUTO_INDICATORS
 
 // SBUS mode ----
 boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
@@ -1177,22 +1255,22 @@ boolean sbusInverted = true; // true = standard (non inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 steering
-#define GEARBOX 2            // CH2 3 position switch for gearbox (left throttle in tracked mode)
-#define THROTTLE 3           // CH3 throttle & brake (right throttle in tracked mode)
-#define HORN 5               // CH4 horn and bluelight / siren
-#define FUNCTION_R 4         // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-#define FUNCTION_L NONE      // CH6 indicators, hazards
-#define POT2 16              // CH7 pot2
-#define MODE1 6              // CH8 mode 1 switch
-#define MODE2 7              // CH9 mode 2 switch
-#define MOMENTARY1 8         // CH10
-#define HAZARDS 9            // CH11
-#define INDICATOR_LEFT 10    // CH12
-#define INDICATOR_RIGHT 11   // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 1          // CH1 steering
+#define GEARBOX 2           // CH2 3 position switch for gearbox (left throttle in tracked mode)
+#define THROTTLE 3          // CH3 throttle & brake (right throttle in tracked mode)
+#define HORN 5              // CH4 horn and bluelight / siren
+#define FUNCTION_R 4        // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L NONE     // CH6 indicators, hazards
+#define POT2 16             // CH7 pot2
+#define MODE1 6             // CH8 mode 1 switch
+#define MODE2 7             // CH9 mode 2 switch
+#define MOMENTARY1 8        // CH10
+#define HAZARDS 9           // CH11
+#define INDICATOR_LEFT 10   // CH12
+#define INDICATOR_RIGHT 11  // CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -1243,7 +1321,7 @@ const uint16_t pulseSpan = 480;
 // Automatic or manual modes -----
 // #define AUTO_LIGHTS
 // #define AUTO_ENGINE_ON_OFF
-#define AUTO_INDICATORS
+ #define AUTO_INDICATORS
 
 // SBUS mode ----
 boolean sbusInverted = false; // false = non standard (inverted) SBUS signal
@@ -1255,22 +1333,22 @@ boolean sbusInverted = false; // false = non standard (inverted) SBUS signal
 
 // Channel assignment (use NONE for non existing channels!)
 // Remote channel #######   // Sound controller channel ##########################################
-#define STEERING 1           // CH1 steering
-#define GEARBOX NONE         // CH2 3 position switch for gearbox (left throttle in tracked mode)
-#define THROTTLE 3           // CH3 throttle & brake (right throttle in tracked mode)
-#define HORN 5               // CH4 horn and bluelight / siren
-#define FUNCTION_R NONE      // CH5 jake brake, high / low beam, headlight flasher, engine on / off
-#define FUNCTION_L NONE      // CH6 indicators, hazards
-#define POT2 16              // CH7 pot2
-#define MODE1 6              // CH8 mode 1 switch
-#define MODE2 7              // CH9 mode 2 switch
-#define MOMENTARY1 8         // CH10
-#define HAZARDS 9            // CH11
-#define INDICATOR_LEFT 10    // CH12
-#define INDICATOR_RIGHT 11   // CH13
-#define CH_14 14             // CH14
-#define CH_15 15             // CH15
-#define CH_16 16             // CH16
+#define STEERING 1          // CH1 steering
+#define GEARBOX NONE        // CH2 3 position switch for gearbox (left throttle in tracked mode)
+#define THROTTLE 3          // CH3 throttle & brake (right throttle in tracked mode)
+#define HORN 5              // CH4 horn and bluelight / siren
+#define FUNCTION_R NONE     // CH5 jake brake, high / low beam, headlight flasher, engine on / off
+#define FUNCTION_L NONE     // CH6 indicators, hazards
+#define POT2 16             // CH7 pot2
+#define MODE1 6             // CH8 mode 1 switch
+#define MODE2 7             // CH9 mode 2 switch
+#define MOMENTARY1 8        // CH10
+#define HAZARDS 9           // CH11
+#define INDICATOR_LEFT 10   // CH12
+#define INDICATOR_RIGHT 11  // CH13
+#define CH_14 NONE
+#define CH_15 NONE
+#define CH_16 NONE
 
 // Channels reversed or not
 boolean channelReversed[17] = {
@@ -1319,9 +1397,9 @@ const uint16_t pulseNeutral = 30;
 const uint16_t pulseSpan = 480;
 
 // Automatic or manual modes -----
-#define AUTO_LIGHTS
+// #define AUTO_LIGHTS
 // #define AUTO_ENGINE_ON_OFF
-#define AUTO_INDICATORS
+// #define AUTO_INDICATORS
 
 // SBUS mode ----
 boolean sbusInverted = false; // false = non standard (inverted) SBUS signal

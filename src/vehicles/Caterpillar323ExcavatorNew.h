@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define VEHICLE_NAME "Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile, WB excavator)"
+#define VEHICLE_NAME "Caterpillar 323 excavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile, WB excavator)"
 
 // Vehicle specific settings for sound, lights, ESC, transmission. This is a vehicle specific file.
 
@@ -138,11 +138,11 @@ volatile int hydraulicPumpVolumePercentage = 100; // Adjust the volume (usually 
 #include "sounds/Caterpillar323Hydraulic2.h" // Caterpillar 323 excavator (slowed down by factor 2)
 
 // Choose the hydraulic fluid flow sound (uncomment the one you want) --------
-volatile int hydraulicFlowVolumePercentage = 90; // Adjust the volume (usually = 120%) 90
+volatile int hydraulicFlowVolumePercentage = 40; // Adjust the volume (usually = 120%) 90
  #include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
 
 // Choose the track rattle sound (uncomment the one you want) --------
-volatile int trackRattleVolumePercentage = 80; // Adjust the volume (usually = 150%)
+volatile int trackRattleVolumePercentage = 70; // Adjust the volume (usually = 150%)
 #include "sounds/Caterpillar323TrackRattle.h" // Caterpillar 323 excavator
 
 #define TRACK_RATTLE_2 // If you want to use a second track rattle sound, which is played with a delay after the first one, to create a more realistic effect

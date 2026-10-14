@@ -25,6 +25,8 @@
 // #define SERVOS_LANDY_DOUBLE_EAGLE
 // #define SERVOS_C34
 // #define SERVOS_URAL
+// #define SERVOS_PAYSTAR
+//  #define SERVOS_MAN
 // #define SERVOS_RGT_EX86100
 // #define SERVOS_ACTROS
 // #define SERVOS_KING_HAULER
@@ -34,7 +36,8 @@
 // NOTICE: The following profiles are for EXCAVATOR_MODE only! ---------------------
 // #define SERVOS_EXCAVATOR // For excavators with electric actuators
 // #define SERVOS_EXCAVATOR_1060_ESC // For excavators with electric actuators, driven by Hobbywing 1060 ESC (range about 1200 - 1800, 1500 is neutral)
-// #define SERVOS_HYDRAULIC_EXCAVATOR // For hydraulic excavators
+// #define SERVOS_HYDRAULIC_EXCAVATOR // For hydraulic excavators like the Pingon
+// #define  SERVOS_KABOLITE_K336_EXCAVATOR // For KABOLITE K336 hydraulic excavator
 // #define SERVOS_WB_EXCAVATOR // For WB excavators
 // #define SERVOS_CRANE // For Mushroom3D rough terrain crane (servo outputs used as outrigger channels SBUS decoder)
 
@@ -133,6 +136,52 @@ uint16_t CH1L = 1990, CH1C = 1640, CH1R = 1090; // CH1 steering left 1990, cente
 uint16_t CH2L = 670, CH2C = 1800, CH2R = 1800;  // CH2 transmission gear 1 978, 2 1800, 3 1800
 uint16_t CH3L = 1300, CH3C = 1450, CH3R = 1600; // CH3 winch pull, off, release
 uint16_t CH4L = 1300, CH4R = 1700;              // CH4 trailer coupler (5th. wheel) locked, unlocked
+
+// Servo ramp time
+uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+
+#endif
+
+// 3D printed PAYSTAR 5000 dump truck servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_PAYSTAR
+
+#define MODE2_WINCH    // Mode 2 is used for winch mode, if defined. The winch is controlled by the CH4 pot and connected to Servo CH3. BUS mode only!
+#define NO_WINCH_DELAY // Use this, if you don't want a winch on / off ramp
+#define CH4_FAN // The CH 4 servo connector is used for the engine fan, which is engine rpm dependent
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits
+uint16_t CH1L = 1060, CH1C = 1570, CH1R = 1970; // CH1 steering left 1990, center 1640, right 1090
+uint16_t CH2L = 1900, CH2C = 1500, CH2R = 1500;  // CH2 transmission gear 1 978, 2 1800, 3 1800
+uint16_t CH3L = 2000, CH3C = 1500, CH3R = 1000; // CH3 winch (dump bed in this case) pull, off, release
+uint16_t CH4L = 1590, CH4R = 1660;              // CH4 engine fan (CH4L = idle, CH4R = full throttle) 1600 1690
+
+// Servo ramp time
+uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
+
+#endif
+
+// Lesu MAN 8x8 hook lifttruck servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_MAN
+
+//#define MODE2_WINCH    // Mode 2 is used for winch mode, if defined. The winch is controlled by the CH4 pot and connected to Servo CH3. BUS mode only!
+//#define NO_WINCH_DELAY // Use this, if you don't want a winch on / off ramp
+//#define CH4_FAN // The CH 4 servo connector is used for the engine fan, which is engine rpm dependent
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Servo limits
+uint16_t CH1L = 1000, CH1C = 1500, CH1R = 2000; // CH1 steering left 1990, center 1640, right 1090
+uint16_t CH2L = 1500, CH2C = 1000, CH2R = 1000; // CH2 transmission gear 1 1500, 2 1000, 3 1000 (1 is shifting rod extended)
+uint16_t CH3L = 2000, CH3C = 1500, CH3R = 1000; // CH3 not used
+uint16_t CH4L = 1590, CH4R = 1660;              // CH4 not used
 
 // Servo ramp time
 uint16_t STEERING_RAMP_TIME = 0; // 0 = fastest speed, enlarge it to around 3000 for "scale" servo movements
@@ -348,6 +397,38 @@ uint16_t CH1_RAMP_TIME = 0; // always 0 for now
 uint16_t CH2_RAMP_TIME = 0; // always 0 for now
 uint16_t CH3_RAMP_TIME = 0; // always 0 for now
 uint16_t CH4_RAMP_TIME = 2500; // 2000 for swing motor protection (2500 for Pingon)
+
+#endif
+
+// Hydraulic excavator servo configuration profile -------------------------------------------------------------------------------------------
+#ifdef SERVOS_KABOLITE_K336_EXCAVATOR
+
+boolean boomDownwardsHydraulic = true; // hydraulic load sound as well for boom downwards
+boolean reverseBoomSoundDirection = true; // reverse sound direction, if needed (for example if hoses can't be swapped)
+
+// Servo frequency
+const uint8_t SERVO_FREQUENCY = 50; // usually 50Hz, some servos may run smoother @ 100Hz
+
+// WARNING: never connect receiver PWM signals to the "CH" pins in BUS communication mode!
+
+// Valve servo limits
+uint16_t CH1L = 1050, CH1C = 1500, CH1R = 1950; // CH1 bucket valve
+uint16_t CH2L = 1050, CH2C = 1500, CH2R = 1950; // CH2 dipper valve
+uint16_t CH3L = 1950, CH3C = 1500, CH3R = 1050; // CH3 boom valve
+
+// Swing ESC limits
+uint16_t CH4L = 1000, CH4C = 1500, CH4R = 2000; // CH4 swing ESC 1375, 1625 (1250, 1500, 1750 for Pingon)
+
+// Hydraulic pump limits
+uint16_t ESC_L = 1000, ESC_C = 1500, ESC_R = 2000; // ESC output for oil pump (always 1000, 1500, 2000)
+uint16_t ESC_MIN = 1500; // Pump off
+uint16_t ESC_MAX = 1950; // Pump max. RPM (1800 for Pingon)
+
+// Servo ramp times
+uint16_t CH1_RAMP_TIME = 0; // always 0 for now
+uint16_t CH2_RAMP_TIME = 0; // always 0 for now
+uint16_t CH3_RAMP_TIME = 0; // always 0 for now
+uint16_t CH4_RAMP_TIME = 2000; // 2000 for swing motor protection (2500 for Pingon)
 
 #endif
 

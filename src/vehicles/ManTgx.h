@@ -98,7 +98,7 @@ volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 
 //#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
 
 // Choose the air brake release sound (uncomment the one you want) --------
-volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
+volatile int brakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
 //#include "sounds/AirBrakeDummy.h" // If you don't want air brake sound
 //#include "sounds/TruckAirBrakes.h" // Short truck air brake sound
 //#include "sounds/TruckAirBrakesLong.h" // Long truck air brake sound
@@ -107,7 +107,7 @@ volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 
 //#include "sounds/UralBrakeSqueak.h" // URAL 4320 air brake sound
 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
-volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
+volatile int parkingBrakeVolumePercentage = 200; // Adjust the brake volume (usually = 200%)
 //#include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
 #include "sounds/ParkingBrake.h" // Parking brake sound
 
@@ -134,7 +134,8 @@ volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volum
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
 const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
-#include "sounds/Indicator.h" // "Tick-Tack" sound
+// #include "sounds/Indicator.h" // "Tick-Tack" sound
+#include "sounds/IndicatorDummy.h" // no sound
 
 // Choose the trailer couplig & uncoupling sounds (uncomment the ones you want) --------
 #define COUPLING_SOUND // uncomment this, if you want to use the trailer coupling & uncoupling sounds
@@ -143,6 +144,24 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 #include "sounds/coupling.h" // coupling
 #include "sounds/uncoupling.h" // uncoupling
 #endif
+
+// Choose the hydraulic pump sound (uncomment the one you want) --------
+volatile int hydraulicPumpVolumePercentage = 120; // Adjust the volume (usually = 120%)
+//#include "sounds/Caterpillar323Hydraulic.h" // Caterpillar 323 excavator
+#include "sounds/Caterpillar323Hydraulic2.h" // Caterpillar 323 excavator (slowed down by factor 2)
+
+// Choose the hydraulic fluid flow sound (uncomment the one you want) --------
+volatile int hydraulicFlowVolumePercentage = 5; // Adjust the volume (usually = 20%)
+//#include "sounds/Caterpillar323HydraulicFlow.h" // Caterpillar 323 excavator
+#include "sounds/hydraulicHiss.h" // Caterpillar 323 excavator
+
+// Choose the track rattle sound (uncomment the one you want) --------
+volatile int trackRattleVolumePercentage = 150; // Adjust the volume (usually = 150%)
+#include "sounds/Caterpillar323TrackRattle.h" // Caterpillar 323 excavator
+
+// Choose the bucket rattle sound (uncomment the one you want) --------
+volatile int bucketRattleVolumePercentage = 160; // Adjust the volume (usually = 160%)
+#include "sounds/Caterpillar323BucketRattle.h" // Caterpillar 323 excavator
 
 // Choose the light options --------
 #define XENON_LIGHTS // Headlights will show a xenon bulb ignition flash, if defined
@@ -176,3 +195,5 @@ const int8_t dec = 1; // Deceleration step (1) 1 = slow for locomotive engine, 5
 
 // Vehicle type ----------------------------------------------------------------------------------------------------
 // #define TRACKED_MODE // For Tanks, diggers, excavators etc. which use dual throttle input on CH2 and CH3
+//#define DUMP_BED // Vehicle with hydraulic dump bed (CAT 730 for example)
+#define HOOK_LIFT

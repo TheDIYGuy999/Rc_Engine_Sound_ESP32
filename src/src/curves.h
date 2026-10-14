@@ -229,14 +229,23 @@ float curveHydraulicValve[][2] = {
 // and servoCurves.xlsx
 
 float curveHydraulicPump[][2] = {
-
-    {0, 2000}, // {input value, output value}
+/*
+    {0, 2000}, // {input value, output value} Pingon
     {1000, 2000},
     {1450, 1700},
     {1500, 1500}, // Neutral
     {1550, 1700},
     {2000, 2000},
     {3000, 2000} // overload range
+    */
+
+    {0, 2000}, // {input value, output value}
+    {1000, 2000},
+    {1450, 1700},
+    {1500, 1500}, // Neutral
+    {1550, 1700},
+    {2000, 2250},
+    {3000, 2250} // overload range
 };
 
 //

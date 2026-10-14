@@ -82,25 +82,40 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 volatile int hornVolumePercentage = 100; // Adjust the horn volume (usually = 100%)
 //#include "sounds/TrainHorn.h" // American train horn
 //#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
-//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
+#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
 //#include "sounds/westinghouseHorn.h" // American truck horn (the best)
 //#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
 //#include "sounds/CarHorn.h" // A boring car horn
 //#include "sounds/TruckHorn.h" // A generic truck horn
 //#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
 //#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
-#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
+//#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
 //#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
-//#include "sounds/sirenDummy.h" // If you don't want siren sound
-//#include "sounds/UsPoliceSiren.h" // US Police siren
-//#include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
-#include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
-//#include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
-//#include "sounds/siren01norskere22.h" // Norwegian siren
-//#include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
+// #include "sounds/sirenDummy.h" // If you don't want siren sound
+// #include "sounds/UsPoliceSiren.h" // US Police siren
+// #include "sounds/FireTruckAirSiren.h" // US fire truck air siren (King Hauler)
+// #include "sounds/FireTruckAirSiren2.h" // US fire truck (incl. loop)
+// #include "sounds/FeuerwehrMartinshorn.h" // European Feuerwehr Martinshorn
+// #include "sounds/IrishFireEngineHorn.h" // Irish fire truck horn
+// #include "sounds/siren01norskere22.h" // Norwegian siren
+// #include "sounds/PostAutoHorn.h" // The typical Swiss post bus horn
+// #include "sounds/brasil(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/in_the_summertime(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/JEEP+HORN+2(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/la_carica(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/la_cucaracha(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/marseillaise(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/river_kwai(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/startrek(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/susannah(1).h" // sound from nenno @ rc-modellbau-portal.de
+#include "sounds/Tequila(1).h" // sound from nenno @ rc-modellbau-portal.de
+// #include "sounds/DixieSiren.h" // Dixie siren
+// #include "sounds/SwissPsalm.h" // Swiss national anthem
+// #include "sounds/Alphorn.h" // Alphorn
+// #include "sounds/kittScanner.h" // Knight Rider KITT scanner. Use it in combination with Neopixel animation.
 
 // Choose the air brake release sound (uncomment the one you want) --------
 volatile int brakeVolumePercentage = 140; // Adjust the brake volume (usually = 200%)
@@ -134,7 +149,7 @@ volatile int sound1VolumePercentage = 100; // Adjust the sound1 volume (usually 
 #include "sounds/door.h" // opening and closing the door
 
 // Choose the reversing beep sound --------
-volatile int reversingVolumePercentage = 0; // Adjust the reversing sound volume (usually = 70%)
+volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volume (usually = 70%)
 #include "sounds/TruckReversingBeep.h" // 1000Hz peep sound
 
 // Choose the indicator / turn signal options --------

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define VEHICLE_NAME "Volvo EC550EL 55 ton ecxavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile and SERVOS_EXCAVATOR servo profile)"
+#define VEHICLE_NAME "Volvo EC550EL 55 ton ecxavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile and 'SERVOS_EXCAVATOR' servo profile)"
 
 // Vehicle specific settings for sound, lights, ESC, transmission. This is a vehicle specific file.
 
@@ -32,7 +32,7 @@ volatile int jakeBrakeVolumePercentage = 200; // Adjust the max. volume (usually
 volatile int jakeBrakeIdleVolumePercentage = 0; // Adjust the min. volume (usually = 80%)
 volatile int jakeBrakeMinRpm = 200; // Adjust the min. RPM for the jake brake (around 100)
 #ifdef JAKE_BRAKE_SOUND
-//#include "sounds/Actros1863JakeBrake.h" // Actros 1863
+#include "sounds/Actros1863JakeBrake.h" // Actros 1863
 #endif
 
 // Choose the Diesel (or whatever) ignition "knock" sound (played in the fixed sampling rate interrupt, uncomment the one you want,
@@ -59,7 +59,7 @@ volatile int chargerStartPoint = 10; // Volume will raise above this point ( usu
 
 // Adjust the additional turbo wastegate  / blowoff valve  sound (set "wastegateVolumePercentage" to "0", if you don't want it)--------
 volatile int wastegateVolumePercentage = 50; // Adjust the wastegate volume (usually = 70%, up to 250%)
-volatile int wastegateIdleVolumePercentage = 1; // Wastegate sound is played, after rapid throttle drop with engaged clutch
+volatile int wastegateIdleVolumePercentage = 0; // Wastegate sound is played, after rapid throttle drop with engaged clutch
 //#include "sounds/WastegateDummy.h"
 #include "sounds/UnimogU1000TurboWastegate.h"
 //#include "sounds/ScaniaR730V8TurboWastegate.h"
@@ -76,17 +76,17 @@ volatile int fanStartPoint = 0; // Volume will raise above this point (250 for T
 
 // Choose the horn sound (uncomment the one you want) --------
 volatile int hornVolumePercentage = 140; // Adjust the horn volume (usually = 100%)
-//#include "sounds/TrainHorn.h" // American train horn
-//#include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
-//#include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
-//#include "sounds/westinghouseHorn.h" // American truck horn (the best)
-//#include "sounds/FireTruckAirHorn.h" // US fire truck air horn
+// #include "sounds/TrainHorn.h" // American train horn
+// #include "sounds/HornblastersOUTLAWTrainHornShort.h" // Hornblasters outlaw train horn short
+// #include "sounds/ManTgeHorn.h" // MAN TGE truck horn (King Hauler)
+// #include "sounds/westinghouseHorn.h" // American truck horn (the best)
+// #include "sounds/FireTruckAirHorn.h" // US fire truck air horn
 #include "sounds/CarHorn.h" // A boring car horn
-//#include "sounds/TruckHorn.h" // A generic truck horn
-//#include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
-//#include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
-//#include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
-//#include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
+// #include "sounds/TruckHorn.h" // A generic truck horn
+// #include "sounds/PeterbiltHorn.h" // A Peterbilt truck horn
+// #include "sounds/2ToneTruckHorn.h" // A 2 tone truck horn
+// #include "sounds/CaboverCAThorn.h" // Cabover wit CAT engine horn
+// #include "sounds/ScaniaV8trainHorn.h" // Scania with train horn
 
 // Choose the siren / additional horn sound (uncomment the one you want) --------
 volatile int sirenVolumePercentage = 100; // Adjust the siren volume (usually = 100%)
@@ -99,7 +99,7 @@ volatile int brakeVolumePercentage = 150; // Adjust the brake volume (usually = 
 // Choose the parking brake engaging sound (uncomment the one you want) --------
 volatile int parkingBrakeVolumePercentage = 150; // Adjust the brake volume (usually = 200%)
 #include "sounds/ParkingBrakeDummy.h" // If you don't want parking brake sound
-//#include "sounds/ParkingBrake.h" // Parking brake sound
+// #include "sounds/ParkingBrake.h" // Parking brake sound
 
 // Choose the gear shifting sound (uncomment the one you want) --------
 volatile int shiftingVolumePercentage = 100; // Adjust the shifting volume (usually = 200%)
@@ -116,7 +116,7 @@ volatile int reversingVolumePercentage = 70; // Adjust the reversing sound volum
 // Choose the indicator / turn signal options --------
 //#define LED_INDICATORS // LED based indicators will switch on and off immediately
 volatile int indicatorVolumePercentage = 100; // Adjust the indicator sound volume (usually = 100%)
-const uint16_t indicatorOn = 300; // The indicator will be switched on above +/- this value, if wheels are turned
+const uint16_t indicatorOn = 100; // The indicator will be switched on above +/- this value, if wheels are turned
 const boolean INDICATOR_DIR = true; // adjust indicator direction with true or false
 #include "sounds/Indicator.h" // "Tick-Tack" sound
 
@@ -133,7 +133,7 @@ volatile int couplingVolumePercentage = 100; // Adjust the volume (usually = 100
 
 // Choose the hydraulic pump sound (uncomment the one you want) --------
 volatile int hydraulicPumpVolumePercentage = 120; // Adjust the volume (usually = 120%)
-//#include "sounds/Caterpillar323Hydraulic.h" // Caterpillar 323 excavator
+// #include "sounds/Caterpillar323Hydraulic.h" // Caterpillar 323 excavator
 #include "sounds/Caterpillar323Hydraulic2.h" // Caterpillar 323 excavator (slowed down by factor 2)
 
 // Choose the hydraulic fluid flow sound (uncomment the one you want) --------
@@ -147,12 +147,12 @@ volatile int trackRattleVolumePercentage = 150; // Adjust the volume (usually = 
 #define TRACK_RATTLE_2 // If you want to use a second track rattle sound, which is played with a delay after the first one, to create a more realistic effect
 // Choose the track rattle 2 sound (uncomment the one you want) --------
 volatile int trackRattle2VolumePercentage = 150; // Adjust the volume (usually = 150%)
-const uint16_t pwmStrokeChainDriveTopSpeed = 500; //Hobbywing 1060 ESC reaches top speed at about 1800 or 1200. 1500 is neutral. This means 1500 +/- 300
-const uint16_t pwmStrokeChainDriveStartRotation = 68; // Hobbywing 1060 ESC starts to move at 1500 + this value
+const uint16_t pwmStrokeChainDriveTopSpeed = 255; //Hobbywing 1060 ESC reaches top speed at about 1800 or 1200. 1500 is neutral. This means 1500 +/- 300
+const uint16_t pwmStrokeChainDriveStartRotation = 70; // Hobbywing 1060 ESC starts to move at 1500 + this value
 const uint16_t trackRattleIntervalMin = 90; // Interval for top speed (never less than the sample duration of the track rattle sound)
 const uint16_t trackRattleIntervalMax = 500; // Maximum interval between track rattle sounds for slow speed
 #ifdef TRACK_RATTLE_2
-//#include "sounds/D6TrackRattle_100ms.h" // CAT D6 dozer track rattle
+// #include "sounds/D6TrackRattle_100ms.h" // CAT D6 dozer track rattle
 #include "sounds/D6TrackRattle_80ms.h" // CAT D6 dozer track rattle
 #endif
 
@@ -170,13 +170,13 @@ const boolean doubleFlashBlueLight = true; // double flash blue lights if "true"
 // Acceleration & deceleration settings ----------------------------------------------------------------------------------
 const uint8_t escRampTimeFirstGear = 20; // determines, how fast the acceleration and deceleration happens (about 15 - 25, 20 for King Hauler)
 const uint8_t escRampTimeSecondGear = 50; // 50 for King Hauler (this value is always in use for automatic transmission, about 80)
-const uint8_t escRampTimeThirdGear = 75; // 75 for King Hauler
+const uint8_t escRampTimeThirdGear = 50; // 75 for King Hauler
 const uint8_t escBrakeSteps = 30; // determines, how fast the ESC is able to brake down (20 - 30, 30 for King Hauler)
 const uint8_t escAccelerationSteps = 3; // determines, how fast the ESC is able to accelerate (2 - 3, 3 for King Hauler)
 
 // Gearbox parameters (select number of automatic gears in curves.h)-----------------------------------------------------
 const boolean automatic = false; // false = linear rpm curve, true = automatic transmission with torque converter is simulated (use it, if you don't have a real shifting transmission)
-#define NumberOfAutomaticGears 3 // <<------- Select 3, 4 or 6 gears!
+#define NumberOfAutomaticGears 3
 const boolean doubleClutch = false; // do not activate it at the same time as automatic!
 const boolean shiftingAutoThrottle = true; // For Tamiya 3 speed tansmission, throttle is altered for synchronizing, if "true"
 
@@ -185,7 +185,7 @@ uint16_t clutchEngagingPoint = 500; // CEP. The "clutch" is engaging above this 
 
 // Engine parameters ----------------------------------------------------------------------------------------------------
 // Engine max. RPM in % of idle RPM. About 200% for big Diesels, 400% for fast running motors.
-uint32_t MAX_RPM_PERCENTAGE = 223; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
+uint32_t MAX_RPM_PERCENTAGE = 220; // NOTE! Was called TOP_SPEED_MULTIPLIER (TSM) in earlier versions and was a multiplier instead of a percentage!
 
 // Engine mass simulation
 const int8_t acc = 1; // Acceleration step (2) 1 = slow for locomotive engine, 9 = fast for trophy truck

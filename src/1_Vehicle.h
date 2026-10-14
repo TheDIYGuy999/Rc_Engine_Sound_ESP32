@@ -15,7 +15,7 @@
 // #include "vehicles/KenworthW900ACAT3408new.h" // Kenworth W900A with Caterpillar 3408 V8 Diesel (good bass speaker required)
 // #include "vehicles/KenworthCummins335.h" // 1950ies Kenworth with Cummins 335 R6 Diesel
 // #include "vehicles/MackSuperLiner.h" // MACK Super Liner
-// #include "vehicles/M35.h"// AM General M35 "deuce and a half" military truck, turbocharged R6 universal fuel engine
+// #include "vehicles/M35.h"// AM General M35 'deuce and a half' military truck, turbocharged R6 universal fuel engine
 // #include "vehicles/US_Firetruck.h"// US firetruck with CAT3408 V8 and Allison 6 speed automatic (horn & siren loop capable)
 // #include "vehicles/FreightlinerCummins350.h" // Freightliner Cabover with Cummins 350 R6 Diesel
 
@@ -38,7 +38,7 @@
 // #include "vehicles/ManKat.h" // MAN KAT V8 Diesel German Bundeswehr military truck
 // #include "vehicles/MagirusDeutz256.h" // Magirus Deutz 256 air cooled V8 Diesel truck
 // #include "vehicles/MagirusMercur125.h" // Magirus Mercur air cooled V6 Diesel truck
- #include "vehicles/Saurer2DM.h" // Swiss Saurer 2DM R6 Diesel truck
+// #include "vehicles/Saurer2DM.h" // Swiss Saurer 2DM R6 Diesel truck
 
 // Russian trucks --------
 // #include "vehicles/Ural4320.h" // URAL 4320 6x6 V8 Diesel military truck
@@ -54,10 +54,10 @@
 // #include "vehicles/FergusonTEA20.h" // 1940ies Ferguson TEA20 petrol engine tractor
 
 // Excavators -------
-// #include "vehicles/Volvo EC550ElExcavator.h" // Volvo EC550EL 55 ton ecxavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile and SERVOS_EXCAVATOR servo profile)
-// #include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
-// #include "vehicles/Caterpillar323ExcavatorNew.h" // Caterpillar 323 excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile, WB excavator)
-// #include "vehicles/Pingon14CExcavator.h" // Pingon 14C excavator (use "FLYSKY_FS_I6S_EXCAVATOR" remote profile)
+// #include "vehicles/Volvo EC550ElExcavator.h" // Volvo EC550EL 55 ton ecxavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile and 'SERVOS_EXCAVATOR' servo profile)
+// #include "vehicles/Caterpillar323Excavator.h" // Caterpillar 323 excavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile)
+// #include "vehicles/Caterpillar323ExcavatorNew.h" // Caterpillar 323 excavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile, WB excavator)
+// #include "vehicles/Pingon14CExcavator.h" // Pingon 14C excavator (use 'FLYSKY_FS_I6S_EXCAVATOR' remote profile)
 
 // Dozers -------
 // #include "vehicles/CaterpillarD6Dozer.h" // Caterpillar D6 Dozer
@@ -69,8 +69,9 @@
 // #include "vehicles/Caterpillar973KLoader.h" // Caterpillar 973K tracked loader
 
 // Wheel Loaders -------
-// #include "vehicles/VolvoL120H.h"
+// #include "vehicles/VolvoL120H.h" // Volvo L120H wheel loader
 // #include "vehicles/HitachiZW370.h" // Hitachi ZW 370-6 heavy wheel loader (for Lukas Cajkar Harmony 370 3D printed loader)
+ #include "vehicles/CAT980.h" //CAT 980 Heavy Wheel Loader (for Burnie222 3D printed Kitten 980 loader)
 
 // Articulated Dump Trucks -------
 // #include "vehicles/CAT730.h" // Caterpillar 730 heavy dump truck
@@ -111,7 +112,7 @@
 // #include "vehicles/DefenderV8OpenPipe.h" // Land Rover Defender 90 V8 manual, open pipes (optimised for smaller speakers)
 // #include "vehicles/DefenderV8CrawlerAutomatic.h" // Land Rover Defender 90 V8 automatic crawler
 // #include "vehicles/DefenderTd5.h" // Land Rover Defender 90 Td5 R5 Diesel
-// #include "vehicles/Defender62LS3.h" // Land Rover Defender "Spectre" with Chevy LS3 V8
+// #include "vehicles/Defender62LS3.h" // Land Rover Defender 'Spectre' with Chevy LS3 V8
 
 // Asian SUV --------
 // #include "vehicles/LandcruiserFJ40.h" // Landcruiser Fj40 with inline 6 petrol engine
@@ -130,3 +131,5 @@
 
 // Generic Diesels --------
 // #include "vehicles/generic6zylDiesel.h" // Generic inline 6 Diesel, no turbo, manual transmission (optimised for smaller speakers)
+
+
